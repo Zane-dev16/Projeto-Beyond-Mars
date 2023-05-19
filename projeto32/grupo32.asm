@@ -28,7 +28,8 @@ inicio:
 
 ; corpo principal do programa
 ciclo:
-    MOV  R1, 0 
+    MOV  R1, 0         ;
+    MOV  R6, 0         ;
     MOVB [R4], R1      ; escreve linha e coluna a zero nos displays
     MOV  R1, LINHA1    ; testar a linha 4 
 
@@ -44,9 +45,23 @@ espera_tecla:          ; neste ciclo espera-se até uma tecla ser premida
     JMP espera_tecla   ; continua a testar a proxima linha
     
 tecla_premida:         ; vai mostrar a linha e a coluna da tecla no display
-    MOV  R6, R1        ; copia linha
-    SHL  R6, 4         ; coloca linha no nibble high
-    OR   R6, R0        ; junta coluna (nibble low)
+    
+    MOV  R7, 1         ;
+adicione_fila:        ; neste ciclo adicione 4 vezes a linha do teclado
+    SHR  R0, 1         ; desloca à direita 1 bit
+    CMP  R0, 0         ; se a linha ja for avaliada
+    JZ   fila_avaliada ; escreve o valor obtido nos displays
+    ADD  R6, R7        ; adicione 4 ao valor a ser escrito no display
+    JMP  adicione_fila ;
+
+fila_avaliada:         ;
+    CMP  R7, 4         ;
+    JZ  display_tecla  ;
+    MOV  R7, 4         ;
+    MOV  R0, R1        ;
+    JMP  adicione_fila ;
+
+display_tecla:         ; escreve linha e coluna nos displays
     MOVB [R4], R6      ; escreve linha e coluna nos displays
     
 ha_tecla:              ; neste ciclo espera-se até NENHUMA tecla estar premida

@@ -1,19 +1,13 @@
 ; *********************************************************************
 ; * IST-UL
-; * Modulo:    lab3.asm
-; * Descrição: Exemplifica o acesso a um teclado.
-; *            Lê uma linha do teclado, verificando se há alguma tecla
-; *            premida nessa linha.
+; * Modulo:    grupo32.asm
+; * Descrição: Projeto Intermédia do grupo 32
 ; *
-; * Nota: Observe a forma como se acede aos periféricos de 8 bits
-; *       através da instrução MOVB
 ; *********************************************************************
 
 ; **********************************************************************
 ; * Constantes
 ; **********************************************************************
-; ATENÇÃO: constantes hexadecimais que comecem por uma letra devem ter 0 antes.
-;          Isto não altera o valor de 16 bits e permite distinguir números de identificadores
 DISPLAYS   EQU 0A000H  ; endereço dos displays de 7 segmentos (periférico POUT-1)
 TEC_LIN    EQU 0C000H  ; endereço das linhas do teclado (periférico POUT-2)
 TEC_COL    EQU 0E000H  ; endereço das colunas do teclado (periférico PIN)

@@ -28,10 +28,8 @@ inicio:
 
 ; corpo principal do programa
 ciclo:
-    MOV  R1, 0         ;
     MOV  R6, 0         ;
-    MOVB [R4], R1      ; escreve linha e coluna a zero nos displays
-    MOV  R1, LINHA1    ; testar a linha 4 
+    MOV  R1, LINHA1    ; testar a linha 1
 
 espera_tecla:          ; neste ciclo espera-se até uma tecla ser premida
     MOVB [R2], R1      ; escrever no periférico de saída (linhas)
@@ -39,15 +37,13 @@ espera_tecla:          ; neste ciclo espera-se até uma tecla ser premida
     AND  R0, R5        ; elimina bits para além dos bits 0-3
     CMP  R0, 0         ; há tecla premida?
     JNZ  tecla_premida ; se houver uma tecla premida, salta
-    CMP R1, 5         ; chegou à última linha?
-    JGE ciclo           ; se chegou à última linha, repete ciclo
+    CMP R1, 5          ; chegou à última linha?
     SHL R1, 1          ; testar a próxima linha
     JMP espera_tecla   ; continua a testar a proxima linha
     
 tecla_premida:         ; vai mostrar a linha e a coluna da tecla no display
-    
     MOV  R7, 1         ;
-adicione_fila:        ; neste ciclo adicione 4 vezes a linha do teclado
+adicione_fila:         ; neste ciclo adicione 4 vezes a linha do teclado
     SHR  R0, 1         ; desloca à direita 1 bit
     CMP  R0, 0         ; se a linha ja for avaliada
     JZ   fila_avaliada ; escreve o valor obtido nos displays
@@ -62,13 +58,26 @@ fila_avaliada:         ;
     JMP  adicione_fila ;
 
 display_tecla:         ; escreve linha e coluna nos displays
-    MOVB [R4], R6      ; escreve linha e coluna nos displays
+    CMP  R6, 4         ; a tecla premida foi 4?
+    JZ decr_display    ; se a tecla premida for 4, decrementa o valor no display
+    CMP  R6, 5         ; a tecla premida foi 5?
+    JZ incr_display    ; se a tecla premida for 5, incrementa o valor no display
+    JMP ha_tecla       ; espera para a próxima tecla ser premida
+
+
+decr_display:          ;
+    DEC  R8            ;
+    MOVB [R4], R8      ;
+    JMP ha_tecla       ;
     
+incr_display:          ;
+    INC   R8            ;
+    MOVB [R4], R8      ;
+    JMP ha_tecla       ;
+
 ha_tecla:              ; neste ciclo espera-se até NENHUMA tecla estar premida
-    MOVB [R2], R1      ; escrever no periférico de saída (linhas)
     MOVB R0, [R3]      ; ler do periférico de entrada (colunas)
     AND  R0, R5        ; elimina bits para além dos bits 0-3
     CMP  R0, 0         ; há tecla premida?
     JNZ  ha_tecla      ; se ainda houver uma tecla premida, espera até não haver
     JMP  ciclo         ; repete ciclo
-

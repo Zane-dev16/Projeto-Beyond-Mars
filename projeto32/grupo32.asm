@@ -68,12 +68,12 @@ exec_tecla:            ; executa instrucoes de acordo com a tecla premida
 
 decr_display:          ; decrementa o valor no display
     DEC  R8            ; decrementa o valor para ser escrito no display
-    MOVB [R4], R8      ; escrever o valor no display
+    MOV [R4], R8      ; escrever o valor no display
     JMP ha_tecla       ; espera até a tecla ser libertada
     
 incr_display:          ; incrementa o valor no display
     INC   R8           ; incrementa o valor para ser escrito no display
-    MOVB [R4], R8      ; escrever o valor no display
+    MOV [R4], R8      ; escrever o valor no display
     JMP ha_tecla       ; espera até a tecla ser libertada
 
 ha_tecla:              ; neste ciclo espera-se até a tecla estar libertada

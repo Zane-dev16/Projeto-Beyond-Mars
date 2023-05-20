@@ -28,7 +28,6 @@ inicio:
 
 ; corpo principal do programa
 ciclo:
-    MOV  R6, 0         ;
     MOV  R1, LINHA1    ; testar a linha 1
 
 espera_tecla:          ; neste ciclo espera-se até uma tecla ser premida
@@ -36,48 +35,50 @@ espera_tecla:          ; neste ciclo espera-se até uma tecla ser premida
     MOVB R0, [R3]      ; ler do periférico de entrada (colunas)
     AND  R0, R5        ; elimina bits para além dos bits 0-3
     CMP  R0, 0         ; há tecla premida?
-    JNZ  tecla_premida ; se houver uma tecla premida, salta
+    JNZ  calcula_tecla ; se houver uma tecla premida, salta
     CMP R1, 5          ; chegou à última linha?
+    JGE ciclo          ; se chegou à última linha, repete ciclo
     SHL R1, 1          ; testar a próxima linha
-    JMP espera_tecla   ; continua a testar a proxima linha
+    JMP espera_tecla   ; continua o ciclo na próxima linha
     
-tecla_premida:         ; vai mostrar a linha e a coluna da tecla no display
-    MOV  R7, 1         ;
-adicione_fila:         ; neste ciclo adicione 4 vezes a linha do teclado
+calcula_tecla:         ; calcula o valor da tecla
+    MOV  R6, 0         ; inicia valor da tecla no 0
+    MOV  R7, 1         ; configure o incremento para 1
+
+calc_val_lin_col:      ; neste ciclo calcula-se o valor da linha/coluna
     SHR  R0, 1         ; desloca à direita 1 bit
-    CMP  R0, 0         ; se a linha ja for avaliada
-    JZ   fila_avaliada ; escreve o valor obtido nos displays
-    ADD  R6, R7        ; adicione 4 ao valor a ser escrito no display
-    JMP  adicione_fila ;
+    CMP  R0, 0         ; o valor da linha/coluna ja foi calculada?
+    JZ   lin_col_avaliada; se ja for calculada, salta
+    ADD  R6, R7        ; incrementa o valor calculada
+    JMP  calc_val_lin_col; repete ciclo
 
-fila_avaliada:         ;
-    CMP  R7, 4         ;
-    JZ  display_tecla  ;
-    MOV  R7, 4         ;
-    MOV  R0, R1        ;
-    JMP  adicione_fila ;
+lin_col_avaliada:      ; passo seguinte depois da cálculo da linha/coluna
+    CMP  R7, 4         ; foi avaliada a linha e coluna?
+    JZ  exec_tecla     ; se for ambas avaliadas, salta
+    MOV  R7, 4         ; configure o incremento para 4
+    MOV  R0, R1        ; configure para o cálculo da linha
+    JMP  calc_val_lin_col; calcula o valor para adicionar utilizando a linha
 
-display_tecla:         ; escreve linha e coluna nos displays
-    CMP  R6, 4         ; a tecla premida foi 4?
-    JZ decr_display    ; se a tecla premida for 4, decrementa o valor no display
+exec_tecla:            ; executa instrucoes de acordo com a tecla premida
     CMP  R6, 5         ; a tecla premida foi 5?
-    JZ incr_display    ; se a tecla premida for 5, incrementa o valor no display
-    JMP ha_tecla       ; espera para a próxima tecla ser premida
+    JZ decr_display    ; se for 5, decrementa valor no display
+    CMP  R6, 6         ; a tecla premida foi 6?
+    JZ incr_display    ; se for 6, incrementa valor no display
+    JMP ha_tecla       ; espera até a tecla ser libertada
 
-
-decr_display:          ;
-    DEC  R8            ;
-    MOVB [R4], R8      ;
-    JMP ha_tecla       ;
+decr_display:          ; decrementa o valor no display
+    DEC  R8            ; decrementa o valor para ser escrito no display
+    MOVB [R4], R8      ; escrever o valor no display
+    JMP ha_tecla       ; espera até a tecla ser libertada
     
-incr_display:          ;
-    INC   R8            ;
-    MOVB [R4], R8      ;
-    JMP ha_tecla       ;
+incr_display:          ; incrementa o valor no display
+    INC   R8           ; incrementa o valor para ser escrito no display
+    MOVB [R4], R8      ; escrever o valor no display
+    JMP ha_tecla       ; espera até a tecla ser libertada
 
-ha_tecla:              ; neste ciclo espera-se até NENHUMA tecla estar premida
+ha_tecla:              ; neste ciclo espera-se até a tecla estar libertada
     MOVB R0, [R3]      ; ler do periférico de entrada (colunas)
     AND  R0, R5        ; elimina bits para além dos bits 0-3
     CMP  R0, 0         ; há tecla premida?
-    JNZ  ha_tecla      ; se ainda houver uma tecla premida, espera até não haver
+    JNZ  ha_tecla      ; se a tecla ainda for premida, espera até não haver
     JMP  ciclo         ; repete ciclo

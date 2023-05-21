@@ -43,21 +43,21 @@ espera_tecla:          ; neste ciclo espera-se até uma tecla ser premida
     
 calcula_tecla:         ; calcula o valor da tecla
     MOV  R6, 0         ; inicia valor da tecla no 0
-    MOV  R7, 1         ; configure o incremento para 1
 
 calc_val_lin_col:      ; neste ciclo calcula-se o valor da linha/coluna
-    SHR  R0, 1         ; desloca à direita 1 bit
-    CMP  R0, 0         ; o valor da linha/coluna ja foi calculada?
+    SHR  R1, 1         ; desloca à direita 1 bit
+    CMP  R1, 0         ; o valor da linha/coluna ja foi calculada?
     JZ   lin_col_avaliada; se ja for calculada, salta
-    ADD  R6, R7        ; incrementa o valor calculada
+    INC  R6        ; incrementa o valor calculada
     JMP  calc_val_lin_col; repete ciclo
 
 lin_col_avaliada:      ; passo seguinte depois da cálculo da linha/coluna
-    CMP  R7, 4         ; foi avaliada a linha e coluna?
+    CMP  R0, 0         ; foi avaliada a linha e coluna?
     JZ  exec_tecla     ; se for ambas avaliadas, salta
-    MOV  R7, 4         ; configure o incremento para 4
-    MOV  R0, R1        ; configure para o cálculo da linha
-    JMP  calc_val_lin_col; calcula o valor para adicionar utilizando a linha
+    SHL  R6, 2         ; linha*4
+    MOV  R1, R0        ; configure para o cálculo da coluna
+    MOV  R0, 0         ; apaga o valor da coluna
+    JMP  calc_val_lin_col; calcula o valor da coluna
 
 exec_tecla:            ; executa instrucoes de acordo com a tecla premida
     CMP  R6, 5         ; a tecla premida foi 5?

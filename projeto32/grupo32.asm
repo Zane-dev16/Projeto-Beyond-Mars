@@ -83,21 +83,10 @@ espera_tecla:          ; neste ciclo espera-se até uma tecla ser premida
     
 calcula_tecla:         ; calcula o valor da tecla
     MOV  R6, 0         ; inicia valor da tecla no 0
-
-calc_val_lin_col:      ; neste ciclo calcula-se o valor da linha/coluna
-    SHR  R1, 1         ; desloca à direita 1 bit
-    CMP  R1, 0         ; o valor da linha/coluna ja foi calculada?
-    JZ   lin_col_avaliada; se ja for calculada, salta
-    INC  R6        ; incrementa o valor calculada
-    JMP  calc_val_lin_col; repete ciclo
-
-lin_col_avaliada:      ; passo seguinte depois da cálculo da linha/coluna
-    CMP  R0, 0         ; foi avaliada a linha e coluna?
-    JZ  exec_tecla     ; se for ambas avaliadas, salta
-    SHL  R6, 2         ; linha*4
-    MOV  R1, R0        ; configure para o cálculo da coluna
-    MOV  R0, 0         ; apaga o valor da coluna
-    JMP  calc_val_lin_col; calcula o valor da coluna
+    CALL conta_linhas_colunas;
+    SHL R6, 2          ; linhas * 4
+    MOV R1, R0         ; conta as colunas
+    CALL conta_linhas_colunas;
 
 exec_tecla:            ; executa instrucoes de acordo com a tecla premida
     CMP  R6, 5         ; a tecla premida foi 5?
@@ -108,17 +97,16 @@ exec_tecla:            ; executa instrucoes de acordo com a tecla premida
 
 decr_display:          ; decrementa o valor no display
     DEC  R8            ; decrementa o valor para ser escrito no display
-    MOV [R4], R8      ; escrever o valor no display
+    CALL    escreve_display;
     JMP espera_nao_tecla; espera até a tecla ser libertada
     
 incr_display:          ; incrementa o valor no display
     INC   R8           ; incrementa o valor para ser escrito no display
-    MOV [R4], R8       ; escrever o valor no display
+    CALL    escreve_display;
     JMP espera_nao_tecla; espera até a tecla ser libertada
 
-
 espera_nao_tecla:      ; neste ciclo espera-se até a tecla estar libertada
-    CALL le_coluna     f; leitura na linha ativada do teclado
+    CALL le_coluna     ; leitura na linha ativada do teclado
     CMP  R0, 0         ; há tecla premida?
     JNZ  espera_nao_tecla; se a tecla ainda for premida, espera até não haver
     JMP  ciclo         ; repete ciclo
@@ -135,6 +123,7 @@ escreve_linha:
 	MOV  R2, TEC_LIN   ; endereço do periférico das linhas
 	MOVB [R2], R1      ; escrever no periférico de saída (linhas)
     POP R2
+    RET
 
 ; **********************************************************************
 ; LE_COLUNA - Faz uma leitura às teclas de uma linha do teclado e retorna o valor lido
@@ -155,3 +144,37 @@ le_coluna:
 	RET
 
 
+; **********************************************************************
+; CALCULA_TECLA - calcula o valor da tecla premida
+; Argumentos:	R1 - linha/coluna da tecla (em formato 1, 2, 4 ou 8)
+;               R6 - valor inicial
+;
+; Retorna: 	R6 - total: valor inicial + numero de linhas/colunas
+; **********************************************************************
+
+conta_linhas_colunas:
+    PUSH    R1
+
+calc_val_lin_col:      ; neste ciclo calcula-se o valor da linha/coluna
+    SHR  R1, 1         ; desloca à direita 1 bit
+    CMP  R1, 0         ; a quantidade das linhas/colunas ja foi contada?
+    JZ   sai_conta_linhas_colunas; se ja for contada, salta
+    INC  R6        ; incrementa o valor calculada
+    JMP  calc_val_lin_col; repete ciclo
+
+sai_conta_linhas_colunas:
+    POP R1
+    RET
+
+; **********************************************************************
+; ESCREVE_DISPLAY - escreve um valor no display
+; Argumentos:   R8 - valor a escrever no display
+;
+; **********************************************************************
+
+escreve_display:
+    PUSH    R4
+    MOV  R4, DISPLAYS  ; endereço do periférico dos displays
+    MOV [R4], R8       ; escrever o valor no display
+    POP R4
+    RET

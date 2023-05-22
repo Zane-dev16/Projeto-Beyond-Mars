@@ -60,19 +60,32 @@ DEF_BONECO:					; tabela que define o boneco (cor, largura, pixels)
 PLACE      0
 inicio:		
 ; inicializações
-    MOV  R4, DISPLAYS  ; endereço do periférico dos displays
     MOV  SP, SP_inicial		; inicializa SP para a palavra a seguir
                     ; à última da pilha
                             
     MOV  [APAGA_AVISO], R1	; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
     MOV  [APAGA_ECRÃ], R1	; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
+    MOV	R1, 0			; cenário de fundo número 0
+    MOV  [SELECIONA_CENARIO_FUNDO], R1	; seleciona o cenário de fundo
+	MOV	R7, 1			; valor a somar à coluna do boneco, para o movimentar
+    MOV R8, 0
 
 ; corpo principal do programa
+
+posição_boneco:
+    MOV  R1, LINHA			; linha do boneco
+    MOV  R2, COLUNA		; coluna do boneco
+	MOV	R4, DEF_BONECO		; endereço da tabela que define o boneco
+
+mostra_boneco:
+	CALL	desenha_boneco		; desenha o boneco a partir da tabela
+
+CALL escreve_display; inicia o valor no 0
 ciclo:
     MOV  R1, LINHA1    ; testar a linha 1
 
 espera_tecla:          ; neste ciclo espera-se até uma tecla ser premida
-    CALL escreve_linha ;
+    CALL escreve_linha ; ativar linha no teclado
     CALL   le_coluna   ; leitura na linha ativada do teclado
     CMP  R0, 0         ; há tecla premida?
     JNZ  calcula_tecla ; se houver uma tecla premida, salta
@@ -113,11 +126,52 @@ espera_nao_tecla:      ; neste ciclo espera-se até a tecla estar libertada
 
 
 ; **********************************************************************
+; DESENHA_BONECO - Desenha um boneco na linha e coluna indicadas
+;			    com a forma e cor definidas na tabela indicada.
+; Argumentos:   R1 - linha
+;               R2 - coluna
+;               R4 - tabela que define o boneco
+;
+; **********************************************************************
+desenha_boneco:
+	PUSH	R2
+	PUSH	R3
+	PUSH	R4
+	PUSH	R5
+	MOV	R5, [R4]			; obtém a largura do boneco
+	ADD	R4, 2			; endereço da cor do 1º pixel (2 porque a largura é uma word)
+
+desenha_pixels:       		; desenha os pixels do boneco a partir da tabela
+	MOV	R3, [R4]			; obtém a cor do próximo pixel do boneco
+	CALL	escreve_pixel		; escreve cada pixel do boneco
+	ADD	R4, 2			; endereço da cor do próximo pixel (2 porque cada cor de pixel é uma word)
+     ADD  R2, 1               ; próxima coluna
+     SUB  R5, 1			; menos uma coluna para tratar
+     JNZ  desenha_pixels      ; continua até percorrer toda a largura do objeto
+	POP	R5
+	POP	R4
+	POP	R3
+	POP	R2
+	RET
+
+; **********************************************************************
+; ESCREVE_PIXEL - Escreve um pixel na linha e coluna indicadas.
+; Argumentos:   R1 - linha
+;               R2 - coluna
+;               R3 - cor do pixel (em formato ARGB de 16 bits)
+;
+; **********************************************************************
+escreve_pixel:
+	MOV  [DEFINE_LINHA], R1		; seleciona a linha
+	MOV  [DEFINE_COLUNA], R2		; seleciona a coluna
+	MOV  [DEFINE_PIXEL], R3		; altera a cor do pixel na linha e coluna já selecionadas
+	RET
+
+; **********************************************************************
 ; ESCREVE_LINHA - Faz uma leitura às teclas de uma linha do teclado e retorna o valor lido
 ; Argumentos:	R1 - linha a testar (em formato 1, 2, 4 ou 8)
 ;
 ; **********************************************************************
-
 escreve_linha:
 	PUSH	R2
 	MOV  R2, TEC_LIN   ; endereço do periférico das linhas
@@ -142,7 +196,6 @@ le_coluna:
 	POP	R5
 	POP	R3
 	RET
-
 
 ; **********************************************************************
 ; CALCULA_TECLA - calcula o valor da tecla premida

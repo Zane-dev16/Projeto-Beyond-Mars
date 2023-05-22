@@ -30,9 +30,6 @@ TOCA_SOM				EQU COMANDOS + 5AH		; endereço do comando para tocar um som
 LINHA        		EQU  16        ; linha do boneco (a meio do ecrã))
 COLUNA			EQU  30        ; coluna do boneco (a meio do ecrã)
 
-MIN_COLUNA		EQU  0		; número da coluna mais à esquerda que o objeto pode ocupar
-MAX_COLUNA		EQU  63        ; número da coluna mais à direita que o objeto pode ocupar
-ATRASO			EQU	400H		; atraso para limitar a velocidade de movimento do boneco
 
 LARGURA			EQU	5		; largura do boneco
 COR_PIXEL			EQU	0FF00H	; cor do pixel: vermelho em ARGB (opaco e vermelho no máximo, verde e azul a 0)
@@ -67,7 +64,6 @@ inicio:
     MOV  [APAGA_ECRÃ], R1	; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
     MOV	R1, 0			; cenário de fundo número 0
     MOV  [SELECIONA_CENARIO_FUNDO], R1	; seleciona o cenário de fundo
-	MOV	R7, 1			; valor a somar à coluna do boneco, para o movimentar
     MOV R8, 0
 
 ; corpo principal do programa
@@ -82,23 +78,23 @@ mostra_boneco:
 
 CALL escreve_display; inicia o valor no 0
 ciclo:
-    MOV  R1, LINHA1    ; testar a linha 1
+    MOV  R7, LINHA1    ; testar a linha 1
 
 espera_tecla:          ; neste ciclo espera-se até uma tecla ser premida
     CALL escreve_linha ; ativar linha no teclado
     CALL   le_coluna   ; leitura na linha ativada do teclado
     CMP  R0, 0         ; há tecla premida?
     JNZ  calcula_tecla ; se houver uma tecla premida, salta
-    CMP R1, 5          ; chegou à última linha?
+    CMP R7, 5          ; chegou à última linha?
     JGE ciclo          ; se chegou à última linha, repete ciclo
-    SHL R1, 1          ; testar a próxima linha
+    SHL R7, 1          ; testar a próxima linha
     JMP espera_tecla   ; continua o ciclo na próxima linha
     
 calcula_tecla:         ; calcula o valor da tecla
     MOV  R6, 0         ; inicia valor da tecla no 0
     CALL conta_linhas_colunas;
     SHL R6, 2          ; linhas * 4
-    MOV R1, R0         ; conta as colunas
+    MOV R7, R0         ; conta as colunas
     CALL conta_linhas_colunas;
 
 exec_tecla:            ; executa instrucoes de acordo com a tecla premida
@@ -106,6 +102,8 @@ exec_tecla:            ; executa instrucoes de acordo com a tecla premida
     JZ decr_display    ; se for 5, decrementa valor no display
     CMP  R6, 6         ; a tecla premida foi 6?
     JZ incr_display    ; se for 6, incrementa valor no display
+    CMP  R6, 0         ; a tecla premida foi 0?
+    JZ move_boneco     ; se for 0, move o boneco
     JMP espera_nao_tecla; espera até a tecla ser libertada
 
 decr_display:          ; decrementa o valor no display
@@ -116,6 +114,13 @@ decr_display:          ; decrementa o valor no display
 incr_display:          ; incrementa o valor no display
     INC   R8           ; incrementa o valor para ser escrito no display
     CALL    escreve_display;
+    JMP espera_nao_tecla; espera até a tecla ser libertada
+
+move_boneco:
+	CALL	apaga_boneco		; apaga o boneco na sua posição corrente
+	INC R1			; para desenhar objeto na linha seguinte
+	INC R2			; para desenhar objeto na coluna seguinte
+	CALL	desenha_boneco		; vai desenhar o boneco de novo
     JMP espera_nao_tecla; espera até a tecla ser libertada
 
 espera_nao_tecla:      ; neste ciclo espera-se até a tecla estar libertada
@@ -168,20 +173,48 @@ escreve_pixel:
 	RET
 
 ; **********************************************************************
+; APAGA_BONECO - Apaga um boneco na linha e coluna indicadas
+;			  com a forma definida na tabela indicada.
+; Argumentos:   R1 - linha
+;               R2 - coluna
+;               R4 - tabela que define o boneco
+;
+; **********************************************************************
+apaga_boneco:
+	PUSH	R2
+	PUSH	R3
+	PUSH	R4
+	PUSH	R5
+	MOV	R5, [R4]			; obtém a largura do boneco
+	ADD	R4, 2			; endereço da cor do 1º pixel (2 porque a largura é uma word)
+apaga_pixels:       		; desenha os pixels do boneco a partir da tabela
+	MOV	R3, 0			; cor para apagar o próximo pixel do boneco
+	CALL	escreve_pixel		; escreve cada pixel do boneco
+	ADD	R4, 2			; endereço da cor do próximo pixel (2 porque cada cor de pixel é uma word)
+     ADD  R2, 1               ; próxima coluna
+     SUB  R5, 1			; menos uma coluna para tratar
+     JNZ  apaga_pixels      ; continua até percorrer toda a largura do objeto
+	POP	R5
+	POP	R4
+	POP	R3
+	POP	R2
+	RET
+
+; **********************************************************************
 ; ESCREVE_LINHA - Faz uma leitura às teclas de uma linha do teclado e retorna o valor lido
-; Argumentos:	R1 - linha a testar (em formato 1, 2, 4 ou 8)
+; Argumentos:	R7 - linha a testar (em formato 1, 2, 4 ou 8)
 ;
 ; **********************************************************************
 escreve_linha:
 	PUSH	R2
 	MOV  R2, TEC_LIN   ; endereço do periférico das linhas
-	MOVB [R2], R1      ; escrever no periférico de saída (linhas)
+	MOVB [R2], R7      ; escrever no periférico de saída (linhas)
     POP R2
     RET
 
 ; **********************************************************************
 ; LE_COLUNA - Faz uma leitura às teclas de uma linha do teclado e retorna o valor lido
-; Argumentos:	R1 - linha a testar (em formato 1, 2, 4 ou 8)
+; Argumentos:	R7 - linha a testar (em formato 1, 2, 4 ou 8)
 ;
 ; Retorna: 	R0 - valor lido das colunas do teclado (0, 1, 2, 4, ou 8)	
 ; **********************************************************************
@@ -199,24 +232,24 @@ le_coluna:
 
 ; **********************************************************************
 ; CALCULA_TECLA - calcula o valor da tecla premida
-; Argumentos:	R1 - linha/coluna da tecla (em formato 1, 2, 4 ou 8)
+; Argumentos:	R7 - linha/coluna da tecla (em formato 1, 2, 4 ou 8)
 ;               R6 - valor inicial
 ;
 ; Retorna: 	R6 - total: valor inicial + numero de linhas/colunas
 ; **********************************************************************
 
 conta_linhas_colunas:
-    PUSH    R1
+    PUSH    R7
 
 calc_val_lin_col:      ; neste ciclo calcula-se o valor da linha/coluna
-    SHR  R1, 1         ; desloca à direita 1 bit
-    CMP  R1, 0         ; a quantidade das linhas/colunas ja foi contada?
+    SHR  R7, 1         ; desloca à direita 1 bit
+    CMP  R7, 0         ; a quantidade das linhas/colunas ja foi contada?
     JZ   sai_conta_linhas_colunas; se ja for contada, salta
     INC  R6        ; incrementa o valor calculada
     JMP  calc_val_lin_col; repete ciclo
 
 sai_conta_linhas_colunas:
-    POP R1
+    POP R7
     RET
 
 ; **********************************************************************

@@ -19,20 +19,37 @@ TECLA_DIREITA			EQU 2		; tecla na segunda coluna do teclado (tecla D)
 
 COMANDOS				EQU	6000H			; endereço de base dos comandos do MediaCenter
 
-DEFINE_LINHA    		EQU COMANDOS + 0AH		; endereço do comando para definir a linha
-DEFINE_COLUNA   		EQU COMANDOS + 0CH		; endereço do comando para definir a coluna
-DEFINE_PIXEL    		EQU COMANDOS + 12H		; endereço do comando para escrever um pixel
-APAGA_AVISO     		EQU COMANDOS + 40H		; endereço do comando para apagar o aviso de nenhum cenário selecionado
-APAGA_ECRÃ	 		EQU COMANDOS + 02H		; endereço do comando para apagar todos os pixels já desenhados
-SELECIONA_CENARIO_FUNDO  EQU COMANDOS + 42H		; endereço do comando para selecionar uma imagem de fundo
-TOCA_SOM				EQU COMANDOS + 5AH		; endereço do comando para tocar um som
+DEFINE_LINHA    		    EQU COMANDOS + 0AH		; endereço do comando para definir a linha
+DEFINE_COLUNA   		    EQU COMANDOS + 0CH		; endereço do comando para definir a coluna
+DEFINE_PIXEL    		    EQU COMANDOS + 12H		; endereço do comando para escrever um pixel
+APAGA_AVISO     		    EQU COMANDOS + 40H		; endereço do comando para apagar o aviso de nenhum cenário selecionado
+APAGA_ECRÃ	 		        EQU COMANDOS + 02H		; endereço do comando para apagar todos os pixels já desenhados
+SELECIONA_CENARIO_FUNDO     EQU COMANDOS + 42H		; endereço do comando para selecionar uma imagem de fundo
+TOCA_SOM				    EQU COMANDOS + 5AH		; endereço do comando para tocar um som
 
-LINHA        		EQU  16        ; linha do boneco (a meio do ecrã))
-COLUNA			EQU  30        ; coluna do boneco (a meio do ecrã)
+LINHA_TOPO        	EQU  0        ; linha do boneco (a meio do ecrã))
+COLUNA_ESQ			EQU  0         ; coluna mais à esquerda
+COLUNA_CENT         EQU  32        ; coluna central
+COLUNA_DIR          EQU  63        ; coluna mais à direita
 
 
-LARGURA			EQU	5		; largura do boneco
-COR_PIXEL			EQU	0FF00H	; cor do pixel: vermelho em ARGB (opaco e vermelho no máximo, verde e azul a 0)
+LARGURA_AST			EQU	5		; largura do asteroide
+ALTURA_AST          EQU 5       ; altura do asteroide 
+
+LARGURA_PAINEL      EQU 15      ; largura do painel da nave
+ALTURA_PAINEL       EQU 5       ; altura do painel da nave
+
+PIXEL_VERM		    EQU	0FF00H	; pixel vermelho opaco
+PIXEL_VERM_TRANS    EQU	0FF00H	; pixel vermelho translucido
+PIXEL_VERD          EQU 0F0F0H  ; pixel verde opaco 
+PIXEL_VERD_TRANS    EQU 0F0F0H  ; pixel verde translucido 
+PIXEL_AZUL          EQU 0F0BFH  ; pixel azul opaco 
+PIXEL_VIOLETA       EQU 0FA3CH  ; pixel violeta opaco 
+PIXEL_AMAR          EQU 0FFF0H  ; pixel opaco amarelo
+PIXEL_CAST          EQU 0F850H  ; pixel opaco castanho
+PIXEL_AMAR_TRANS    EQU 05FF0H  ; pixel amarelo translucido 
+PIXEL_CINZ_ESC      EQU 0F777H  ; pixel cinzento escuro opaco 
+PIXEL_CINZ_CLA      EQU 0FFFFH  ; pixel cinzento claro opaco 
 
 
 ; *********************************************************************************
@@ -46,10 +63,45 @@ SP_inicial:				; este é o endereço (1200H) com que o SP deve ser
 						; inicializado. O 1.º end. de retorno será 
 						; armazenado em 11FEH (1200H-2)
 							
-DEF_BONECO:					; tabela que define o boneco (cor, largura, pixels)
-	WORD		LARGURA
-	WORD		COR_PIXEL, 0, COR_PIXEL, 0, COR_PIXEL		; # # #   as cores podem ser diferentes de pixel para pixel
-     
+ASTEROIDE_PERIGO:		; tabela que define o asteroide perigoso (cor, largura, pixels, altura)
+	WORD		LARGURA_AST
+    WORD        ALTURA_AST
+	WORD		0, PIXEL_VERM, PIXEL_VERM, PIXEL_VERM, 0		
+    WORD		PIXEL_VERM, PIXEL_VERM, PIXEL_VERM, PIXEL_VERM, PIXEL_VERM
+    WORD		PIXEL_VERM, PIXEL_VERM, PIXEL_VERM, PIXEL_VERM, PIXEL_VERM
+    WORD		PIXEL_VERM, PIXEL_VERM, PIXEL_VERM, PIXEL_VERM, PIXEL_VERM
+    WORD		0, PIXEL_VERM, PIXEL_VERM, PIXEL_VERM, 0
+
+ASTEROIDE_COM_RECURSOS:	; tabela que define o asteroide com recursos (cor, largura, pixels, altura)
+	WORD		LARGURA_AST
+    WORD        ALTURA_AST
+	WORD		0, 0, PIXEL_VERD, 0, 0		
+    WORD		0, PIXEL_VERD, PIXEL_VERD, PIXEL_VERD, 0
+    WORD		PIXEL_VERD, PIXEL_VERD, PIXEL_VERD, PIXEL_VERD, PIXEL_VERD
+    WORD		0, PIXEL_VERD, PIXEL_VERD, PIXEL_VERD, 0
+    WORD		0, 0, PIXEL_VERD, 0, 0 
+
+RECURSOS:				; tabela que define os recursos (cor, largura, pixels, altura)
+	WORD		LARGURA_AST
+    WORD        ALTURA_AST
+	WORD		PIXEL_AZUL, 0, PIXEL_AZUL, 0, PIXEL_AZUL		
+    WORD		0, PIXEL_AZUL, PIXEL_AZUL, PIXEL_AZUL, 0
+    WORD		PIXEL_AZUL, PIXEL_AZUL, PIXEL_AZUL, PIXEL_AZUL, PIXEL_AZUL
+    WORD		0, PIXEL_AZUL, PIXEL_AZUL, PIXEL_AZUL, 0
+    WORD		PIXEL_AZUL, 0, PIXEL_AZUL, 0, PIXEL_AZUL 
+
+PAINEL_NAVE:			; tabela que define o painel da nave (cor, largura, pixels, altura)
+	WORD		LARGURA_PAINEL
+    WORD        ALTURA_PAINEL
+	WORD		0, 0, PIXEL_CINZ_ESC, PIXEL_CINZ_ESC, PIXEL_CINZ_ESC, PIXEL_CINZ_ESC, PIXEL_CINZ_ESC, PIXEL_CINZ_ESC, PIXEL_CINZ_ESC, PIXEL_CINZ_ESC, PIXEL_CINZ_ESC, PIXEL_CINZ_ESC, PIXEL_CINZ_ESC, 0, 0		
+    WORD		0, PIXEL_CINZ_ESC, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_ESC, 0
+    WORD		PIXEL_CINZ_ESC, PIXEL_CINZ_CLA, PIXEL_VERM_TRANS, PIXEL_CINZ_CLA, PIXEL_AMAR_TRANS, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_AMAR_TRANS, PIXEL_CINZ_CLA, PIXEL_VERD_TRANS, PIXEL_CINZ_CLA, PIXEL_CINZ_ESC
+    WORD		PIXEL_CINZ_ESC, PIXEL_CINZ_CLA, PIXEL_VERM, PIXEL_CINZ_CLA, PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_VERD, PIXEL_CINZ_CLA, PIXEL_CINZ_ESC
+    WORD		PIXEL_CINZ_ESC, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_ESC 
+
+SONDA:                  ; tabela que define a sonda (cor, pixels)
+    WORD        PIXEL_CAST 
+
 
 ; *********************************************************************************
 ; * Código
@@ -68,10 +120,20 @@ inicio:
 
 ; corpo principal do programa
 
-posição_boneco:
-    MOV  R1, LINHA			; linha do boneco
-    MOV  R2, COLUNA		; coluna do boneco
-	MOV	R4, DEF_BONECO		; endereço da tabela que define o boneco
+posição_asteroide_esq:
+    MOV  R1, LINHA_TOPO			; linha do asteroide
+    MOV  R2, COLUNA_ESQ		; coluna do asteroide
+	MOV	R4, DEF_BONECO		; endereço da tabela que define o asteroide
+
+posição_asteroide_cent:
+    MOV  R1, LINHA_TOPO			; linha do asteroide
+    MOV  R2, COLUNA_CENT		; coluna do asteroide
+	MOV	R4, DEF_BONECO		; endereço da tabela que define o asteroide
+
+posição_asteroide_dir:
+    MOV  R1, LINHA_TOPO			; linha do asteroide
+    MOV  R2, COLUNA_DIR		; coluna do asteroide
+	MOV	R4, DEF_BONECO		; endereço da tabela que define o asteroide
 
 mostra_boneco:
 	CALL	desenha_boneco		; desenha o boneco a partir da tabela
@@ -157,6 +219,50 @@ desenha_pixels:       		; desenha os pixels do boneco a partir da tabela
 	POP	R4
 	POP	R3
 	POP	R2
+	RET
+
+; **********************************************************************
+; ESCREVE_AST_ESQ - Escreve um asteroide que tem inicio no canto superior esquerdo
+; Argumentos: ;  R3 - cor do primeiro pixel (0 ou COR_PIXEL)
+
+; **********************************************************************
+escreve_ast_esq:
+	PUSH R1				; guarda os registos alterados por esta rotina
+	PUSH R3
+	PUSH R4
+	MOV  R1, LINHA_TOPO			; linha corrente
+	MOV  R4, R1
+    ADD  R4, ALTURA
+ee_proxima_linha:
+	CALL escreve_linha_ast_esq		; escreve os pixels na linha corrente
+	ADD  R1, 1			; próxima linha
+	CMP  R1, R4			; chegou ao fim?
+	JLT  ee_proxima_linha
+	POP  R4
+	POP  R3
+	POP  R1
+	RET
+; **********************************************************************
+; ESCREVE_LINHA - Escreve uma linha completa no ecra, trocando a cor do pixel alternadamente
+; Argumentos:   R1 - linha
+;               R3 - cor do primeiro pixel (0 ou COR_PIXEL)
+; 
+; **********************************************************************
+escreve_linha_ast_esq:
+	PUSH R2
+	PUSH R3
+	PUSH R4
+	MOV  R2, COLUNA_ESQ               ; coluna corrente
+	MOV  R4, R1
+    ADD  R4, LARGURA
+el_proximo_pixel:
+	CALL escreve_pixel       ; escreve o pixel na coluna corrente
+	ADD  R2, 1               ; próxima coluna
+	CMP  R2, R4              ; chegou ao fim?
+	JLT  el_proximo_pixel
+	POP  R4
+	POP  R3
+	POP  R2
 	RET
 
 ; **********************************************************************

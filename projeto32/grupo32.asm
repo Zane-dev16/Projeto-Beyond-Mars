@@ -8,14 +8,14 @@
 ; **********************************************************************
 ; * Constantes
 ; **********************************************************************
-DISPLAYS   EQU 0A000H  ; endereço dos displays de 7 segmentos (periférico POUT-1)
-TEC_LIN    EQU 0C000H  ; endereço das linhas do teclado (periférico POUT-2)
-TEC_COL    EQU 0E000H  ; endereço das colunas do teclado (periférico PIN)
-LINHA1      EQU 1       ; linha a testar (4ª linha, 1000b)
-LINHA4      EQU 8;
-MASCARA    EQU 0FH     ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
-TECLA_ESQUERDA			EQU 1		; tecla na primeira coluna do teclado (tecla C)
-TECLA_DIREITA			EQU 2		; tecla na segunda coluna do teclado (tecla D)
+DISPLAYS            EQU 0A000H  ; endereço dos displays de 7 segmentos (periférico POUT-1)
+TEC_LIN             EQU 0C000H  ; endereço das linhas do teclado (periférico POUT-2)
+TEC_COL             EQU 0E000H  ; endereço das colunas do teclado (periférico PIN)
+LINHA1              EQU 1       ; linha a testar (4ª linha, 1000b)
+LINHA4              EQU 8;
+MASCARA             EQU 0FH     ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
+TECLA_ESQUERDA		EQU 1		; tecla na primeira coluna do teclado (tecla C)
+TECLA_DIREITA		EQU 2		; tecla na segunda coluna do teclado (tecla D)
 
 COMANDOS				EQU	6000H			; endereço de base dos comandos do MediaCenter
 
@@ -27,11 +27,13 @@ APAGA_ECRÃ	 		        EQU COMANDOS + 02H		; endereço do comando para apagar to
 SELECIONA_CENARIO_FUNDO     EQU COMANDOS + 42H		; endereço do comando para selecionar uma imagem de fundo
 TOCA_SOM				    EQU COMANDOS + 5AH		; endereço do comando para tocar um som
 
-LINHA_TOPO        	EQU  0        ; linha do boneco (a meio do ecrã))
-COLUNA_ESQ			EQU  0         ; coluna mais à esquerda
-COLUNA_CENT         EQU  32        ; coluna central
-COLUNA_DIR          EQU  63        ; coluna mais à direita
+LINHA_TOPO        	EQU 0       ; linha do topo do ecrã
+COLUNA_ESQ			EQU 0       ; coluna mais à esquerda
+COLUNA_CENT         EQU 32      ; coluna central
+COLUNA_DIR          EQU 63      ; coluna mais à direita
 
+LINHA_PAINEL        EQU 25      ; linha do painel da nave
+COLUNA_PAINEL       EQU 27      ; coluna do painel da nave
 
 LARGURA_AST			EQU	5		; largura do asteroide
 ALTURA_AST          EQU 5       ; altura do asteroide 
@@ -114,16 +116,60 @@ inicio:
                             
     MOV  [APAGA_AVISO], R1	; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
     MOV  [APAGA_ECRÃ], R1	; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
-    MOV	R1, 0			; cenário de fundo número 0
+    MOV	 R1, 0			; cenário de fundo número 0
     MOV  [SELECIONA_CENARIO_FUNDO], R1	; seleciona o cenário de fundo
-    MOV R8, 0
+    MOV  R8, 0
+
+posicao_painel:
+    MOV   R1, LINHA_PAINEL		; linha do painel da nave
+    MOV   R2, COLUNA_PAINEL		; coluna do painel da nave
+	MOV	  R4, PAINEL_NAVE		; endereço da tabela que define o painel da nave
+    CALL desenha_painel
+
 
 ; corpo principal do programa
+
+; **********************************************************************
+; DESENHA_PAINEL - Desenha o painel da nave na linha e coluna indicadas
+;			       com a forma e cor definidas na tabela indicada.
+; Argumentos:   R1 - linha
+;               R2 - coluna
+;               R4 - tabela que define o boneco
+; **********************************************************************
+
+desenha_painel:
+    PUSH  R1
+	PUSH  R2
+	PUSH  R3
+	PUSH  R4
+	PUSH  R5
+    PUSH  R6
+	MOV   R5, [R4]			; obtém a largura do painel
+	ADD	  R4, 2			    ; endereço da altura do painel
+    MOV   R6, [R4]          ; obtém a altura do painel
+    ADD	  R4, 2			    ; endereço da cor do 1º pixel
+
+desenha_pixels:       		; desenha os pixels do painel a partir da tabela
+	MOV	 R3, [R4]			; obtém a cor do próximo pixel do painel
+	CALL escreve_pixel		; escreve cada pixel do painel
+	ADD	 R4, 2			    ; endereço da cor do próximo pixel 
+    ADD  R2, 1              ; próxima coluna
+    SUB  R5, 1			    ; menos uma coluna para tratar
+    JNZ  desenha_pixels     ; continua até percorrer toda a largura do painel
+    SUB  R6, 1              ; verifica se todas as linhas já foram desenhadas
+    JNZ  desenha_pixels     ; continua até percorrer toda a altura do painel
+    POP  R6
+    POP	 R5
+	POP	 R4
+	POP	 R3
+	POP	 R2
+    POP  R1
+	RET
 
 posição_asteroide_esq:
     MOV  R1, LINHA_TOPO			; linha do asteroide
     MOV  R2, COLUNA_ESQ		; coluna do asteroide
-	MOV	R4, DEF_BONECO		; endereço da tabela que define o asteroide
+	MOV	 R4, DEF_BONECO		; endereço da tabela que define o asteroide
 
 posição_asteroide_cent:
     MOV  R1, LINHA_TOPO			; linha do asteroide
@@ -193,7 +239,7 @@ espera_nao_tecla:      ; neste ciclo espera-se até a tecla estar libertada
 
 
 ; **********************************************************************
-; DESENHA_BONECO - Desenha um boneco na linha e coluna indicadas
+; DESENHA_ASTEROIDE - Desenha um asteroide na linha e coluna indicadas
 ;			    com a forma e cor definidas na tabela indicada.
 ; Argumentos:   R1 - linha
 ;               R2 - coluna
@@ -221,49 +267,7 @@ desenha_pixels:       		; desenha os pixels do boneco a partir da tabela
 	POP	R2
 	RET
 
-; **********************************************************************
-; ESCREVE_AST_ESQ - Escreve um asteroide que tem inicio no canto superior esquerdo
-; Argumentos: ;  R3 - cor do primeiro pixel (0 ou COR_PIXEL)
 
-; **********************************************************************
-escreve_ast_esq:
-	PUSH R1				; guarda os registos alterados por esta rotina
-	PUSH R3
-	PUSH R4
-	MOV  R1, LINHA_TOPO			; linha corrente
-	MOV  R4, R1
-    ADD  R4, ALTURA
-ee_proxima_linha:
-	CALL escreve_linha_ast_esq		; escreve os pixels na linha corrente
-	ADD  R1, 1			; próxima linha
-	CMP  R1, R4			; chegou ao fim?
-	JLT  ee_proxima_linha
-	POP  R4
-	POP  R3
-	POP  R1
-	RET
-; **********************************************************************
-; ESCREVE_LINHA - Escreve uma linha completa no ecra, trocando a cor do pixel alternadamente
-; Argumentos:   R1 - linha
-;               R3 - cor do primeiro pixel (0 ou COR_PIXEL)
-; 
-; **********************************************************************
-escreve_linha_ast_esq:
-	PUSH R2
-	PUSH R3
-	PUSH R4
-	MOV  R2, COLUNA_ESQ               ; coluna corrente
-	MOV  R4, R1
-    ADD  R4, LARGURA
-el_proximo_pixel:
-	CALL escreve_pixel       ; escreve o pixel na coluna corrente
-	ADD  R2, 1               ; próxima coluna
-	CMP  R2, R4              ; chegou ao fim?
-	JLT  el_proximo_pixel
-	POP  R4
-	POP  R3
-	POP  R2
-	RET
 
 ; **********************************************************************
 ; ESCREVE_PIXEL - Escreve um pixel na linha e coluna indicadas.
@@ -273,9 +277,9 @@ el_proximo_pixel:
 ;
 ; **********************************************************************
 escreve_pixel:
-	MOV  [DEFINE_LINHA], R1		; seleciona a linha
-	MOV  [DEFINE_COLUNA], R2		; seleciona a coluna
-	MOV  [DEFINE_PIXEL], R3		; altera a cor do pixel na linha e coluna já selecionadas
+	MOV  [DEFINE_LINHA],  R1	; seleciona a linha
+	MOV  [DEFINE_COLUNA], R2	; seleciona a coluna
+	MOV  [DEFINE_PIXEL],  R3	; altera a cor do pixel na linha e coluna já selecionadas
 	RET
 
 ; **********************************************************************

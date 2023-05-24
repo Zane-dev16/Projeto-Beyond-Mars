@@ -32,7 +32,7 @@ COLUNA_ESQ			EQU 0       ; coluna mais à esquerda
 COLUNA_CENT         EQU 32      ; coluna central
 COLUNA_DIR          EQU 63      ; coluna mais à direita
 
-LINHA_PAINEL        EQU 25      ; linha do painel da nave
+LINHA_PAINEL        EQU 27      ; linha do painel da nave
 COLUNA_PAINEL       EQU 27      ; coluna do painel da nave
 
 LARGURA_AST			EQU	5		; largura do asteroide
@@ -144,7 +144,9 @@ desenha_painel:
 	PUSH  R4
 	PUSH  R5
     PUSH  R6
+    PUSH  R7
 	MOV   R5, [R4]			; obtém a largura do painel
+    MOV   R7, R5
 	ADD	  R4, 2			    ; endereço da altura do painel
     MOV   R6, [R4]          ; obtém a altura do painel
     ADD	  R4, 2			    ; endereço da cor do 1º pixel
@@ -156,6 +158,9 @@ desenha_pixels:       		; desenha os pixels do painel a partir da tabela
     ADD  R2, 1              ; próxima coluna
     SUB  R5, 1			    ; menos uma coluna para tratar
     JNZ  desenha_pixels     ; continua até percorrer toda a largura do painel
+    MOV  R5, R7
+    MOV  R2, COLUNA_PAINEL
+    ADD  R1, 1
     SUB  R6, 1              ; verifica se todas as linhas já foram desenhadas
     JNZ  desenha_pixels     ; continua até percorrer toda a altura do painel
     POP  R6
@@ -169,20 +174,20 @@ desenha_pixels:       		; desenha os pixels do painel a partir da tabela
 posição_asteroide_esq:
     MOV  R1, LINHA_TOPO			; linha do asteroide
     MOV  R2, COLUNA_ESQ		; coluna do asteroide
-	MOV	 R4, DEF_BONECO		; endereço da tabela que define o asteroide
+	;MOV	 R4, DEF_BONECO		; endereço da tabela que define o asteroide
 
 posição_asteroide_cent:
     MOV  R1, LINHA_TOPO			; linha do asteroide
     MOV  R2, COLUNA_CENT		; coluna do asteroide
-	MOV	R4, DEF_BONECO		; endereço da tabela que define o asteroide
+	;MOV	R4, DEF_BONECO		; endereço da tabela que define o asteroide
 
 posição_asteroide_dir:
     MOV  R1, LINHA_TOPO			; linha do asteroide
     MOV  R2, COLUNA_DIR		; coluna do asteroide
-	MOV	R4, DEF_BONECO		; endereço da tabela que define o asteroide
+	;MOV	R4, DEF_BONECO		; endereço da tabela que define o asteroide
 
-mostra_boneco:
-	CALL	desenha_boneco		; desenha o boneco a partir da tabela
+;mostra_boneco:
+;	CALL	desenha_boneco		; desenha o boneco a partir da tabela
 
 CALL escreve_display; inicia o valor no 0
 ciclo:
@@ -228,7 +233,7 @@ move_boneco:
 	CALL	apaga_boneco		; apaga o boneco na sua posição corrente
 	INC R1			; para desenhar objeto na linha seguinte
 	INC R2			; para desenhar objeto na coluna seguinte
-	CALL	desenha_boneco		; vai desenhar o boneco de novo
+	;CALL	desenha_boneco		; vai desenhar o boneco de novo
     JMP espera_nao_tecla; espera até a tecla ser libertada
 
 espera_nao_tecla:      ; neste ciclo espera-se até a tecla estar libertada
@@ -236,37 +241,6 @@ espera_nao_tecla:      ; neste ciclo espera-se até a tecla estar libertada
     CMP  R0, 0         ; há tecla premida?
     JNZ  espera_nao_tecla; se a tecla ainda for premida, espera até não haver
     JMP  ciclo         ; repete ciclo
-
-
-; **********************************************************************
-; DESENHA_ASTEROIDE - Desenha um asteroide na linha e coluna indicadas
-;			    com a forma e cor definidas na tabela indicada.
-; Argumentos:   R1 - linha
-;               R2 - coluna
-;               R4 - tabela que define o boneco
-;
-; **********************************************************************
-desenha_boneco:
-	PUSH	R2
-	PUSH	R3
-	PUSH	R4
-	PUSH	R5
-	MOV	R5, [R4]			; obtém a largura do boneco
-	ADD	R4, 2			; endereço da cor do 1º pixel (2 porque a largura é uma word)
-
-desenha_pixels:       		; desenha os pixels do boneco a partir da tabela
-	MOV	R3, [R4]			; obtém a cor do próximo pixel do boneco
-	CALL	escreve_pixel		; escreve cada pixel do boneco
-	ADD	R4, 2			; endereço da cor do próximo pixel (2 porque cada cor de pixel é uma word)
-     ADD  R2, 1               ; próxima coluna
-     SUB  R5, 1			; menos uma coluna para tratar
-     JNZ  desenha_pixels      ; continua até percorrer toda a largura do objeto
-	POP	R5
-	POP	R4
-	POP	R3
-	POP	R2
-	RET
-
 
 
 ; **********************************************************************

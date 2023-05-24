@@ -171,7 +171,7 @@ exec_tecla:                 ; executa instrucoes de acordo com a tecla premida
     CMP  R6, 6              ; a tecla premida foi 6?
     JZ incr_display         ; se for 6, incrementa valor no display
     CMP  R6, 0              ; a tecla premida foi 0?
-    JZ move_objeto          ; se for 0, move o objeto
+    CALL move_asteroide     ; se for 0, move o objeto
     JMP espera_nao_tecla    ; espera até a tecla ser libertada
 
 decr_display:               ; decrementa o valor no display
@@ -184,8 +184,23 @@ incr_display:               ; incrementa o valor no display
     CALL  escreve_display
     JMP   espera_nao_tecla  ; espera até a tecla ser libertada
 
+espera_nao_tecla:      ; neste ciclo espera-se até a tecla estar libertada
+    CALL le_coluna     ; leitura na linha ativada do teclado
+    CMP  R0, 0         ; há tecla premida?
+    JNZ  espera_nao_tecla; se a tecla ainda for premida, espera até não haver
+    JMP  ciclo         ; repete ciclo
 
-move_objeto:
+; **********************************************************************
+; MOVE_ASTEROIDE - Desenha o painel da nave na linha e coluna indicadas
+;			       com a forma e cor definidas na tabela indicada.
+; Argumentos:   R1 - linha
+;               R2 - coluna
+;               R4 - tabela que define o boneco
+; **********************************************************************
+
+move_asteroide:
+    PUSH  R1
+	PUSH  R2
     MOV R1, [posicao_asteroide]	; para desenhar objeto na linha seguinte
 	MOV R2, [posicao_asteroide + 2] ; para desenhar objeto na coluna seguinte
 	CALL  apaga_objeto		; apaga o objeto na sua posição corrente
@@ -195,21 +210,9 @@ move_objeto:
     MOV [posicao_asteroide], R1	; para desenhar objeto na linha seguinte
 	MOV [posicao_asteroide + 2], R2 ; para desenhar objeto na coluna seguinte
     JMP espera_nao_tecla; espera até a tecla ser libertada
-
-espera_nao_tecla:      ; neste ciclo espera-se até a tecla estar libertada
-    CALL le_coluna     ; leitura na linha ativada do teclado
-    CMP  R0, 0         ; há tecla premida?
-    JNZ  espera_nao_tecla; se a tecla ainda for premida, espera até não haver
-    JMP  ciclo         ; repete ciclo
-
-; **********************************************************************
-; DESENHA_OBJETO - Desenha o painel da nave na linha e coluna indicadas
-;			       com a forma e cor definidas na tabela indicada.
-; Argumentos:   R1 - linha
-;               R2 - coluna
-;               R4 - tabela que define o boneco
-; **********************************************************************
-
+    POP	 R2
+    POP  R1
+    RET
 
 ; **********************************************************************
 ; DESENHA_OBJETO - Desenha o painel da nave na linha e coluna indicadas

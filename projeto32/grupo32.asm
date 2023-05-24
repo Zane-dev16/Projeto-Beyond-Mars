@@ -124,20 +124,27 @@ posicao_painel:
     MOV   R1, LINHA_PAINEL		; linha do painel da nave
     MOV   R2, COLUNA_PAINEL		; coluna do painel da nave
 	MOV	  R4, PAINEL_NAVE		; endereço da tabela que define o painel da nave
-    CALL desenha_painel
+    CALL desenha_objeto
 
+tipo_asteroide:
+    MOV	 R4, ASTEROIDE_PERIGO		    ; endereço da tabela que define o asteroide
+
+posição_asteroide_esq:
+    MOV  R1, LINHA_TOPO			; linha do asteroide
+    MOV  R2, COLUNA_ESQ		    ; coluna do asteroide
+    CALL desenha_objeto
 
 ; corpo principal do programa
 
 ; **********************************************************************
-; DESENHA_PAINEL - Desenha o painel da nave na linha e coluna indicadas
+; DESENHA_OBJETO - Desenha o painel da nave na linha e coluna indicadas
 ;			       com a forma e cor definidas na tabela indicada.
 ; Argumentos:   R1 - linha
 ;               R2 - coluna
 ;               R4 - tabela que define o boneco
 ; **********************************************************************
 
-desenha_painel:
+desenha_objeto:
     PUSH  R1
 	PUSH  R2
 	PUSH  R3
@@ -145,24 +152,28 @@ desenha_painel:
 	PUSH  R5
     PUSH  R6
     PUSH  R7
-	MOV   R5, [R4]			; obtém a largura do painel
-    MOV   R7, R5
-	ADD	  R4, 2			    ; endereço da altura do painel
-    MOV   R6, [R4]          ; obtém a altura do painel
+    PUSH  R8
+	MOV   R5, [R4]			; obtém a largura do objeto
+    MOV   R7, R5            ; guarda a altura do objeto
+    MOV   R8, R2            ; guarda a coluna inicial do painel  
+	ADD	  R4, 2			    ; endereço da altura do objeto
+    MOV   R6, [R4]          ; obtém a altura do objeto
     ADD	  R4, 2			    ; endereço da cor do 1º pixel
 
-desenha_pixels:       		; desenha os pixels do painel a partir da tabela
-	MOV	 R3, [R4]			; obtém a cor do próximo pixel do painel
-	CALL escreve_pixel		; escreve cada pixel do painel
+desenha_pixels:       		; desenha os pixels do objeto a partir da tabela
+	MOV	 R3, [R4]			; obtém a cor do próximo pixel do objeto
+	CALL escreve_pixel		; escreve cada pixel do objeto
 	ADD	 R4, 2			    ; endereço da cor do próximo pixel 
     ADD  R2, 1              ; próxima coluna
     SUB  R5, 1			    ; menos uma coluna para tratar
-    JNZ  desenha_pixels     ; continua até percorrer toda a largura do painel
+    JNZ  desenha_pixels     ; continua até percorrer toda a largura do objeto
     MOV  R5, R7
-    MOV  R2, COLUNA_PAINEL
+    MOV  R2, R8
     ADD  R1, 1
     SUB  R6, 1              ; verifica se todas as linhas já foram desenhadas
-    JNZ  desenha_pixels     ; continua até percorrer toda a altura do painel
+    JNZ  desenha_pixels     ; continua até percorrer toda a altura do objeto
+    POP  R8
+    POP  R7
     POP  R6
     POP	 R5
 	POP	 R4
@@ -171,69 +182,54 @@ desenha_pixels:       		; desenha os pixels do painel a partir da tabela
     POP  R1
 	RET
 
-posição_asteroide_esq:
-    MOV  R1, LINHA_TOPO			; linha do asteroide
-    MOV  R2, COLUNA_ESQ		; coluna do asteroide
-	;MOV	 R4, DEF_BONECO		; endereço da tabela que define o asteroide
+mostra_objeto:
+	CALL	desenha_objeto	; desenha o objeto a partir da tabela
 
-posição_asteroide_cent:
-    MOV  R1, LINHA_TOPO			; linha do asteroide
-    MOV  R2, COLUNA_CENT		; coluna do asteroide
-	;MOV	R4, DEF_BONECO		; endereço da tabela que define o asteroide
-
-posição_asteroide_dir:
-    MOV  R1, LINHA_TOPO			; linha do asteroide
-    MOV  R2, COLUNA_DIR		; coluna do asteroide
-	;MOV	R4, DEF_BONECO		; endereço da tabela que define o asteroide
-
-;mostra_boneco:
-;	CALL	desenha_boneco		; desenha o boneco a partir da tabela
-
-CALL escreve_display; inicia o valor no 0
+    CALL escreve_display    ; inicia o valor no 0
 ciclo:
-    MOV  R7, LINHA1    ; testar a linha 1
-
-espera_tecla:          ; neste ciclo espera-se até uma tecla ser premida
-    CALL escreve_linha ; ativar linha no teclado
-    CALL   le_coluna   ; leitura na linha ativada do teclado
-    CMP  R0, 0         ; há tecla premida?
-    JNZ  calcula_tecla ; se houver uma tecla premida, salta
-    CMP R7, 5          ; chegou à última linha?
-    JGE ciclo          ; se chegou à última linha, repete ciclo
-    SHL R7, 1          ; testar a próxima linha
-    JMP espera_tecla   ; continua o ciclo na próxima linha
+    MOV  R7, LINHA1         ; testar a linha 1
     
-calcula_tecla:         ; calcula o valor da tecla
-    MOV  R6, 0         ; inicia valor da tecla no 0
-    CALL conta_linhas_colunas;
-    SHL R6, 2          ; linhas * 4
-    MOV R7, R0         ; conta as colunas
-    CALL conta_linhas_colunas;
-
-exec_tecla:            ; executa instrucoes de acordo com a tecla premida
-    CMP  R6, 5         ; a tecla premida foi 5?
-    JZ decr_display    ; se for 5, decrementa valor no display
-    CMP  R6, 6         ; a tecla premida foi 6?
-    JZ incr_display    ; se for 6, incrementa valor no display
-    CMP  R6, 0         ; a tecla premida foi 0?
-    JZ move_boneco     ; se for 0, move o boneco
-    JMP espera_nao_tecla; espera até a tecla ser libertada
-
-decr_display:          ; decrementa o valor no display
-    DEC  R8            ; decrementa o valor para ser escrito no display
-    CALL    escreve_display;
-    JMP espera_nao_tecla; espera até a tecla ser libertada
+espera_tecla:               ; neste ciclo espera-se até uma tecla ser premida
+    CALL escreve_linha      ; ativar linha no teclado
+    CALL le_coluna          ; leitura na linha ativada do teclado
+    CMP  R0, 0              ; há tecla premida?
+    JNZ  calcula_tecla      ; se houver uma tecla premida, salta
+    CMP R7, 5               ; chegou à última linha?
+    JGE ciclo               ; se chegou à última linha, repete ciclo
+    SHL R7, 1               ; testar a próxima linha
+    JMP espera_tecla        ; continua o ciclo na próxima linha
     
-incr_display:          ; incrementa o valor no display
-    INC   R8           ; incrementa o valor para ser escrito no display
-    CALL    escreve_display;
-    JMP espera_nao_tecla; espera até a tecla ser libertada
+calcula_tecla:              ; calcula o valor da tecla
+    MOV  R6, 0              ; inicia valor da tecla no 0
+    CALL conta_linhas_colunas
+    SHL R6, 2               ; linhas * 4
+    MOV R7, R0              ; conta as colunas
+    CALL conta_linhas_colunas
 
-move_boneco:
-	CALL	apaga_boneco		; apaga o boneco na sua posição corrente
+exec_tecla:                 ; executa instrucoes de acordo com a tecla premida
+    CMP  R6, 5              ; a tecla premida foi 5?
+    JZ decr_display         ; se for 5, decrementa valor no display
+    CMP  R6, 6              ; a tecla premida foi 6?
+    JZ incr_display         ; se for 6, incrementa valor no display
+    CMP  R6, 0              ; a tecla premida foi 0?
+    JZ move_objeto          ; se for 0, move o objeto
+    JMP espera_nao_tecla    ; espera até a tecla ser libertada
+
+decr_display:               ; decrementa o valor no display
+    DEC  R8                 ; decrementa o valor para ser escrito no display
+    CALL escreve_display
+    JMP  espera_nao_tecla    ; espera até a tecla ser libertada
+    
+incr_display:               ; incrementa o valor no display
+    INC   R8                ; incrementa o valor para ser escrito no display
+    CALL  escreve_display
+    JMP   espera_nao_tecla  ; espera até a tecla ser libertada
+
+move_objeto:
+	CALL  apaga_objeto		; apaga o objeto na sua posição corrente
 	INC R1			; para desenhar objeto na linha seguinte
 	INC R2			; para desenhar objeto na coluna seguinte
-	CALL	desenha_boneco		; vai desenhar o boneco de novo
+    CALL	desenha_objeto		; vai desenhar o objeto de novo
     JMP espera_nao_tecla; espera até a tecla ser libertada
 
 espera_nao_tecla:      ; neste ciclo espera-se até a tecla estar libertada
@@ -257,23 +253,23 @@ escreve_pixel:
 	RET
 
 ; **********************************************************************
-; APAGA_BONECO - Apaga um boneco na linha e coluna indicadas
+; APAGA_objeto - Apaga um objeto na linha e coluna indicadas
 ;			  com a forma definida na tabela indicada.
 ; Argumentos:   R1 - linha
 ;               R2 - coluna
-;               R4 - tabela que define o boneco
+;               R4 - tabela que define o objeto
 ;
 ; **********************************************************************
-apaga_boneco:
+apaga_objeto:
 	PUSH	R2
 	PUSH	R3
 	PUSH	R4
 	PUSH	R5
-	MOV	R5, [R4]			; obtém a largura do boneco
+	MOV	R5, [R4]			; obtém a largura do objeto
 	ADD	R4, 2			; endereço da cor do 1º pixel (2 porque a largura é uma word)
-apaga_pixels:       		; desenha os pixels do boneco a partir da tabela
-	MOV	R3, 0			; cor para apagar o próximo pixel do boneco
-	CALL	escreve_pixel		; escreve cada pixel do boneco
+apaga_pixels:       		; desenha os pixels do objeto a partir da tabela
+	MOV	R3, 0			; cor para apagar o próximo pixel do objeto
+	CALL	escreve_pixel		; escreve cada pixel do objeto
 	ADD	R4, 2			; endereço da cor do próximo pixel (2 porque cada cor de pixel é uma word)
      ADD  R2, 1               ; próxima coluna
      SUB  R5, 1			; menos uma coluna para tratar

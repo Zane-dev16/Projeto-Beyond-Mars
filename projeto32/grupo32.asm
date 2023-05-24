@@ -41,6 +41,9 @@ ALTURA_AST          EQU 5       ; altura do asteroide
 LARGURA_PAINEL      EQU 15      ; largura do painel da nave
 ALTURA_PAINEL       EQU 5       ; altura do painel da nave
 
+LARGURA_SONDA		EQU 1		;largura das sondas
+ALTURA_SONDA		EQU 1		;altura das sondas
+
 PIXEL_VERM		    EQU	0FF00H	; pixel vermelho opaco
 PIXEL_VERM_TRANS    EQU	0FF00H	; pixel vermelho translucido
 PIXEL_VERD          EQU 0F0F0H  ; pixel verde opaco 
@@ -53,7 +56,7 @@ PIXEL_AMAR_TRANS    EQU 05FF0H  ; pixel amarelo translucido
 PIXEL_CINZ_ESC      EQU 0F777H  ; pixel cinzento escuro opaco 
 PIXEL_CINZ_CLA      EQU 0FFFFH  ; pixel cinzento claro opaco 
 
-
+ATRASO_SONDA		EQU	9000H
 ; *********************************************************************************
 ; * Dados 
 ; *********************************************************************************
@@ -102,6 +105,8 @@ PAINEL_NAVE:			; tabela que define o painel da nave (cor, largura, pixels, altur
     WORD		PIXEL_CINZ_ESC, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_ESC 
 
 SONDA:                  ; tabela que define a sonda (cor, pixels)
+	WORD 		LARGURA_SONDA
+	WORD		ALTURA_SONDA
     WORD        PIXEL_CAST 
 
 posicao_asteroide:		; posição do asteroide
@@ -170,6 +175,8 @@ exec_tecla:                 ; executa instrucoes de acordo com a tecla premida
     JZ decr_display         ; se for 5, decrementa valor no display
     CMP  R6, 6              ; a tecla premida foi 6?
     JZ incr_display         ; se for 6, incrementa valor no display
+	CMP	 R6, 1				; a tecla premida foi 1?
+	JZ disparo_vertical		; se for 1 dispara a sonda
     CMP  R6, 0              ; a tecla premida foi 0?
     CALL move_asteroide     ; se for 0, move o objeto
     JMP espera_nao_tecla    ; espera até a tecla ser libertada
@@ -213,7 +220,41 @@ move_asteroide:
     POP	  R2
     POP   R1
     RET
+	
+; **********************************************************************
+; disparo_vertical - Desenha e move a sonda começando na linha e coluna indicadas
+;			       com a forma e cor definidas na tabela indicada.
+; Argumentos:   R1 - linha
+;               R2 - coluna
+;               R4 - tabela que define a sonda
+; **********************************************************************
 
+disparo_vertical:
+	PUSH R1
+	PUSH R2
+	PUSH R4
+	MOV R1,26				;linha inicial da sonda a ser disparada para a frente
+	MOV R2,32				;coluna inicial da sonda a ser disparada para a frente
+	MOV R4,SONDA
+	MOV R9,12				;contador de quadradinhos que a sonda atravessa 
+move_sonda:
+	CALL desenha_objeto		;desenha a sonda
+	
+	MOV	R10, ATRASO_SONDA	; atraso para limitar a velocidade de movimento da sonda		
+ciclo_atraso_sonda:
+	SUB	R10, 1
+	JNZ	ciclo_atraso_sonda
+	
+	CALL  apaga_objeto		;apaga a sonda atual
+	SUB	R1, 1				; para desenhar objeto na coluna seguinte (direita ou esquerda)
+	SUB R9, 1				;para diminuir o contador de quadradinhos que a sonda atravessou
+	CMP R9, 0				;verifica se a sonda já percorreu 12 quadradinhos
+	JNE	move_sonda			; vai desenhar a sonda de novo
+	POP R4
+	POP R2
+	POP R1
+	JMP espera_tecla
+	
 ; **********************************************************************
 ; DESENHA_OBJETO - Desenha o painel da nave na linha e coluna indicadas
 ;			       com a forma e cor definidas na tabela indicada.

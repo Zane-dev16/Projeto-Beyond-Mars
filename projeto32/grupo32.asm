@@ -201,15 +201,19 @@ espera_nao_tecla:           ; neste ciclo espera-se até a tecla estar libertada
 move_asteroide:
     PUSH  R1
 	PUSH  R2
+    PUSH  R9
     MOV   R1, [posicao_asteroide]	  ; para desenhar objeto na linha seguinte
 	MOV   R2, [posicao_asteroide + 2] ; para desenhar objeto na coluna seguinte
 	CALL  apaga_objeto		          ; apaga o objeto na sua posição corrente
 	INC   R1			              ; para desenhar objeto na linha seguinte
 	INC   R2			              ; para desenhar objeto na coluna seguinte
     CALL  desenha_objeto		      ; vai desenhar o objeto de novo
+    MOV   R9, 0
+    MOV   [TOCA_SOM], R9              ; seleciona o cenário de fundo
     MOV   [posicao_asteroide], R1	  ; para desenhar objeto na linha seguinte
 	MOV   [posicao_asteroide + 2], R2 ; para desenhar objeto na coluna seguinte
     JMP   espera_nao_tecla            ; espera até a tecla ser libertada
+    POP   R9
     POP	  R2
     POP   R1
     RET
@@ -259,7 +263,6 @@ desenha_pixels:       		; desenha os pixels do objeto a partir da tabela
 	POP	 R2
     POP  R1
 	RET
-
 
 
 ; **********************************************************************

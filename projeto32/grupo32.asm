@@ -233,7 +233,7 @@ move_boneco:
 	CALL	apaga_boneco		; apaga o boneco na sua posição corrente
 	INC R1			; para desenhar objeto na linha seguinte
 	INC R2			; para desenhar objeto na coluna seguinte
-	;CALL	desenha_boneco		; vai desenhar o boneco de novo
+	CALL	desenha_boneco		; vai desenhar o boneco de novo
     JMP espera_nao_tecla; espera até a tecla ser libertada
 
 espera_nao_tecla:      ; neste ciclo espera-se até a tecla estar libertada

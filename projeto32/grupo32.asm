@@ -104,6 +104,9 @@ PAINEL_NAVE:			; tabela que define o painel da nave (cor, largura, pixels, altur
 SONDA:                  ; tabela que define a sonda (cor, pixels)
     WORD        PIXEL_CAST 
 
+posicao_asteroide:		; posição do asteroide
+	WORD LINHA_TOPO
+	WORD COLUNA_ESQ
 
 ; *********************************************************************************
 ; * Código
@@ -118,7 +121,7 @@ inicio:
     MOV  [APAGA_ECRÃ], R1	; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
     MOV	 R1, 0			; cenário de fundo número 0
     MOV  [SELECIONA_CENARIO_FUNDO], R1	; seleciona o cenário de fundo
-    MOV  R8, 0
+    MOV  R8, 0              ; número inicial do display
 
 posicao_painel:
     MOV   R1, LINHA_PAINEL		; linha do painel da nave
@@ -126,18 +129,22 @@ posicao_painel:
 	MOV	  R4, PAINEL_NAVE		; endereço da tabela que define o painel da nave
     CALL desenha_objeto
 
+mostra_painel:
+	CALL	desenha_objeto	; desenha o objeto a partir da tabela
+
 tipo_asteroide:
     MOV	 R4, ASTEROIDE_PERIGO		    ; endereço da tabela que define o asteroide
 
-posição_asteroide_esq:
-    MOV  R1, LINHA_TOPO			; linha do asteroide
-    MOV  R2, COLUNA_ESQ		    ; coluna do asteroide
+posição_asteroide:
+    MOV R1, [posicao_asteroide]	; le valor da linha do asteroide
+	MOV R2, [posicao_asteroide + 2] ; le valor da coluna do asteroide (+2 porque a linha é um WORD)
     CALL desenha_objeto
 
-mostra_objeto:
+mostra_asteroide:
 	CALL	desenha_objeto	; desenha o objeto a partir da tabela
 
-    CALL escreve_display    ; inicia o valor no 0
+
+CALL escreve_display    ; inicia o valor no 0
 ciclo:
     MOV  R7, LINHA1         ; testar a linha 1
     
@@ -177,11 +184,16 @@ incr_display:               ; incrementa o valor no display
     CALL  escreve_display
     JMP   espera_nao_tecla  ; espera até a tecla ser libertada
 
+
 move_objeto:
+    MOV R1, [posicao_asteroide]	; para desenhar objeto na linha seguinte
+	MOV R2, [posicao_asteroide + 2] ; para desenhar objeto na coluna seguinte
 	CALL  apaga_objeto		; apaga o objeto na sua posição corrente
 	INC R1			; para desenhar objeto na linha seguinte
 	INC R2			; para desenhar objeto na coluna seguinte
     CALL	desenha_objeto		; vai desenhar o objeto de novo
+    MOV [posicao_asteroide], R1	; para desenhar objeto na linha seguinte
+	MOV [posicao_asteroide + 2], R2 ; para desenhar objeto na coluna seguinte
     JMP espera_nao_tecla; espera até a tecla ser libertada
 
 espera_nao_tecla:      ; neste ciclo espera-se até a tecla estar libertada
@@ -190,8 +202,14 @@ espera_nao_tecla:      ; neste ciclo espera-se até a tecla estar libertada
     JNZ  espera_nao_tecla; se a tecla ainda for premida, espera até não haver
     JMP  ciclo         ; repete ciclo
 
+; **********************************************************************
+; DESENHA_OBJETO - Desenha o painel da nave na linha e coluna indicadas
+;			       com a forma e cor definidas na tabela indicada.
+; Argumentos:   R1 - linha
+;               R2 - coluna
+;               R4 - tabela que define o boneco
+; **********************************************************************
 
-; corpo principal do programa
 
 ; **********************************************************************
 ; DESENHA_OBJETO - Desenha o painel da nave na linha e coluna indicadas
@@ -238,7 +256,6 @@ desenha_pixels:       		; desenha os pixels do objeto a partir da tabela
 	POP	 R2
     POP  R1
 	RET
-
 
 
 

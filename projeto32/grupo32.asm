@@ -134,54 +134,6 @@ posição_asteroide_esq:
     MOV  R2, COLUNA_ESQ		    ; coluna do asteroide
     CALL desenha_objeto
 
-; corpo principal do programa
-
-; **********************************************************************
-; DESENHA_OBJETO - Desenha o painel da nave na linha e coluna indicadas
-;			       com a forma e cor definidas na tabela indicada.
-; Argumentos:   R1 - linha
-;               R2 - coluna
-;               R4 - tabela que define o boneco
-; **********************************************************************
-
-desenha_objeto:
-    PUSH  R1
-	PUSH  R2
-	PUSH  R3
-	PUSH  R4
-	PUSH  R5
-    PUSH  R6
-    PUSH  R7
-    PUSH  R8
-	MOV   R5, [R4]			; obtém a largura do objeto
-    MOV   R7, R5            ; guarda a altura do objeto
-    MOV   R8, R2            ; guarda a coluna inicial do painel  
-	ADD	  R4, 2			    ; endereço da altura do objeto
-    MOV   R6, [R4]          ; obtém a altura do objeto
-    ADD	  R4, 2			    ; endereço da cor do 1º pixel
-
-desenha_pixels:       		; desenha os pixels do objeto a partir da tabela
-	MOV	 R3, [R4]			; obtém a cor do próximo pixel do objeto
-	CALL escreve_pixel		; escreve cada pixel do objeto
-	ADD	 R4, 2			    ; endereço da cor do próximo pixel 
-    ADD  R2, 1              ; próxima coluna
-    SUB  R5, 1			    ; menos uma coluna para tratar
-    JNZ  desenha_pixels     ; continua até percorrer toda a largura do objeto
-    MOV  R5, R7
-    MOV  R2, R8
-    ADD  R1, 1
-    SUB  R6, 1              ; verifica se todas as linhas já foram desenhadas
-    JNZ  desenha_pixels     ; continua até percorrer toda a altura do objeto
-    POP  R8
-    POP  R7
-    POP  R6
-    POP	 R5
-	POP	 R4
-	POP	 R3
-	POP	 R2
-    POP  R1
-	RET
-
 mostra_objeto:
 	CALL	desenha_objeto	; desenha o objeto a partir da tabela
 
@@ -237,6 +189,57 @@ espera_nao_tecla:      ; neste ciclo espera-se até a tecla estar libertada
     CMP  R0, 0         ; há tecla premida?
     JNZ  espera_nao_tecla; se a tecla ainda for premida, espera até não haver
     JMP  ciclo         ; repete ciclo
+
+
+; corpo principal do programa
+
+; **********************************************************************
+; DESENHA_OBJETO - Desenha o painel da nave na linha e coluna indicadas
+;			       com a forma e cor definidas na tabela indicada.
+; Argumentos:   R1 - linha
+;               R2 - coluna
+;               R4 - tabela que define o boneco
+; **********************************************************************
+
+desenha_objeto:
+    PUSH  R1
+	PUSH  R2
+	PUSH  R3
+	PUSH  R4
+	PUSH  R5
+    PUSH  R6
+    PUSH  R7
+    PUSH  R8
+	MOV   R5, [R4]			; obtém a largura do objeto
+    MOV   R7, R5            ; guarda a altura do objeto
+    MOV   R8, R2            ; guarda a coluna inicial do painel  
+	ADD	  R4, 2			    ; endereço da altura do objeto
+    MOV   R6, [R4]          ; obtém a altura do objeto
+    ADD	  R4, 2			    ; endereço da cor do 1º pixel
+
+desenha_pixels:       		; desenha os pixels do objeto a partir da tabela
+	MOV	 R3, [R4]			; obtém a cor do próximo pixel do objeto
+	CALL escreve_pixel		; escreve cada pixel do objeto
+	ADD	 R4, 2			    ; endereço da cor do próximo pixel 
+    ADD  R2, 1              ; próxima coluna
+    SUB  R5, 1			    ; menos uma coluna para tratar
+    JNZ  desenha_pixels     ; continua até percorrer toda a largura do objeto
+    MOV  R5, R7
+    MOV  R2, R8
+    ADD  R1, 1
+    SUB  R6, 1              ; verifica se todas as linhas já foram desenhadas
+    JNZ  desenha_pixels     ; continua até percorrer toda a altura do objeto
+    POP  R8
+    POP  R7
+    POP  R6
+    POP	 R5
+	POP	 R4
+	POP	 R3
+	POP	 R2
+    POP  R1
+	RET
+
+
 
 
 ; **********************************************************************

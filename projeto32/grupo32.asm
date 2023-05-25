@@ -119,76 +119,75 @@ valor_display:              ; valor para escrever no display
 ; *********************************************************************************
 ; * Código
 ; *********************************************************************************
-PLACE      0
-inicio:		
-; inicializações
-    MOV  SP, SP_inicial		; inicializa SP para a palavra a seguir
-                    ; à última da pilha
-                            
-    MOV  [APAGA_AVISO], R1	; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
-    MOV  [APAGA_ECRÃ], R1	; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
-    MOV	 R1, 0			; cenário de fundo número 0
-    MOV  [SELECIONA_CENARIO_FUNDO], R1	; seleciona o cenário de fundo
-    MOV  R8, 0              ; número inicial do display
+PLACE 0
+inicio:
+    ; inicializações
+    MOV SP, SP_inicial  ; inicializa SP para a palavra a seguir à última da pilha
+
+    MOV [APAGA_AVISO], R1  ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
+    MOV [APAGA_ECRÃ], R1  ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
+    MOV R1, 0  ; cenário de fundo número 0
+    MOV [SELECIONA_CENARIO_FUNDO], R1  ; seleciona o cenário de fundo
+    MOV R8, 0  ; número inicial do display
 
 posicao_painel:
-    MOV   R1, LINHA_PAINEL		; linha do painel da nave
-    MOV   R2, COLUNA_PAINEL		; coluna do painel da nave
-	MOV	  R4, PAINEL_NAVE		; endereço da tabela que define o painel da nave
+    MOV R1, LINHA_PAINEL  ; linha do painel da nave
+    MOV R2, COLUNA_PAINEL  ; coluna do painel da nave
+    MOV R4, PAINEL_NAVE  ; endereço da tabela que define o painel da nave
 
 mostra_painel:
-	CALL	desenha_objeto	; desenha o objeto a partir da tabela
+    CALL desenha_objeto  ; desenha o objeto a partir da tabela
 
 tipo_asteroide:
-    MOV	 R4, ASTEROIDE_PERIGO		    ; endereço da tabela que define o asteroide
+    MOV R4, ASTEROIDE_PERIGO  ; endereço da tabela que define o asteroide
 
 posição_asteroide:
-    MOV R1, [posicao_asteroide]	; le valor da linha do asteroide
-	MOV R2, [posicao_asteroide + 2] ; le valor da coluna do asteroide (+2 porque a linha é um WORD)
+    MOV R1, [posicao_asteroide]  ; le valor da linha do asteroide
+    MOV R2, [posicao_asteroide + 2]  ; le valor da coluna do asteroide (+2 porque a linha é um WORD)
 
 mostra_asteroide:
-	CALL	desenha_objeto	; desenha o objeto a partir da tabela
+    CALL desenha_objeto  ; desenha o objeto a partir da tabela
 
+CALL escreve_display  ; inicia o valor no 0
 
-CALL escreve_display    ; inicia o valor no 0
 ciclo:
-    MOV  R7, LINHA1         ; testar a linha 1
-    
+    MOV R7, LINHA1  ; testar a linha 1
+
     CALL espera_tecla
 
-exec_tecla:                 ; executa instrucoes de acordo com a tecla premida
-    CALL calcula_tecla      ; calcula o valor da tecla premida
-    CMP  R6, 5              ; a tecla premida foi 5?
-    JZ decr_display      ; se for 5, decrementa valor no display
-    CMP  R6, 6              ; a tecla premida foi 6?
-    JZ incr_display         ; se for 6, incrementa valor no display
-	CMP	 R6, 1				; a tecla premida foi 1?
-	JZ disparo_vertical		; se for 1 dispara a sonda
-    CMP  R6, 0              ; a tecla premida foi 0?
-    JZ deslocamento_asteroide; se for 0, move o objeto
-    JMP espera_nao_tecla    ; espera até a tecla estar libertada
+exec_tecla:  ; executa instruções de acordo com a tecla premida
+    CALL calcula_tecla  ; calcula o valor da tecla premida
+    CMP R6, 5  ; a tecla premida foi 5?
+    JZ decr_display  ; se for 5, decrementa valor no display
+    CMP R6, 6  ; a tecla premida foi 6?
+    JZ incr_display  ; se for 6, incrementa valor no display
+    CMP R6, 1  ; a tecla premida foi 1?
+    JZ disparo_vertical  ; se for 1, dispara a sonda
+    CMP R6, 0  ; a tecla premida foi 0?
+    JZ deslocamento_asteroide  ; se for 0, move o objeto
+    JMP espera_nao_tecla  ; espera até a tecla estar libertada
 
-decr_display:               ; decrementa o valor no display
-    MOV  R1, -1             ; decrementa o valor para ser escrito no display
-    CALL shift_display      ;
-    JMP  espera_nao_tecla    ; espera até a tecla estar libertada
-    
-incr_display:               ; incrementa o valor no display
-    MOV  R1, 1              ; incrementa o valor para ser escrito no display
-    CALL  shift_display
-    JMP   espera_nao_tecla  ; espera até a tecla estar libertada
+decr_display:  ; decrementa o valor no display
+    MOV R1, -1  ; decrementa o valor para ser escrito no display
+    CALL shift_display
+    JMP espera_nao_tecla  ; espera até a tecla estar libertada
+
+incr_display:  ; incrementa o valor no display
+    MOV R1, 1  ; incrementa o valor para ser escrito no display
+    CALL shift_display
+    JMP espera_nao_tecla  ; espera até a tecla estar libertada
 
 disparo_vertical:
-    CALL dispara_sonda;
-    JMP espera_nao_tecla    ;
+    CALL dispara_sonda
+    JMP espera_nao_tecla
 
 deslocamento_asteroide:
     CALL move_asteroide
-    JMP espera_nao_tecla    ;
+    JMP espera_nao_tecla
 
-espera_nao_tecla:           ; espera-se até a tecla estar libertada
-    CALL espera_libertar_tecla   ;
-    JMP  ciclo              ; repete ciclo
+espera_nao_tecla:  ; espera-se até a tecla estar libertada
+    CALL espera_libertar_tecla
+    JMP ciclo  ; repete ciclo
 
 ; **********************************************************************
 ; MOVE_ASTEROIDE - Desenha o painel da nave na linha e coluna indicadas

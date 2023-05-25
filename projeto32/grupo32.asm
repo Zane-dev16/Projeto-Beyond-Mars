@@ -188,7 +188,7 @@ deslocamento_asteroide:
 espera_nao_tecla:  ; espera-se até a tecla estar libertada
     CALL espera_libertar_tecla
     JMP ciclo  ; repete ciclo
-
+    
 ; **********************************************************************
 ; MOVE_ASTEROIDE - Desenha o painel da nave na linha e coluna indicadas
 ;			       com a forma e cor definidas na tabela indicada.
@@ -199,61 +199,66 @@ espera_nao_tecla:  ; espera-se até a tecla estar libertada
 
 move_asteroide:
     PUSH  R1
-	PUSH  R2
+    PUSH  R2
     PUSH  R9
-    MOV   R1, [posicao_asteroide]	  ; para desenhar objeto na linha seguinte
-	MOV   R2, [posicao_asteroide + 2] ; para desenhar objeto na coluna seguinte
-	CALL  apaga_objeto		          ; apaga o objeto na sua posição corrente
-	INC   R1			              ; para desenhar objeto na linha seguinte
-	INC   R2			              ; para desenhar objeto na coluna seguinte
-    MOV   [posicao_asteroide], R1	  ; para desenhar objeto na linha seguinte
-	MOV   [posicao_asteroide + 2], R2 ; para desenhar objeto na coluna seguinte
-    CALL  desenha_objeto		      ; vai desenhar o objeto de novo
-    MOV   R9, 0
-    MOV   [TOCA_SOM], R9              ; seleciona o cenário de fundo
-    JMP   espera_nao_tecla            ; espera até a tecla ser libertada
+
+    MOV   R1, [posicao_asteroide]         ; Carrega a posição atual do asteroide na linha
+    MOV   R2, [posicao_asteroide + 2]     ; Carrega a posição atual do asteroide na coluna
+    CALL  apaga_objeto                    ; Apaga o objeto em sua posição atual
+    INC   R1                              ; Incrementa a posição do asteroide para a próxima linha
+    INC   R2                              ; Incrementa a posição do asteroide para a próxima coluna
+    MOV   [posicao_asteroide], R1         ; Armazena a nova posição do asteroide na linha
+    MOV   [posicao_asteroide + 2], R2     ; Armazena a nova posição do asteroide na coluna
+    CALL  desenha_objeto                  ; Desenha o objeto novamente na nova posição
+    MOV   R9, 0                           ; Define o cenário de fundo como 0 (sem som)
+    MOV   [TOCA_SOM], R9                  ; Define o cenário de fundo
+    JMP   espera_nao_tecla                ; Aguarda até que a tecla seja liberada
     POP   R9
-    POP	  R2
+    POP   R2
     POP   R1
     RET
-	
 ; **********************************************************************
-; disparo_vertical - Desenha e move a sonda começando na linha e coluna indicadas
-;			       com a forma e cor definidas na tabela indicada.
+; dispara_sonda - Desenha e move a sonda começando na linha e coluna indicadas
+;                 com a forma e cor definidas na tabela indicada.
 ; Argumentos:   R1 - linha
 ;               R2 - coluna
 ;               R4 - tabela que define a sonda
 ; **********************************************************************
 
 dispara_sonda:
-	PUSH R1
-	PUSH R2
-	PUSH R4
-	MOV R1,26				;linha inicial da sonda a ser disparada para a frente
-	MOV R2,32				;coluna inicial da sonda a ser disparada para a frente
-	MOV R4,SONDA
-	MOV R9,12				;contador de quadradinhos que a sonda atravessa 
+    PUSH R1
+    PUSH R2
+    PUSH R4
+
+    MOV R1, 26              ; Define a linha inicial da sonda a ser disparada para frente
+    MOV R2, 32              ; Define a coluna inicial da sonda a ser disparada para frente
+    MOV R4, SONDA           ; Define a tabela que define a sonda
+    MOV R9, 12              ; Define o contador de quadradinhos que a sonda atravessa
+
 move_sonda:
-	CALL desenha_objeto		;desenha a sonda
-	
-	MOV	R10, ATRASO_SONDA	; atraso para limitar a velocidade de movimento da sonda		
+    CALL desenha_objeto     ; Desenha a sonda
+
+    MOV R10, ATRASO_SONDA   ; Define o atraso para limitar a velocidade de movimento da sonda
+
 ciclo_atraso_sonda:
-	SUB	R10, 1
-	JNZ	ciclo_atraso_sonda
-	
-	CALL  apaga_objeto		;apaga a sonda atual
-	SUB	R1, 1				; para desenhar objeto na coluna seguinte (direita ou esquerda)
-	SUB R9, 1				;para diminuir o contador de quadradinhos que a sonda atravessou
-	CMP R9, 0				;verifica se a sonda já percorreu 12 quadradinhos
-	JNE	move_sonda			; vai desenhar a sonda de novo
-	POP R4
-	POP R2
-	POP R1
-	RET
+    SUB R10, 1              ; Decrementa o atraso
+    JNZ ciclo_atraso_sonda  ; Repete o ciclo de atraso até que R10 seja igual a zero
+
+    CALL apaga_objeto       ; Apaga a sonda atual
+    SUB R1, 1               ; Move a sonda para a próxima linha (para cima)
+    SUB R9, 1               ; Decrementa o contador de quadradinhos que a sonda atravessou
+    CMP R9, 0               ; Verifica se a sonda já percorreu 12 quadradinhos
+    JNE move_sonda          ; Se o contador ainda não for zero, move a sonda novamente
+
+    POP R4
+    POP R2
+    POP R1
+    RET
+
 	
 ; **********************************************************************
-; DESENHA_OBJETO - Desenha o painel da nave na linha e coluna indicadas
-;			       com a forma e cor definidas na tabela indicada.
+; desenha_objeto - Desenha o painel da nave na linha e coluna indicadas
+;                  com a forma e cor definidas na tabela indicada.
 ; Argumentos:   R1 - linha
 ;               R2 - coluna
 ;               R4 - tabela que define o boneco
@@ -261,101 +266,102 @@ ciclo_atraso_sonda:
 
 desenha_objeto:
     PUSH  R1
-	PUSH  R2
-	PUSH  R3
-	PUSH  R4
-	PUSH  R5
-    PUSH  R6
-    PUSH  R7
-    PUSH  R8
-	MOV   R5, [R4]			; obtém a largura do objeto
-    MOV   R7, R5            ; guarda a altura do objeto
-    MOV   R8, R2            ; guarda a coluna inicial do painel  
-	ADD	  R4, 2			    ; endereço da altura do objeto
-    MOV   R6, [R4]          ; obtém a altura do objeto
-    ADD	  R4, 2			    ; endereço da cor do 1º pixel
-
-desenha_pixels:       		; desenha os pixels do objeto a partir da tabela
-	MOV	 R3, [R4]			; obtém a cor do próximo pixel do objeto
-	CALL escreve_pixel		; escreve cada pixel do objeto
-	ADD	 R4, 2			    ; endereço da cor do próximo pixel 
-    ADD  R2, 1              ; próxima coluna
-    SUB  R5, 1			    ; menos uma coluna para tratar
-    JNZ  desenha_pixels     ; continua até percorrer toda a largura do objeto
-    MOV  R5, R7
-    MOV  R2, R8
-    ADD  R1, 1
-    SUB  R6, 1              ; verifica se todas as linhas já foram desenhadas
-    JNZ  desenha_pixels     ; continua até percorrer toda a altura do objeto
-    POP  R8
-    POP  R7
-    POP  R6
-    POP	 R5
-	POP	 R4
-	POP	 R3
-	POP	 R2
-    POP  R1
-	RET
-
-
-; **********************************************************************
-; ESCREVE_PIXEL - Escreve um pixel na linha e coluna indicadas.
-; Argumentos:   R1 - linha
-;               R2 - coluna
-;               R3 - cor do pixel (em formato ARGB de 16 bits)
-;
-; **********************************************************************
-escreve_pixel:
-	MOV  [DEFINE_LINHA],  R1	; seleciona a linha
-	MOV  [DEFINE_COLUNA], R2	; seleciona a coluna
-	MOV  [DEFINE_PIXEL],  R3	; altera a cor do pixel na linha e coluna já selecionadas
-	RET
-
-; **********************************************************************
-; APAGA_objeto - Apaga um objeto na linha e coluna indicadas
-;			  com a forma definida na tabela indicada.
-; Argumentos:   R1 - linha
-;               R2 - coluna
-;               R4 - tabela que define o objeto
-;
-; **********************************************************************
-apaga_objeto:
-	PUSH  R1
     PUSH  R2
-	PUSH  R3
-	PUSH  R4
-	PUSH  R5
+    PUSH  R3
+    PUSH  R4
+    PUSH  R5
     PUSH  R6
     PUSH  R7
     PUSH  R8
-	MOV   R5, [R4]			; obtém a largura do objeto
-    MOV   R7, R5            ; guarda a altura do objeto
-    MOV   R8, R2            ; guarda a coluna inicial do painel  
-	ADD	  R4, 2			    ; endereço da altura do objeto
-    MOV   R6, [R4]          ; obtém a altura do objeto
-    ADD	  R4, 2			    ; endereço da cor do 1º pixel
+    MOV   R5, [R4]            ; Obtém a largura do objeto
+    MOV   R7, R5              ; Guarda a altura do objeto
+    MOV   R8, R2              ; Guarda a coluna inicial do painel
+    ADD   R4, 2               ; Endereço da altura do objeto
+    MOV   R6, [R4]            ; Obtém a altura do objeto
+    ADD   R4, 2               ; Endereço da cor do 1º pixel
 
-apaga_pixels:       		; desenha os pixels do objeto a partir da tabela
-	MOV	  R3, 0			    ; cor para apagar o próximo pixel do objeto
-	CALL  escreve_pixel		; escreve cada pixel do objeto
-	ADD	  R4, 2			    ; endereço da cor do próximo pixel 
-    ADD   R2, 1             ; próxima coluna
-    SUB   R5, 1			    ; menos uma coluna para tratar
-    JNZ   apaga_pixels    ; continua até percorrer toda a largura do objeto
+desenha_pixels:             ; Desenha os pixels do objeto a partir da tabela
+    MOV   R3, [R4]            ; Obtém a cor do próximo pixel do objeto
+    CALL  escreve_pixel       ; Escreve cada pixel do objeto
+    ADD   R4, 2               ; Endereço da cor do próximo pixel
+    ADD   R2, 1               ; Próxima coluna
+    SUB   R5, 1               ; Menos uma coluna para tratar
+    JNZ   desenha_pixels      ; Continua até percorrer toda a largura do objeto
     MOV   R5, R7
     MOV   R2, R8
-    ADD   R1, 1
-    SUB   R6, 1             ; verifica se todas as linhas já foram desenhadas
-    JNZ   apaga_pixels    ; continua até percorrer toda a altura do objeto
+    ADD   R1, 1               ; Próxima linha
+    SUB   R6, 1               ; Verifica se todas as linhas já foram desenhadas
+    JNZ   desenha_pixels      ; Continua até percorrer toda a altura do objeto
     POP   R8
     POP   R7
     POP   R6
-    POP	  R5
-	POP	  R4
-	POP	  R3
-	POP	  R2
+    POP   R5
+    POP   R4
+    POP   R3
+    POP   R2
     POP   R1
-	RET
+    RET
+
+
+; **********************************************************************
+; escreve_pixel - Escreve um pixel na linha e coluna indicadas.
+; Argumentos:   R1 - linha
+;               R2 - coluna
+;               R3 - cor do pixel (em formato ARGB de 16 bits)
+; **********************************************************************
+
+escreve_pixel:
+    MOV  [DEFINE_LINHA], R1   ; Seleciona a linha
+    MOV  [DEFINE_COLUNA], R2  ; Seleciona a coluna
+    MOV  [DEFINE_PIXEL], R3   ; Altera a cor do pixel na linha e coluna já selecionadas
+    RET
+
+
+; **********************************************************************
+; apaga_objeto - Apaga um objeto na linha e coluna indicadas
+;                com a forma definida na tabela indicada.
+; Argumentos:   R1 - linha
+;               R2 - coluna
+;               R4 - tabela que define o objeto
+; **********************************************************************
+
+apaga_objeto:
+    PUSH  R1
+    PUSH  R2
+    PUSH  R3
+    PUSH  R4
+    PUSH  R5
+    PUSH  R6
+    PUSH  R7
+    PUSH  R8
+    MOV   R5, [R4]            ; Obtém a largura do objeto
+    MOV   R7, R5              ; Guarda a altura do objeto
+    MOV   R8, R2              ; Guarda a coluna inicial do painel
+    ADD   R4, 2               ; Endereço da altura do objeto
+    MOV   R6, [R4]            ; Obtém a altura do objeto
+    ADD   R4, 2               ; Endereço da cor do 1º pixel
+
+apaga_pixels:               ; Apaga os pixels do objeto a partir da tabela
+    MOV   R3, 0               ; Cor para apagar o próximo pixel do objeto
+    CALL  escreve_pixel       ; Escreve cada pixel do objeto
+    ADD   R4, 2               ; Endereço da cor do próximo pixel
+    ADD   R2, 1               ; Próxima coluna
+    SUB   R5, 1               ; Menos uma coluna para tratar
+    JNZ   apaga_pixels        ; Continua até percorrer toda a largura do objeto
+    MOV   R5, R7
+    MOV   R2, R8
+    ADD   R1, 1               ; Próxima linha
+    SUB   R6, 1               ; Verifica se todas as linhas já foram apagadas
+    JNZ   apaga_pixels        ; Continua até percorrer toda a altura do objeto
+    POP   R8
+    POP   R7
+    POP   R6
+    POP   R5
+    POP   R4
+    POP   R3
+    POP   R2
+    POP   R1
+    RET
 
 ; **********************************************************************
 ; ESPERA_TECLA - Espera até uma tecla seja premida e lê a coluna e linha

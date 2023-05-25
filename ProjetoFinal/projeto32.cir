@@ -17,7 +17,7 @@
     "width" : 1440,
     "height" : 900,
     "leftRightDividerLocation" : 222,
-    "topBottomDividerLocation" : 771
+    "topBottomDividerLocation" : 743
   },
   "connections" : [ {
     "className" : "Connection",
@@ -740,10 +740,10 @@
     "positionX" : 194,
     "positionY" : 84,
     "simGuiVisibleInSimulation" : true,
-    "simGuiXRelative" : 4,
-    "simGuiYRelative" : 208,
-    "simGuiWidth" : 1030,
-    "simGuiHeight" : 692,
+    "simGuiXRelative" : 48,
+    "simGuiYRelative" : 128,
+    "simGuiWidth" : 1002,
+    "simGuiHeight" : 757,
     "clockPeriod" : 200,
     "startAutomatically" : true,
     "simulationMaster" : true,
@@ -772,7 +772,7 @@
       "pinConnectionID" : -1,
       "pinValueFixed" : "1"
     },
-    "programFilePathName" : "grupo32.asm",
+    "programFilePathName" : "../projeto32/grupo32.asm",
     "nTabSpaces" : 4,
     "bus interface" : {
       "className" : "ModuleExtensionMasterBusReadWrite",
@@ -1454,7 +1454,7 @@
     "positionX" : 734,
     "positionY" : 456,
     "simGuiVisibleInSimulation" : true,
-    "simGuiXRelative" : 1186,
+    "simGuiXRelative" : 1188,
     "simGuiYRelative" : 551,
     "simGuiWidth" : 110,
     "simGuiHeight" : 140,
@@ -1525,7 +1525,7 @@
     "positionX" : 608,
     "positionY" : 222,
     "simGuiVisibleInSimulation" : true,
-    "simGuiXRelative" : 689,
+    "simGuiXRelative" : 672,
     "simGuiYRelative" : 6,
     "simGuiWidth" : 768,
     "simGuiHeight" : 384,
@@ -1534,9 +1534,15 @@
     "windowScreenWidthPixels" : 1024,
     "windowScreenHeightixels" : 512,
     "defaultPenColor" : 65280,
-    "image paths" : [ "../../../../.Trash/lab4/espa‡o.jpg" ],
+    "image paths" : [ "../projeto32/2.jpg" ],
     "sounds/videos settings" : [ {
       "filePathName" : "../../../../Downloads/lab4/disparo.wav",
+      "relative sound volume" : 1.0,
+      "relative start time" : 0.0,
+      "relative stop time" : 1.0,
+      "playAsClip" : false
+    }, {
+      "filePathName" : "../projeto32/disparo_laser.wav",
       "relative sound volume" : 1.0,
       "relative start time" : 0.0,
       "relative stop time" : 1.0,

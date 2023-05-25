@@ -56,8 +56,6 @@ PIXEL_AMAR_TRANS    EQU 05FF0H   ; pixel amarelo translucido
 PIXEL_CINZ_ESC      EQU 0F777H   ; pixel cinzento escuro opaco 
 PIXEL_CINZ_CLA      EQU 0FFFFH   ; pixel cinzento claro opaco 
 
-MOVES_SONDA			EQU 12		; número de movimentos da sonda
-
 ; *********************************************************************************
 ; * Dados 
 ; *********************************************************************************

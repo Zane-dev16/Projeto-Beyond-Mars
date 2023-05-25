@@ -18,6 +18,7 @@ RECURSOS:                   ; tabela que define os recursos (cor, largura, pixel
     WORD    PIXEL_AZUL, 0, PIXEL_AZUL, 0, PIXEL_AZUL
 
 ATRASO_SONDA		EQU	9000H	; atraso que determina a velocidade da SONDA
+MOVES_SONDA			EQU 12		; número de movimentos da sonda
 
 posição_asteroide_cent:
     MOV  R1, LINHA_TOPO			; linha do asteroide

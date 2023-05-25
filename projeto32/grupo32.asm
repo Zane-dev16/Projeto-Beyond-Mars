@@ -154,18 +154,10 @@ CALL escreve_display    ; inicia o valor no 0
 ciclo:
     MOV  R7, LINHA1         ; testar a linha 1
     
-espera_tecla:               ; neste ciclo espera-se até uma tecla ser premida
-    CALL escreve_linha      ; ativar linha no teclado
-    CALL le_coluna          ; leitura na linha ativada do teclado
-    CMP  R0, 0              ; há tecla premida?
-    JNZ  exec_tecla      ; se houver uma tecla premida, salta
-    CMP R7, 5               ; chegou à última linha?
-    JGE ciclo               ; se chegou à última linha, repete ciclo
-    SHL R7, 1               ; testar a próxima linha
-    JMP espera_tecla        ; continua o ciclo na próxima linha
+    CALL espera_tecla
 
 exec_tecla:                 ; executa instrucoes de acordo com a tecla premida
-    CALL calcula_tecla
+    CALL calcula_tecla      ; calcula o valor da tecla premida
     CMP  R6, 5              ; a tecla premida foi 5?
     JZ decr_display      ; se for 5, decrementa valor no display
     CMP  R6, 6              ; a tecla premida foi 6?
@@ -258,7 +250,7 @@ ciclo_atraso_sonda:
 	POP R4
 	POP R2
 	POP R1
-	JMP espera_tecla
+	RET
 	
 ; **********************************************************************
 ; DESENHA_OBJETO - Desenha o painel da nave na linha e coluna indicadas
@@ -367,6 +359,28 @@ apaga_pixels:       		; desenha os pixels do objeto a partir da tabela
 	RET
 
 ; **********************************************************************
+; ESPERA_TECLA - Espera até uma tecla seja premida e lê a coluna e linha
+;
+; Retorna: 	R7 - linha da tecla premida
+;           R0 - coluna da tecla premida
+;
+; **********************************************************************
+espera_tecla:               ; neste ciclo espera-se até uma tecla ser premida
+    MOV  R7, LINHA1         ; testar a linha 1
+varre_linhas:
+    CALL escreve_linha      ; ativar linha no teclado
+    CALL le_coluna          ; leitura na linha ativada do teclado
+    CMP  R0, 0              ; há tecla premida?
+    JNZ sai_espera_tecla    ;
+    CMP R7, 5               ; chegou à última linha?
+    JGE espera_tecla        ;
+    SHL R7, 1               ; testar a próxima linha
+    JMP varre_linhas        ; continua o ciclo na próxima linha
+
+sai_espera_tecla:
+    RET
+
+; **********************************************************************
 ; ESCREVE_LINHA - Faz uma leitura às teclas de uma linha do teclado e retorna o valor lido
 ; Argumentos:	R7 - linha a testar (em formato 1, 2, 4 ou 8)
 ;
@@ -380,7 +394,6 @@ escreve_linha:
 
 ; **********************************************************************
 ; LE_COLUNA - Faz uma leitura às teclas de uma linha do teclado e retorna o valor lido
-; Argumentos:	R7 - linha a testar (em formato 1, 2, 4 ou 8)
 ;
 ; Retorna: 	R0 - valor lido das colunas do teclado (0, 1, 2, 4, ou 8)	
 ; **********************************************************************
@@ -399,7 +412,6 @@ le_coluna:
 ; **********************************************************************
 ; CALCULA_TECLA - calcula o valor da tecla premida
 ; Argumentos:	R7 - linha/coluna da tecla (em formato 1, 2, 4 ou 8)
-;               R6 - valor inicial
 ;
 ; Retorna: 	R6 - total: valor inicial + numero de linhas/colunas
 ; **********************************************************************

@@ -17,7 +17,7 @@
     "width" : 1440,
     "height" : 900,
     "leftRightDividerLocation" : 222,
-    "topBottomDividerLocation" : 771
+    "topBottomDividerLocation" : 743
   },
   "connections" : [ {
     "className" : "Connection",
@@ -741,7 +741,7 @@
     "positionY" : 84,
     "simGuiVisibleInSimulation" : true,
     "simGuiXRelative" : 396,
-    "simGuiYRelative" : 446,
+    "simGuiYRelative" : 36,
     "simGuiWidth" : 769,
     "simGuiHeight" : 819,
     "clockPeriod" : 200,
@@ -1525,8 +1525,8 @@
     "positionX" : 608,
     "positionY" : 222,
     "simGuiVisibleInSimulation" : true,
-    "simGuiXRelative" : 429,
-    "simGuiYRelative" : 299,
+    "simGuiXRelative" : 407,
+    "simGuiYRelative" : 56,
     "simGuiWidth" : 768,
     "simGuiHeight" : 384,
     "columnAddressNBits" : 6,
@@ -1534,9 +1534,9 @@
     "windowScreenWidthPixels" : 1024,
     "windowScreenHeightixels" : 512,
     "defaultPenColor" : 65280,
-    "image paths" : [ "../../../../.Trash/lab4/espa‡o.jpg" ],
+    "image paths" : [ "2.jpg" ],
     "sounds/videos settings" : [ {
-      "filePathName" : "../../../../Downloads/lab4/disparo.wav",
+      "filePathName" : "disparo_laser.wav",
       "relative sound volume" : 1.0,
       "relative start time" : 0.0,
       "relative stop time" : 1.0,

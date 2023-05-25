@@ -135,7 +135,6 @@ posicao_painel:
     MOV   R1, LINHA_PAINEL		; linha do painel da nave
     MOV   R2, COLUNA_PAINEL		; coluna do painel da nave
 	MOV	  R4, PAINEL_NAVE		; endereço da tabela que define o painel da nave
-    CALL desenha_objeto
 
 mostra_painel:
 	CALL	desenha_objeto	; desenha o objeto a partir da tabela
@@ -146,7 +145,6 @@ tipo_asteroide:
 posição_asteroide:
     MOV R1, [posicao_asteroide]	; le valor da linha do asteroide
 	MOV R2, [posicao_asteroide + 2] ; le valor da coluna do asteroide (+2 porque a linha é um WORD)
-    CALL desenha_objeto
 
 mostra_asteroide:
 	CALL	desenha_objeto	; desenha o objeto a partir da tabela
@@ -160,16 +158,14 @@ espera_tecla:               ; neste ciclo espera-se até uma tecla ser premida
     CALL escreve_linha      ; ativar linha no teclado
     CALL le_coluna          ; leitura na linha ativada do teclado
     CMP  R0, 0              ; há tecla premida?
-    JNZ  calcula_tecla1      ; se houver uma tecla premida, salta
+    JNZ  exec_tecla      ; se houver uma tecla premida, salta
     CMP R7, 5               ; chegou à última linha?
     JGE ciclo               ; se chegou à última linha, repete ciclo
     SHL R7, 1               ; testar a próxima linha
     JMP espera_tecla        ; continua o ciclo na próxima linha
-    
-calcula_tecla1:              ; calcula o valor da tecla
-    CALL calcula_tecla
 
 exec_tecla:                 ; executa instrucoes de acordo com a tecla premida
+    CALL calcula_tecla
     CMP  R6, 5              ; a tecla premida foi 5?
     JZ decr_display      ; se for 5, decrementa valor no display
     CMP  R6, 6              ; a tecla premida foi 6?
@@ -177,23 +173,29 @@ exec_tecla:                 ; executa instrucoes de acordo com a tecla premida
 	CMP	 R6, 1				; a tecla premida foi 1?
 	JZ disparo_vertical		; se for 1 dispara a sonda
     CMP  R6, 0              ; a tecla premida foi 0?
-    CALL move_asteroide     ; se for 0, move o objeto
-    JMP espera_nao_tecla    ; espera até a tecla ser libertada
+    JZ deslocamento_asteroide; se for 0, move o objeto
+    JMP espera_nao_tecla    ; espera até a tecla estar libertada
 
 decr_display:               ; decrementa o valor no display
     MOV  R1, -1             ; decrementa o valor para ser escrito no display
     CALL shift_display      ;
-    JMP  espera_nao_tecla    ; espera até a tecla ser libertada
+    JMP  espera_nao_tecla    ; espera até a tecla estar libertada
     
 incr_display:               ; incrementa o valor no display
     MOV  R1, 1              ; incrementa o valor para ser escrito no display
     CALL  shift_display
-    JMP   espera_nao_tecla  ; espera até a tecla ser libertada
+    JMP   espera_nao_tecla  ; espera até a tecla estar libertada
 
-espera_nao_tecla:           ; neste ciclo espera-se até a tecla estar libertada
-    CALL le_coluna          ; leitura na linha ativada do teclado
-    CMP  R0, 0              ; há tecla premida?
-    JNZ  espera_nao_tecla   ; se a tecla ainda for premida, espera até não haver
+disparo_vertical:
+    CALL dispara_sonda;
+    JMP espera_nao_tecla    ;
+
+deslocamento_asteroide:
+    CALL move_asteroide
+    JMP espera_nao_tecla    ;
+
+espera_nao_tecla:           ; espera-se até a tecla estar libertada
+    CALL espera_libertar_tecla   ;
     JMP  ciclo              ; repete ciclo
 
 ; **********************************************************************
@@ -213,11 +215,11 @@ move_asteroide:
 	CALL  apaga_objeto		          ; apaga o objeto na sua posição corrente
 	INC   R1			              ; para desenhar objeto na linha seguinte
 	INC   R2			              ; para desenhar objeto na coluna seguinte
+    MOV   [posicao_asteroide], R1	  ; para desenhar objeto na linha seguinte
+	MOV   [posicao_asteroide + 2], R2 ; para desenhar objeto na coluna seguinte
     CALL  desenha_objeto		      ; vai desenhar o objeto de novo
     MOV   R9, 0
     MOV   [TOCA_SOM], R9              ; seleciona o cenário de fundo
-    MOV   [posicao_asteroide], R1	  ; para desenhar objeto na linha seguinte
-	MOV   [posicao_asteroide + 2], R2 ; para desenhar objeto na coluna seguinte
     JMP   espera_nao_tecla            ; espera até a tecla ser libertada
     POP   R9
     POP	  R2
@@ -232,7 +234,7 @@ move_asteroide:
 ;               R4 - tabela que define a sonda
 ; **********************************************************************
 
-disparo_vertical:
+dispara_sonda:
 	PUSH R1
 	PUSH R2
 	PUSH R4
@@ -466,4 +468,19 @@ escreve_display:
     MOV [R4], R0; escrever o valor no display
     POP R0
     POP R4
+    RET
+
+; **********************************************************************
+; espera_nao_tecla - escreve um valor no display
+; Argumentos:   R8 - valor a escrever no display
+;
+; **********************************************************************
+
+espera_libertar_tecla:           ; neste ciclo espera-se até a tecla estar libertada
+    PUSH R0
+    tecla_premida:          ;
+    CALL le_coluna          ; leitura na linha ativada do teclado
+    CMP  R0, 0              ; há tecla premida?
+    JNZ  tecla_premida   ; se a tecla ainda for premida, espera até não haver
+    POP R0
     RET

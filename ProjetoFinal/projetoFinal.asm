@@ -17,6 +17,7 @@ MASCARA             EQU 0FH     ; para isolar os 4 bits de menor peso, ao ler as
 TECLA_ESQUERDA		EQU 1		; tecla na primeira coluna do teclado (tecla C)
 TECLA_DIREITA		EQU 2		; tecla na segunda coluna do teclado (tecla D)
 INICIO_ENERGIA      EQU 00100H  ;
+FATOR_INICIAL       EQU 1000    ;
 
 COMANDOS				EQU	6000H			; endereço de base dos comandos do MediaCenter
 

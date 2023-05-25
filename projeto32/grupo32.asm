@@ -78,24 +78,6 @@ ASTEROIDE_PERIGO:           ; tabela que define o asteroide perigoso (cor, largu
     WORD    PIXEL_VERM, PIXEL_VERM, PIXEL_VERM, PIXEL_VERM, PIXEL_VERM
     WORD    0, PIXEL_VERM, PIXEL_VERM, PIXEL_VERM, 0
 
-ASTEROIDE_COM_RECURSOS:     ; tabela que define o asteroide com recursos (cor, largura, pixels, altura)
-    WORD    LARGURA_AST
-    WORD    ALTURA_AST
-    WORD    0, 0, PIXEL_VERD, 0, 0
-    WORD    0, PIXEL_VERD, PIXEL_VERD, PIXEL_VERD, 0
-    WORD    PIXEL_VERD, PIXEL_VERD, PIXEL_VERD, PIXEL_VERD, PIXEL_VERD
-    WORD    0, PIXEL_VERD, PIXEL_VERD, PIXEL_VERD, 0
-    WORD    0, 0, PIXEL_VERD, 0, 0
-
-RECURSOS:                   ; tabela que define os recursos (cor, largura, pixels, altura)
-    WORD    LARGURA_AST
-    WORD    ALTURA_AST
-    WORD    PIXEL_AZUL, 0, PIXEL_AZUL, 0, PIXEL_AZUL
-    WORD    0, PIXEL_AZUL, PIXEL_AZUL, PIXEL_AZUL, 0
-    WORD    PIXEL_AZUL, PIXEL_AZUL, PIXEL_AZUL, PIXEL_AZUL, PIXEL_AZUL
-    WORD    0, PIXEL_AZUL, PIXEL_AZUL, PIXEL_AZUL, 0
-    WORD    PIXEL_AZUL, 0, PIXEL_AZUL, 0, PIXEL_AZUL
-
 PAINEL_NAVE:                ; tabela que define o painel da nave (cor, largura, pixels, altura)
     WORD    LARGURA_PAINEL
     WORD    ALTURA_PAINEL
@@ -113,7 +95,8 @@ SONDA:                      ; tabela que define a sonda (cor, pixels)
 posicao_asteroide:          ; posição do asteroide
     WORD    LINHA_TOPO
     WORD    COLUNA_ESQ
-posicao_sonda:
+
+posicao_sonda:              ; posição da sonda centrada com o painel
 	WORD	LINHA_CIMA_PAINEL
 	WORD	COLUNA_CENT
 
@@ -214,7 +197,8 @@ move_asteroide:
     PUSH  R0
     PUSH  R1
     PUSH  R2
-
+    PUSH  R4
+    MOV   R4, ASTEROIDE_PERIGO  ; endereço da tabela que define o asteroide
     MOV   R1, [posicao_asteroide]         ; Carrega a posição atual do asteroide na linha
     MOV   R2, [posicao_asteroide + 2]     ; Carrega a posição atual do asteroide na coluna
     CALL  apaga_objeto                    ; Apaga o objeto em sua posição atual
@@ -226,6 +210,7 @@ move_asteroide:
     MOV   R0, 0                           ; Define o cenário de fundo como 0 (sem som)
     MOV   [TOCA_SOM], R0                  ; Define o cenário de fundo
     JMP   espera_nao_tecla                ; Aguarda até que a tecla seja liberada
+    POP   R4
     POP   R2
     POP   R1
     POP   R0
@@ -242,7 +227,8 @@ move_asteroide:
 dispara_sonda:
     PUSH  R1
     PUSH  R2
-
+    PUSH  R4
+    MOV   R4,SONDA
     MOV   R1, [posicao_sonda]         ; Carrega a posição atual da sonda na linha
     MOV   R2, [posicao_sonda + 2]     ; Carrega a posição atual da sonda na coluna
     CALL  apaga_objeto                    ; Apaga o objeto em sua posição atual
@@ -251,6 +237,7 @@ dispara_sonda:
     MOV   [posicao_sonda + 2], R2     ; Armazena a nova posição da sonda na coluna
     CALL  desenha_objeto                  ; Desenha o objeto novamente na nova posição
     JMP   espera_nao_tecla                ; Aguarda até que a tecla seja liberada
+    POP   R4
     POP   R2
     POP   R1
     RET

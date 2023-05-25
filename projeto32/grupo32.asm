@@ -128,6 +128,8 @@ inicio:
     MOV R1, 0  ; cenário de fundo número 0
     MOV [SELECIONA_CENARIO_FUNDO], R1  ; seleciona o cenário de fundo
 
+; Desenha o bonecos;
+
 posicao_painel:
     MOV R1, LINHA_PAINEL  ; linha do painel da nave
     MOV R2, COLUNA_PAINEL  ; coluna do painel da nave
@@ -136,19 +138,20 @@ posicao_painel:
 mostra_painel:
     CALL desenha_objeto  ; desenha o objeto a partir da tabela
 
-tipo_asteroide:
-    MOV R4, ASTEROIDE_PERIGO  ; endereço da tabela que define o asteroide
-
 posição_asteroide:
     MOV R1, [posicao_asteroide]  ; le valor da linha do asteroide
     MOV R2, [posicao_asteroide + 2]  ; le valor da coluna do asteroide (+2 porque a linha é um WORD)
+    MOV R4, ASTEROIDE_PERIGO  ; endereço da tabela que define o asteroide
 
 mostra_asteroide:
     CALL desenha_objeto  ; desenha o objeto a partir da tabela
 
-CALL escreve_display  ; inicia o valor no 0
 
-ciclo:
+CALL escreve_display  ; inicia o valor do display 0
+
+; Deteta e executa as funções da cada tecla
+
+teclado:
     CALL espera_tecla
 
 exec_tecla:             ; executa instruções de acordo com a tecla premida
@@ -183,7 +186,7 @@ deslocamento_asteroide:
 
 espera_nao_tecla:  ; espera-se até a tecla estar libertada
     CALL espera_libertar_tecla
-    JMP ciclo  ; repete ciclo
+    JMP teclado  ; repete ciclo
     
 ; **********************************************************************
 ; MOVE_ASTEROIDE - Desenha o painel da nave na linha e coluna indicadas
@@ -368,7 +371,7 @@ apaga_pixels:               ; Apaga os pixels do objeto a partir da tabela
 ;
 ; **********************************************************************
 espera_tecla:               ; neste ciclo espera-se até uma tecla ser premida
-    MOV  R1, LINHA1         ; testar a linha 1
+    MOV  R1, TEC_LIN1       ; testar a linha 1
 varre_linhas:
     CALL escreve_linha      ; ativar linha no teclado
     CALL le_coluna          ; leitura na linha ativada do teclado

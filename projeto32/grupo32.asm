@@ -30,6 +30,7 @@ LINHA_TOPO          EQU 0        ; linha do topo do ecrã
 COLUNA_ESQ          EQU 0        ; coluna mais à esquerda
 COLUNA_CENT         EQU 32       ; coluna central
 COLUNA_DIR          EQU 63       ; coluna mais à direita
+LINHA_CIMA_PAINEL	EQU 26		 ; linha acima do painel
 
 LINHA_PAINEL        EQU 27       ; linha do painel da nave
 COLUNA_PAINEL       EQU 25       ; coluna do painel da nave
@@ -55,7 +56,8 @@ PIXEL_AMAR_TRANS    EQU 05FF0H  ; pixel amarelo translucido
 PIXEL_CINZ_ESC      EQU 0F777H  ; pixel cinzento escuro opaco 
 PIXEL_CINZ_CLA      EQU 0FFFFH  ; pixel cinzento claro opaco 
 
-ATRASO_SONDA		EQU	9000H
+ATRASO_SONDA		EQU	9000H	; atraso que determina a velocidade da SONDA
+MOVES_SONDA			EQU 12		; número de movimentos da sonda
 ; *********************************************************************************
 ; * Dados 
 ; *********************************************************************************
@@ -111,6 +113,9 @@ SONDA:                      ; tabela que define a sonda (cor, pixels)
 posicao_asteroide:          ; posição do asteroide
     WORD    LINHA_TOPO
     WORD    COLUNA_ESQ
+posicao_sonda:
+	WORD	LINHA_CIMA_PAINEL
+	WORD	COLUNA_CENT
 
 valor_display:              ; valor para escrever no display
     WORD    0
@@ -145,6 +150,14 @@ posição_asteroide:
 
 mostra_asteroide:
     CALL desenha_objeto  ; desenha o objeto a partir da tabela
+
+posiçao_sonda: 
+	MOV R1,[posicao_sonda]	; le valor da linha da sonda
+	MOV R2,[posicao_sonda+2]	; le valor da coluna da sonda (+2 porque a linha é um WORD)
+	
+mostra_sonda:
+	MOV R4,SONDA
+	CALL desenha_objeto	; desenha a sonda a partir da tabela
 
 CALL escreve_display  ; inicia o valor no 0
 
@@ -219,38 +232,25 @@ move_asteroide:
 ;                 com a forma e cor definidas na tabela indicada.
 ; Argumentos:   R1 - linha
 ;               R2 - coluna
-;               R4 - tabela que define a sonda
+;               
 ; **********************************************************************
 
 dispara_sonda:
-    PUSH R1
-    PUSH R2
-    PUSH R4
+    PUSH  R1
+    PUSH  R2
 
-    MOV R1, 26              ; Define a linha inicial da sonda a ser disparada para frente
-    MOV R2, 32              ; Define a coluna inicial da sonda a ser disparada para frente
-    MOV R4, SONDA           ; Define a tabela que define a sonda
-    MOV R9, 12              ; Define o contador de quadradinhos que a sonda atravessa
-
-move_sonda:
-    CALL desenha_objeto     ; Desenha a sonda
-
-    MOV R10, ATRASO_SONDA   ; Define o atraso para limitar a velocidade de movimento da sonda
-
-ciclo_atraso_sonda:
-    SUB R10, 1              ; Decrementa o atraso
-    JNZ ciclo_atraso_sonda  ; Repete o ciclo de atraso até que R10 seja igual a zero
-
-    CALL apaga_objeto       ; Apaga a sonda atual
-    SUB R1, 1               ; Move a sonda para a próxima linha (para cima)
-    SUB R9, 1               ; Decrementa o contador de quadradinhos que a sonda atravessou
-    CMP R9, 0               ; Verifica se a sonda já percorreu 12 quadradinhos
-    JNE move_sonda          ; Se o contador ainda não for zero, move a sonda novamente
-
-    POP R4
-    POP R2
-    POP R1
+    MOV   R1, [posicao_sonda]         ; Carrega a posição atual da sonda na linha
+    MOV   R2, [posicao_sonda + 2]     ; Carrega a posição atual da sonda na coluna
+    CALL  apaga_objeto                    ; Apaga o objeto em sua posição atual
+    SUB   R1,1                              ; volta para a linha anterior
+    MOV   [posicao_sonda], R1         ; Armazena a nova posição da sonda na linha
+    MOV   [posicao_sonda + 2], R2     ; Armazena a nova posição da sonda na coluna
+    CALL  desenha_objeto                  ; Desenha o objeto novamente na nova posição
+    JMP   espera_nao_tecla                ; Aguarda até que a tecla seja liberada
+    POP   R2
+    POP   R1
     RET
+
 
 	
 ; **********************************************************************
@@ -368,7 +368,7 @@ apaga_pixels:               ; Apaga os pixels do objeto a partir da tabela
 ;
 ; **********************************************************************
 espera_tecla:               ; neste ciclo espera-se até uma tecla ser premida
-    MOV  R1, LINHA1         ; testar a linha 1
+    MOV  R1, TEC_LIN1         ; testar a linha 1
 varre_linhas:
     CALL escreve_linha      ; ativar linha no teclado
     CALL le_coluna          ; leitura na linha ativada do teclado

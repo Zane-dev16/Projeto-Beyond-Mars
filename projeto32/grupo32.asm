@@ -139,7 +139,6 @@ mostra_sonda:
 	MOV R4,SONDA
 	CALL desenha_objeto	               ; desenha a sonda a partir da tabela
 
-CALL escreve_display                   ; inicia o valor no 0
 
 CALL escreve_display                   ; inicia o valor do display 0
 
@@ -353,7 +352,7 @@ apaga_pixels:                 ; Apaga os pixels do objeto a partir da tabela
 ;           R0 - coluna da tecla premida
 ;
 ; **********************************************************************
-espera_tecla:               ; neste ciclo espera-se até uma tecla ser premida
+espera_tecla:               ; espera-se até uma tecla ser premida
     MOV  R1, TEC_LIN1       ; testar a linha 1
 varre_linhas:
     CALL escreve_linha      ; ativar linha no teclado
@@ -402,7 +401,7 @@ le_coluna:
 ; Argumentos:	R0 - coluna da tecla (em formato 1, 2, 4 ou 8)
 ;               R1 - linha da tecla (em formato 1, 2, 4 ou 8)
 ;
-; Retorna: 	R2 - total: valor inicial + numero de linhas/colunas
+; Retorna: 	R2 - total
 ; **********************************************************************
 
 calcula_tecla:                 ; calcula o valor da tecla
@@ -441,7 +440,7 @@ sai_conta_linhas_colunas:
 
 ; **********************************************************************
 ; shift_display - adicione ao valor no display
-; Argumentos:   R1 - valor a adicionar ao display
+; Argumentos:   R1 - incremento/decremento do display (em formato 1, -1)
 ;
 ; **********************************************************************
 
@@ -471,7 +470,7 @@ escreve_display:
     RET
 
 ; **********************************************************************
-; espera_nao_tecla - espera até a tecla seja libertada
+; espera_nao_tecla - espera até a tecla premida seja libertada
 ;
 ; **********************************************************************
 

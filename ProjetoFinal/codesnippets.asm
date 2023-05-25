@@ -17,6 +17,8 @@ RECURSOS:                   ; tabela que define os recursos (cor, largura, pixel
     WORD    0, PIXEL_AZUL, PIXEL_AZUL, PIXEL_AZUL, 0
     WORD    PIXEL_AZUL, 0, PIXEL_AZUL, 0, PIXEL_AZUL
 
+ATRASO_SONDA		EQU	9000H	; atraso que determina a velocidade da SONDA
+
 posição_asteroide_cent:
     MOV  R1, LINHA_TOPO			; linha do asteroide
     MOV  R2, COLUNA_CENT		; coluna do asteroide

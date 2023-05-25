@@ -203,8 +203,8 @@ move_asteroide:
     MOV   [posicao_asteroide], R1         ; Armazena a nova posição do asteroide na linha
     MOV   [posicao_asteroide + 2], R2     ; Armazena a nova posição do asteroide na coluna
     CALL  desenha_objeto                  ; Desenha o objeto novamente na nova posição
-    MOV   R0, 0                           ; Define o cenário de fundo como 0 (sem som)
-    MOV   [TOCA_SOM], R0                  ; Define o cenário de fundo
+    MOV   R0, 0                           ; Efeito sonora número 0
+    MOV   [TOCA_SOM], R0                  ; Toca o efeito sonora número 0
     JMP   espera_nao_tecla                ; Aguarda até que a tecla seja liberada
     POP   R4
     POP   R2

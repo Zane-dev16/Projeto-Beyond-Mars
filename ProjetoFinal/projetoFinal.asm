@@ -16,6 +16,7 @@ LINHA4              EQU 8;
 MASCARA             EQU 0FH     ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
 TECLA_ESQUERDA		EQU 1		; tecla na primeira coluna do teclado (tecla C)
 TECLA_DIREITA		EQU 2		; tecla na segunda coluna do teclado (tecla D)
+INICIO_ENERGIA      EQU 00100H  ;
 
 COMANDOS				EQU	6000H			; endereço de base dos comandos do MediaCenter
 
@@ -53,6 +54,7 @@ PIXEL_AMAR_TRANS    EQU 05FF0H  ; pixel amarelo translucido
 PIXEL_CINZ_ESC      EQU 0F777H  ; pixel cinzento escuro opaco 
 PIXEL_CINZ_CLA      EQU 0FFFFH  ; pixel cinzento claro opaco 
 
+TAMANHO_PILHA		EQU  100H      ; tamanho de cada pilha, em words
 
 ; *********************************************************************************
 ; * Dados 
@@ -66,11 +68,7 @@ SP_inicial_prog_princ:		; este é o endereço com que o SP deste processo deve s
 	STACK TAMANHO_PILHA		; espaço reservado para a pilha do processo "teclado"
 SP_inicial_energia:			; este é o endereço com que o SP deste processo deve ser inicializado
 							
-	STACK TAMANHO_PILHA * N_BONECOS	; espaço reservado para as pilhas de todos os processos "boneco"
-SP_inicial_boneco:					; este é o endereço incial do SP com que o processo "boneco" deve ser declarado no PROCESS,
-								; mas cada instância deve depois reinicializar o SP (cada uma com o seu bloco de TAMANHO_PILHA palavras)
-
-							
+						
 ASTEROIDE_PERIGO:		; tabela que define o asteroide perigoso (cor, largura, pixels, altura)
 	WORD		LARGURA_AST
     WORD        ALTURA_AST
@@ -108,13 +106,31 @@ PAINEL_NAVE:			; tabela que define o painel da nave (cor, largura, pixels, altur
     WORD		PIXEL_CINZ_ESC, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_ESC 
 
 SONDA:                  ; tabela que define a sonda (cor, pixels)
-    WORD        PIXEL_CAST 
+    WORD        PIXEL_CAST
+
+; Tabela das rotinas de interrupção
+tab:
+	WORD rot_int_0			; rotina de atendimento da interrupção 0
+	WORD rot_int_1			; rotina de atendimento da interrupção 1
+	WORD rot_int_2			; rotina de atendimento da interrupção 2
+	WORD rot_int_3			; rotina de atendimento da interrupção 3
 
 ; *********************************************************************************
 ; * Código
 ; *********************************************************************************
 PLACE      0
-inicio:	    
+inicio:
+	MOV  SP, SP_inicial_prog_princ		; inicializa SP do programa principal
+
+	MOV  BTE, tab			; inicializa BTE (registo de Base da Tabela de Exceções)
+
+	EI2					; permite interrupções 2
+	EI					; permite interrupções (geral)
+
+    MOV R8, INICIO_ENERGIA   ;
+    CALL escreve_display    ; inicia o valor no 100
+    fim:
+        JMP fim
 
 
 ; **********************************************************************
@@ -125,8 +141,51 @@ inicio:
 ;
 ; **********************************************************************
 
-PROCESS SP_inicial_energia	; indicação de que a rotina que se segue é um processo,
+SP_inicial_energia	; indicação de que a rotina que se segue é um processo,
 						; com indicação do valor para inicializar o SP
 
 energia:
+    MOV R1, 0
+    WAIT
+    JMP energia
+
+; **********************************************************************
+; ESCREVE_DISPLAY - escreve um valor no display
+; Argumentos:   R8 - valor a escrever no display
+;
+; **********************************************************************
+
+escreve_display:
+    PUSH    R4
+    MOV  R4, DISPLAYS  ; endereço do periférico dos displays
+    MOV [R4], R8       ; escrever o valor no display
+    POP R4
     RET
+
+
+; **********************************************************************
+; ROT_INT_0 - 	Rotina de atendimento da interrupção 0
+; **********************************************************************
+rot_int_0:
+	RFE
+
+; **********************************************************************
+; ROT_INT_1 - 	Rotina de atendimento da interrupção 1
+; **********************************************************************
+rot_int_1:
+	RFE
+
+; **********************************************************************
+; ROT_INT_2 - 	Rotina de atendimento da interrupção 2
+;           Trata do gasto da energia ao longo do tempo
+; **********************************************************************
+rot_int_2:
+	SUB R8, 3;
+    CALL escreve_display
+	RFE
+
+; **********************************************************************
+; ROT_INT_3 - 	Rotina de atendimento da interrupção 3
+; **********************************************************************
+rot_int_3:
+	RFE

@@ -11,8 +11,7 @@
 DISPLAYS            EQU 0A000H   ; endereço dos displays de 7 segmentos (periférico POUT-1)
 TEC_LIN             EQU 0C000H   ; endereço das linhas do teclado (periférico POUT-2)
 TEC_COL             EQU 0E000H   ; endereço das colunas do teclado (periférico PIN)
-LINHA1              EQU 1        ; linha a testar (4ª linha, 1000b)
-LINHA4              EQU 8
+TEC_LIN1            EQU 1        ; primeira linha do teclado
 MASCARA             EQU 0FH      ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
 TECLA_ESQUERDA      EQU 1        ; tecla na primeira coluna do teclado (tecla C)
 TECLA_DIREITA       EQU 2        ; tecla na segunda coluna do teclado (tecla D)
@@ -128,7 +127,6 @@ inicio:
     MOV [APAGA_ECRÃ], R1  ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
     MOV R1, 0  ; cenário de fundo número 0
     MOV [SELECIONA_CENARIO_FUNDO], R1  ; seleciona o cenário de fundo
-    MOV R8, 0  ; número inicial do display
 
 posicao_painel:
     MOV R1, LINHA_PAINEL  ; linha do painel da nave
@@ -151,29 +149,27 @@ mostra_asteroide:
 CALL escreve_display  ; inicia o valor no 0
 
 ciclo:
-    MOV R7, LINHA1  ; testar a linha 1
-
     CALL espera_tecla
 
-exec_tecla:  ; executa instruções de acordo com a tecla premida
+exec_tecla:             ; executa instruções de acordo com a tecla premida
     CALL calcula_tecla  ; calcula o valor da tecla premida
-    CMP R6, 5  ; a tecla premida foi 5?
-    JZ decr_display  ; se for 5, decrementa valor no display
-    CMP R6, 6  ; a tecla premida foi 6?
-    JZ incr_display  ; se for 6, incrementa valor no display
-    CMP R6, 1  ; a tecla premida foi 1?
-    JZ disparo_vertical  ; se for 1, dispara a sonda
-    CMP R6, 0  ; a tecla premida foi 0?
+    CMP R2, 5           ; a tecla premida foi 5?
+    JZ decr_display     ; se for 5, decrementa valor no display
+    CMP R2, 6           ; a tecla premida foi 6?
+    JZ incr_display     ; se for 6, incrementa valor no display
+    CMP R2, 1           ; a tecla premida foi 1?
+    JZ disparo_vertical ; se for 1, dispara a sonda
+    CMP R2, 0           ; a tecla premida foi 0?
     JZ deslocamento_asteroide  ; se for 0, move o objeto
-    JMP espera_nao_tecla  ; espera até a tecla estar libertada
+    JMP espera_nao_tecla       ; espera até a tecla estar libertada
 
-decr_display:  ; decrementa o valor no display
-    MOV R1, -1  ; decrementa o valor para ser escrito no display
+decr_display:             ; decrementa o valor no display
+    MOV R1, -1
     CALL shift_display
     JMP espera_nao_tecla  ; espera até a tecla estar libertada
 
-incr_display:  ; incrementa o valor no display
-    MOV R1, 1  ; incrementa o valor para ser escrito no display
+incr_display:             ; incrementa o valor no display
+    MOV R1, 1
     CALL shift_display
     JMP espera_nao_tecla  ; espera até a tecla estar libertada
 
@@ -198,9 +194,9 @@ espera_nao_tecla:  ; espera-se até a tecla estar libertada
 ; **********************************************************************
 
 move_asteroide:
+    PUSH  R0
     PUSH  R1
     PUSH  R2
-    PUSH  R9
 
     MOV   R1, [posicao_asteroide]         ; Carrega a posição atual do asteroide na linha
     MOV   R2, [posicao_asteroide + 2]     ; Carrega a posição atual do asteroide na coluna
@@ -210,13 +206,14 @@ move_asteroide:
     MOV   [posicao_asteroide], R1         ; Armazena a nova posição do asteroide na linha
     MOV   [posicao_asteroide + 2], R2     ; Armazena a nova posição do asteroide na coluna
     CALL  desenha_objeto                  ; Desenha o objeto novamente na nova posição
-    MOV   R9, 0                           ; Define o cenário de fundo como 0 (sem som)
-    MOV   [TOCA_SOM], R9                  ; Define o cenário de fundo
+    MOV   R0, 0                           ; Define o cenário de fundo como 0 (sem som)
+    MOV   [TOCA_SOM], R0                  ; Define o cenário de fundo
     JMP   espera_nao_tecla                ; Aguarda até que a tecla seja liberada
-    POP   R9
     POP   R2
     POP   R1
+    POP   R0
     RET
+
 ; **********************************************************************
 ; dispara_sonda - Desenha e move a sonda começando na linha e coluna indicadas
 ;                 com a forma e cor definidas na tabela indicada.
@@ -266,23 +263,23 @@ ciclo_atraso_sonda:
 
 desenha_objeto:
     PUSH  R1
-    PUSH  R2
-    PUSH  R3
-    PUSH  R4
+    PUSH  R2 
+    PUSH  R3 
+    PUSH  R4 
     PUSH  R5
     PUSH  R6
     PUSH  R7
     PUSH  R8
     MOV   R5, [R4]            ; Obtém a largura do objeto
-    MOV   R7, R5              ; Guarda a altura do objeto
-    MOV   R8, R2              ; Guarda a coluna inicial do painel
+    MOV   R7, R5              ; Guarda a largura do objeto
+    MOV   R8, R2              ; Guarda a coluna inicial
     ADD   R4, 2               ; Endereço da altura do objeto
     MOV   R6, [R4]            ; Obtém a altura do objeto
     ADD   R4, 2               ; Endereço da cor do 1º pixel
 
 desenha_pixels:             ; Desenha os pixels do objeto a partir da tabela
     MOV   R3, [R4]            ; Obtém a cor do próximo pixel do objeto
-    CALL  escreve_pixel       ; Escreve cada pixel do objeto
+    CALL  escreve_pixel       ; Escreve um pixel do objeto
     ADD   R4, 2               ; Endereço da cor do próximo pixel
     ADD   R2, 1               ; Próxima coluna
     SUB   R5, 1               ; Menos uma coluna para tratar
@@ -366,20 +363,20 @@ apaga_pixels:               ; Apaga os pixels do objeto a partir da tabela
 ; **********************************************************************
 ; ESPERA_TECLA - Espera até uma tecla seja premida e lê a coluna e linha
 ;
-; Retorna: 	R7 - linha da tecla premida
+; Retorna: 	R1 - linha da tecla premida
 ;           R0 - coluna da tecla premida
 ;
 ; **********************************************************************
 espera_tecla:               ; neste ciclo espera-se até uma tecla ser premida
-    MOV  R7, LINHA1         ; testar a linha 1
+    MOV  R1, LINHA1         ; testar a linha 1
 varre_linhas:
     CALL escreve_linha      ; ativar linha no teclado
     CALL le_coluna          ; leitura na linha ativada do teclado
     CMP  R0, 0              ; há tecla premida?
     JNZ sai_espera_tecla    ;
-    CMP R7, 5               ; chegou à última linha?
+    CMP R1, 5               ; chegou à última linha?
     JGE espera_tecla        ;
-    SHL R7, 1               ; testar a próxima linha
+    SHL R1, 1               ; testar a próxima linha
     JMP varre_linhas        ; continua o ciclo na próxima linha
 
 sai_espera_tecla:
@@ -387,14 +384,14 @@ sai_espera_tecla:
 
 ; **********************************************************************
 ; ESCREVE_LINHA - Faz uma leitura às teclas de uma linha do teclado e retorna o valor lido
-; Argumentos:	R7 - linha a testar (em formato 1, 2, 4 ou 8)
+; Argumentos:	R1 - linha a testar (em formato 1, 2, 4 ou 8)
 ;
 ; **********************************************************************
 escreve_linha:
-	PUSH	R2
-	MOV  R2, TEC_LIN   ; endereço do periférico das linhas
-	MOVB [R2], R7      ; escrever no periférico de saída (linhas)
-    POP R2
+	PUSH	R0
+	MOV  R0, TEC_LIN   ; endereço do periférico das linhas
+	MOVB [R0], R1      ; escrever no periférico de saída (linhas)
+    POP R0
     RET
 
 ; **********************************************************************
@@ -404,92 +401,91 @@ escreve_linha:
 ; **********************************************************************
 
 le_coluna:
-	PUSH	R3
-	PUSH	R5
-	MOV  R3, TEC_COL   ; endereço do periférico das colunas
-	MOV  R5, MASCARA   ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
-	MOVB R0, [R3]      ; ler do periférico de entrada (colunas)
-	AND  R0, R5        ; elimina bits para além dos bits 0-3
-	POP	R5
-	POP	R3
+	PUSH	R1
+	PUSH	R2
+	MOV  R1, TEC_COL   ; endereço do periférico das colunas
+	MOV  R2, MASCARA   ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
+	MOVB R0, [R1]      ; ler do periférico de entrada (colunas)
+	AND  R0, R2        ; elimina bits para além dos bits 0-3
+	POP	R2
+	POP	R1
 	RET
 
 ; **********************************************************************
 ; CALCULA_TECLA - calcula o valor da tecla premida
-; Argumentos:	R7 - linha/coluna da tecla (em formato 1, 2, 4 ou 8)
+; Argumentos:	R0 - coluna da tecla (em formato 1, 2, 4 ou 8)
+;               R1 - linha da tecla (em formato 1, 2, 4 ou 8)
 ;
-; Retorna: 	R6 - total: valor inicial + numero de linhas/colunas
+; Retorna: 	R2 - total: valor inicial + numero de linhas/colunas
 ; **********************************************************************
 
 calcula_tecla:              ; calcula o valor da tecla
-    PUSH R7
-    MOV  R6, 0              ; inicia valor da tecla no 0
-    CALL conta_linhas_colunas
-    SHL R6, 2               ; linhas * 4
-    MOV R7, R0              ; conta as colunas
-    CALL conta_linhas_colunas
-    POP R7
-    RET
-
-; **********************************************************************
-; CONTA_LINHAS_COLUNAS - calcula o valor da tecla premida
-; Argumentos:	R7 - linha/coluna da tecla (em formato 1, 2, 4 ou 8)
-;               R6 - valor inicial
-;
-; Retorna: 	R6 - total: valor inicial + numero de linhas/colunas
-; **********************************************************************
-
-conta_linhas_colunas:
-    PUSH    R7
-
-calc_val_lin_col:      ; neste ciclo calcula-se o valor da linha/coluna
-    SHR  R7, 1         ; desloca à direita 1 bit
-    CMP  R7, 0         ; a quantidade das linhas/colunas ja foi contada?
-    JZ   sai_conta_linhas_colunas; se ja for contada, salta
-    INC  R6        ; incrementa o valor calculada
-    JMP  calc_val_lin_col; repete ciclo
-
-sai_conta_linhas_colunas:
-    POP R7
-    RET
-
-; **********************************************************************
-; shift_display - adicione ao valor no display
-; Argumentos:   R8 - valor escrito no display
-;               R1 - valor a adicionar ao display
-;
-; **********************************************************************
-
-shift_display:
     PUSH R1
-    PUSH R8
-    MOV R8, [valor_display]
-    ADD R8, R1
-    MOV [valor_display], R8
-    CALL escreve_display
-    POP R8
+    MOV  R2, 0              ; inicia valor da tecla no 0
+    CALL conta_linhas_colunas
+    ADD R2, R3              ; adicionar numero de linhas
+    SHL R2, 2               ; linhas * 4
+    MOV R1, R0              ; conta as colunas
+    CALL conta_linhas_colunas
+    ADD R2, R3              ; adicionar numero de colunas
     POP R1
     RET
 
 ; **********************************************************************
-; ESCREVE_DISPLAY - escreve um valor no display
-; Argumentos:   R8 - valor a escrever no display
+; CONTA_LINHAS_COLUNAS - conta numero das linhas/colunas
+; Argumentos:	R1 - linha/coluna da tecla (em formato 1, 2, 4 ou 8)
 ;
+; Retorna: 	R3 - total contada
 ; **********************************************************************
 
-escreve_display:
-    PUSH    R4
-    PUSH    R0
-    MOV  R4, DISPLAYS  ; endereço do periférico dos displays
-    MOV  R0, [valor_display]  ;
-    MOV [R4], R0; escrever o valor no display
-    POP R0
-    POP R4
+conta_linhas_colunas:
+    PUSH    R1
+
+    MOV  R3, 0         ; inicia contador no 0
+calc_val_lin_col:      ; neste ciclo calcula-se o valor da linha/coluna
+    SHR  R1, 1         ; desloca à direita 1 bit
+    CMP  R1, 0         ; a quantidade das linhas/colunas ja foi contada?
+    JZ   sai_conta_linhas_colunas; se ja for contada, salta
+    INC  R3        ; incrementa o valor calculada
+    JMP  calc_val_lin_col; repete ciclo
+
+sai_conta_linhas_colunas:
+    POP R1
     RET
 
 ; **********************************************************************
-; espera_nao_tecla - escreve um valor no display
-; Argumentos:   R8 - valor a escrever no display
+; shift_display - adicione ao valor no display
+; Argumentos:   R1 - valor a adicionar ao display
+;
+; **********************************************************************
+
+shift_display:
+    PUSH R0
+    PUSH R1
+    MOV R0, [valor_display]
+    ADD R0, R1
+    MOV [valor_display], R0
+    CALL escreve_display
+    POP R1
+    POP R0
+    RET
+
+; **********************************************************************
+; ESCREVE_DISPLAY - escreve o valor no endereço valor_display no display
+;
+; **********************************************************************
+escreve_display:
+    PUSH    R0
+    PUSH    R1
+    MOV  R1, DISPLAYS  ; endereço do periférico dos displays
+    MOV  R0, [valor_display]  ;
+    MOV [R1], R0; escrever o valor no display
+    POP R1
+    POP R0
+    RET
+
+; **********************************************************************
+; espera_nao_tecla - espera até a tecla seja libertada
 ;
 ; **********************************************************************
 

@@ -44,11 +44,11 @@ ALTURA_PAINEL       EQU 5        ; altura do painel da nave
 LARGURA_SONDA       EQU 1        ; largura das sondas
 ALTURA_SONDA        EQU 1        ; altura das sondas
 
-PIXEL_VERM          EQU 0FF00H   ; pixel vermelho opaco
-PIXEL_VERM_TRANS    EQU 0FF00H   ; pixel vermelho translucido
-PIXEL_VERDE         EQU 0FF0000H ; pixel verde opaco
-PIXEL_VERDE_TRANS   EQU 0FF0000H ; pixel verde translucido
-PIXEL_AZUL          EQU 0FFH     ; pixel azul opaco
+PIXEL_VERM		    EQU	0FF00H	; pixel vermelho opaco
+PIXEL_VERM_TRANS    EQU	0FF00H	; pixel vermelho translucido
+PIXEL_VERD          EQU 0F0F0H  ; pixel verde opaco 
+PIXEL_VERD_TRANS    EQU 0F0F0H  ; pixel verde translucido 
+PIXEL_AZUL          EQU 0FFH    ; pixel azul opaco
 PIXEL_VIOLETA       EQU 0FA3CH  ; pixel violeta opaco 
 PIXEL_AMAR          EQU 0FFF0H  ; pixel opaco amarelo
 PIXEL_CAST          EQU 0F850H  ; pixel opaco castanho
@@ -60,61 +60,61 @@ ATRASO_SONDA		EQU	9000H
 ; *********************************************************************************
 ; * Dados 
 ; *********************************************************************************
-	PLACE       1000H
+PLACE               1000H
 pilha:
-	STACK 100H			; espaço reservado para a pilha 
-						; (200H bytes, pois são 100H words)
-SP_inicial:				; este é o endereço (1200H) com que o SP deve ser 
-						; inicializado. O 1.º end. de retorno será 
-						; armazenado em 11FEH (1200H-2)
-							
-ASTEROIDE_PERIGO:		; tabela que define o asteroide perigoso (cor, largura, pixels, altura)
-	WORD		LARGURA_AST
-    WORD        ALTURA_AST
-	WORD		0, PIXEL_VERM, PIXEL_VERM, PIXEL_VERM, 0		
-    WORD		PIXEL_VERM, PIXEL_VERM, PIXEL_VERM, PIXEL_VERM, PIXEL_VERM
-    WORD		PIXEL_VERM, PIXEL_VERM, PIXEL_VERM, PIXEL_VERM, PIXEL_VERM
-    WORD		PIXEL_VERM, PIXEL_VERM, PIXEL_VERM, PIXEL_VERM, PIXEL_VERM
-    WORD		0, PIXEL_VERM, PIXEL_VERM, PIXEL_VERM, 0
+    STACK 100H              ; espaço reservado para a pilha 
+                            ; (200H bytes, pois são 100H words)
+SP_inicial:                 ; este é o endereço (1200H) com que o SP deve ser 
+                            ; inicializado. O 1.º end. de retorno será 
+                            ; armazenado em 11FEH (1200H-2)
 
-ASTEROIDE_COM_RECURSOS:	; tabela que define o asteroide com recursos (cor, largura, pixels, altura)
-	WORD		LARGURA_AST
-    WORD        ALTURA_AST
-	WORD		0, 0, PIXEL_VERD, 0, 0		
-    WORD		0, PIXEL_VERD, PIXEL_VERD, PIXEL_VERD, 0
-    WORD		PIXEL_VERD, PIXEL_VERD, PIXEL_VERD, PIXEL_VERD, PIXEL_VERD
-    WORD		0, PIXEL_VERD, PIXEL_VERD, PIXEL_VERD, 0
-    WORD		0, 0, PIXEL_VERD, 0, 0 
+ASTEROIDE_PERIGO:           ; tabela que define o asteroide perigoso (cor, largura, pixels, altura)
+    WORD    LARGURA_AST
+    WORD    ALTURA_AST
+    WORD    0, PIXEL_VERM, PIXEL_VERM, PIXEL_VERM, 0
+    WORD    PIXEL_VERM, PIXEL_VERM, PIXEL_VERM, PIXEL_VERM, PIXEL_VERM
+    WORD    PIXEL_VERM, PIXEL_VERM, PIXEL_VERM, PIXEL_VERM, PIXEL_VERM
+    WORD    PIXEL_VERM, PIXEL_VERM, PIXEL_VERM, PIXEL_VERM, PIXEL_VERM
+    WORD    0, PIXEL_VERM, PIXEL_VERM, PIXEL_VERM, 0
 
-RECURSOS:				; tabela que define os recursos (cor, largura, pixels, altura)
-	WORD		LARGURA_AST
-    WORD        ALTURA_AST
-	WORD		PIXEL_AZUL, 0, PIXEL_AZUL, 0, PIXEL_AZUL		
-    WORD		0, PIXEL_AZUL, PIXEL_AZUL, PIXEL_AZUL, 0
-    WORD		PIXEL_AZUL, PIXEL_AZUL, PIXEL_AZUL, PIXEL_AZUL, PIXEL_AZUL
-    WORD		0, PIXEL_AZUL, PIXEL_AZUL, PIXEL_AZUL, 0
-    WORD		PIXEL_AZUL, 0, PIXEL_AZUL, 0, PIXEL_AZUL 
+ASTEROIDE_COM_RECURSOS:     ; tabela que define o asteroide com recursos (cor, largura, pixels, altura)
+    WORD    LARGURA_AST
+    WORD    ALTURA_AST
+    WORD    0, 0, PIXEL_VERD, 0, 0
+    WORD    0, PIXEL_VERD, PIXEL_VERD, PIXEL_VERD, 0
+    WORD    PIXEL_VERD, PIXEL_VERD, PIXEL_VERD, PIXEL_VERD, PIXEL_VERD
+    WORD    0, PIXEL_VERD, PIXEL_VERD, PIXEL_VERD, 0
+    WORD    0, 0, PIXEL_VERD, 0, 0
 
-PAINEL_NAVE:			; tabela que define o painel da nave (cor, largura, pixels, altura)
-	WORD		LARGURA_PAINEL
-    WORD        ALTURA_PAINEL
-	WORD		0, 0, PIXEL_CINZ_ESC, PIXEL_CINZ_ESC, PIXEL_CINZ_ESC, PIXEL_CINZ_ESC, PIXEL_CINZ_ESC, PIXEL_CINZ_ESC, PIXEL_CINZ_ESC, PIXEL_CINZ_ESC, PIXEL_CINZ_ESC, PIXEL_CINZ_ESC, PIXEL_CINZ_ESC, 0, 0		
-    WORD		0, PIXEL_CINZ_ESC, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_ESC, 0
-    WORD		PIXEL_CINZ_ESC, PIXEL_CINZ_CLA, PIXEL_VERM_TRANS, PIXEL_CINZ_CLA, PIXEL_AMAR_TRANS, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_AMAR_TRANS, PIXEL_CINZ_CLA, PIXEL_VERD_TRANS, PIXEL_CINZ_CLA, PIXEL_CINZ_ESC
-    WORD		PIXEL_CINZ_ESC, PIXEL_CINZ_CLA, PIXEL_VERM, PIXEL_CINZ_CLA, PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_VERD, PIXEL_CINZ_CLA, PIXEL_CINZ_ESC
-    WORD		PIXEL_CINZ_ESC, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_ESC 
+RECURSOS:                   ; tabela que define os recursos (cor, largura, pixels, altura)
+    WORD    LARGURA_AST
+    WORD    ALTURA_AST
+    WORD    PIXEL_AZUL, 0, PIXEL_AZUL, 0, PIXEL_AZUL
+    WORD    0, PIXEL_AZUL, PIXEL_AZUL, PIXEL_AZUL, 0
+    WORD    PIXEL_AZUL, PIXEL_AZUL, PIXEL_AZUL, PIXEL_AZUL, PIXEL_AZUL
+    WORD    0, PIXEL_AZUL, PIXEL_AZUL, PIXEL_AZUL, 0
+    WORD    PIXEL_AZUL, 0, PIXEL_AZUL, 0, PIXEL_AZUL
 
-SONDA:                  ; tabela que define a sonda (cor, pixels)
-	WORD 		LARGURA_SONDA
-	WORD		ALTURA_SONDA
-    WORD        PIXEL_CAST 
+PAINEL_NAVE:                ; tabela que define o painel da nave (cor, largura, pixels, altura)
+    WORD    LARGURA_PAINEL
+    WORD    ALTURA_PAINEL
+    WORD    0, 0, PIXEL_CINZ_ESC, PIXEL_CINZ_ESC, PIXEL_CINZ_ESC, PIXEL_CINZ_ESC, PIXEL_CINZ_ESC, PIXEL_CINZ_ESC, PIXEL_CINZ_ESC, PIXEL_CINZ_ESC, PIXEL_CINZ_ESC, PIXEL_CINZ_ESC, PIXEL_CINZ_ESC, 0, 0
+    WORD    0, PIXEL_CINZ_ESC, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_ESC, 0
+    WORD    PIXEL_CINZ_ESC, PIXEL_CINZ_CLA, PIXEL_VERM_TRANS, PIXEL_CINZ_CLA, PIXEL_AMAR_TRANS, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_AMAR_TRANS, PIXEL_CINZ_CLA, PIXEL_VERD_TRANS, PIXEL_CINZ_CLA, PIXEL_CINZ_ESC
+    WORD    PIXEL_CINZ_ESC, PIXEL_CINZ_CLA, PIXEL_VERM, PIXEL_CINZ_CLA, PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_VERD, PIXEL_CINZ_CLA, PIXEL_CINZ_ESC
+    WORD    PIXEL_CINZ_ESC, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_ESC
 
-posicao_asteroide:		; posição do asteroide
-	WORD LINHA_TOPO
-	WORD COLUNA_ESQ
+SONDA:                      ; tabela que define a sonda (cor, pixels)
+    WORD    LARGURA_SONDA
+    WORD    ALTURA_SONDA
+    WORD    PIXEL_CAST
 
-valor_display:          ; valor para escrever no display
-    WORD 0              ;
+posicao_asteroide:          ; posição do asteroide
+    WORD    LINHA_TOPO
+    WORD    COLUNA_ESQ
+
+valor_display:              ; valor para escrever no display
+    WORD    0
 
 ; *********************************************************************************
 ; * Código

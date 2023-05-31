@@ -16,7 +16,7 @@ LINHA4              EQU 8;
 MASCARA             EQU 0FH     ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
 TECLA_ESQUERDA		EQU 1		; tecla na primeira coluna do teclado (tecla C)
 TECLA_DIREITA		EQU 2		; tecla na segunda coluna do teclado (tecla D)
-INICIO_ENERGIA      EQU 00100H  ;
+INICIO_ENERGIA      EQU 100     ;
 FATOR_INICIAL       EQU 1000    ;
 
 COMANDOS				EQU	6000H			; endereço de base dos comandos do MediaCenter
@@ -116,6 +116,10 @@ tab:
 	WORD rot_int_2			; rotina de atendimento da interrupção 2
 	WORD rot_int_3			; rotina de atendimento da interrupção 3
 
+
+evento_display:			; LOCKs para cada rotina de interrupção comunicar ao processo
+	LOCK 0				; LOCK para a rotina de interrupção 0
+
 ; *********************************************************************************
 ; * Código
 ; *********************************************************************************
@@ -125,44 +129,73 @@ inicio:
 
 	MOV  BTE, tab			; inicializa BTE (registo de Base da Tabela de Exceções)
 
-	EI2					; permite interrupções 2
+    EI2                 ; permite interrupções 0
 	EI					; permite interrupções (geral)
 
     MOV R8, INICIO_ENERGIA   ;
     CALL escreve_display    ; inicia o valor no 100
-    fim:
-        JMP fim
-
-
-; **********************************************************************
-; Processo
-;
-; ENERGIA - Processo que deteta quando se carrega numa tecla na 4ª linha
-;		  do teclado e escreve o valor da coluna num LOCK.
-;
-; **********************************************************************
-
-SP_inicial_energia	; indicação de que a rotina que se segue é um processo,
-						; com indicação do valor para inicializar o SP
+    CALL energia
 
 energia:
-    MOV R1, 0
-    WAIT
-    JMP energia
+    MOV R8, INICIO_ENERGIA
+
+altera_energia:
+    CALL escreve_display
+    MOV R0, [evento_display]
+    ADD R8, R0
+    JMP altera_energia
+
 
 ; **********************************************************************
-; ESCREVE_DISPLAY - escreve um valor no display
+; ESCREVE_DISPLAY - escreve um valor decimal no display hexadecimal
+;                   na forma decimal
 ; Argumentos:   R8 - valor a escrever no display
 ;
 ; **********************************************************************
 
 escreve_display:
-    PUSH    R4
-    MOV  R4, DISPLAYS  ; endereço do periférico dos displays
-    MOV [R4], R8       ; escrever o valor no display
-    POP R4
+    PUSH    R0
+    PUSH    R1
+    PUSH    R8
+    MOV  R0, DISPLAYS  ; endereço do periférico dos displays
+    CALL calcula_display
+    MOV [R0], R1       ; escrever o valor no display
+    POP R8
+    POP R1
+    POP R0
     RET
 
+; **********************************************************************
+; CALCULA_DISPLAY - calcula o valor hexadecimal para que no display
+;                          seja na mesma forma que o argumento decimal
+; Argumentos:   R8 - valor decimal
+;
+; Retorna: 	R1 - valor a escrever no display	
+; **********************************************************************
+
+calcula_display:
+    PUSH R0
+    PUSH R8
+    PUSH R2
+    PUSH R3
+    MOV R0, FATOR_INICIAL; fator para obter os dígitos
+    MOV R3, 10  ; para diminuir a potência de 10 do fator
+calcula_digito:
+    MOD R8, R0  ;
+    DIV R0, R3  ; fator para obter proximo digito
+    JZ sai_calcula_display; se o fator for menor que 10 sai
+    MOV R2, R8  ; copia numero
+    DIV R2, R0  ; calcula digito
+    SHL R1, 4   ; desloca digitos no resultado para colocar novo digito
+    OR  R1, R2  ; coloca novo digito no resultado
+    JMP calcula_digito  ;
+
+sai_calcula_display:
+    POP R3
+    POP R2
+    POP R8
+    POP R0
+    RET
 
 ; **********************************************************************
 ; ROT_INT_0 - 	Rotina de atendimento da interrupção 0
@@ -181,8 +214,14 @@ rot_int_1:
 ;           Trata do gasto da energia ao longo do tempo
 ; **********************************************************************
 rot_int_2:
-	SUB R8, 3;
-    CALL escreve_display
+    PUSH R0
+    PUSH R1
+    MOV R1, evento_display
+    MOV R0, -3
+    MOV [R1], R0
+    INC R2
+    POP R0
+    POP R1
 	RFE
 
 ; **********************************************************************

@@ -37,6 +37,11 @@ COLUNA_DIR          EQU 63      ; coluna mais à direita
 LINHA_PAINEL        EQU 27      ; linha do painel da nave
 COLUNA_PAINEL       EQU 27      ; coluna do painel da nave
 
+LINHA_CIMA_PAINEL	EQU 26		 ; linha acima do painel
+
+LARGURA_SONDA       EQU 1        ; largura das sondas
+ALTURA_SONDA        EQU 1        ; altura das sondas
+
 LARGURA_AST			EQU	5		; largura do asteroide
 ALTURA_AST          EQU 5       ; altura do asteroide 
 
@@ -66,6 +71,12 @@ TAMANHO_PILHA		EQU  100H      ; tamanho de cada pilha, em words
 	STACK TAMANHO_PILHA		; espaço reservado para a pilha do processo "programa principal"
 SP_inicial_prog_princ:		; este é o endereço com que o SP deste processo deve ser inicializado
 							
+	STACK TAMANHO_PILHA		; espaço reservado para a pilha do processo "teclado"
+SP_inicial_painel:			; este é o endereço com que o SP deste processo deve ser inicializado
+		
+	STACK TAMANHO_PILHA		; espaço reservado para a pilha do processo "teclado"
+SP_inicial_sonda:			; este é o endereço com que o SP deste processo deve ser inicializado
+
 	STACK TAMANHO_PILHA		; espaço reservado para a pilha do processo "teclado"
 SP_inicial_asteroide:			; este é o endereço com que o SP deste processo deve ser inicializado
 							
@@ -106,8 +117,10 @@ PAINEL_NAVE:			; tabela que define o painel da nave (cor, largura, pixels, altur
     WORD		PIXEL_CINZ_ESC, PIXEL_CINZ_CLA, PIXEL_VERM, PIXEL_CINZ_CLA, PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_VERD, PIXEL_CINZ_CLA, PIXEL_CINZ_ESC
     WORD		PIXEL_CINZ_ESC, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_ESC 
 
-SONDA:                  ; tabela que define a sonda (cor, pixels)
-    WORD        PIXEL_CAST
+SONDA:                      ; tabela que define a sonda (cor, pixels)
+    WORD    LARGURA_SONDA
+    WORD    ALTURA_SONDA
+    WORD    PIXEL_CAST
 
 posicao_asteroide:          ; posição do asteroide
     WORD    LINHA_TOPO
@@ -119,6 +132,9 @@ tab:
 	WORD rot_int_1			; rotina de atendimento da interrupção 1
 	WORD rot_int_2			; rotina de atendimento da interrupção 2
 	WORD rot_int_3			; rotina de atendimento da interrupção 3
+
+evento_sonda:			; LOCK que controla a temporização do movimento da sonda
+	LOCK 0				; LOCK para a rotina de interrupção 0
 
 evento_asteroide:		; LOCKs que controla a temporização do movimento do asteroide
 	LOCK 0				; LOCK para a rotina de interrupção 0
@@ -139,10 +155,13 @@ inicio:
     MOV [APAGA_ECRÃ], R1               ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
 
     EI0                 ; permite interrupções 0
-    EI2                 ; permite interrupções w
+    EI1                 ; permite interrupções 1
+    EI2                 ; permite interrupções 2
 	EI					; permite interrupções (geral)
 
 	; cria processos.
+    CALL sonda
+    CALL painel
     CALL asteroide
 
 energia:
@@ -153,6 +172,59 @@ atualiza_display:
     MOV R0, [evento_display]
     ADD R8, R0
     JMP atualiza_display
+
+; **********************************************************************
+; Processo
+;
+; PAINEL - Processo que desenha um painel controla a sua animação
+;
+; **********************************************************************
+
+PROCESS SP_inicial_painel	;
+
+painel:
+	
+	; desenha o painel
+    MOV R1, LINHA_PAINEL               ; linha do painel da nave
+    MOV R2, COLUNA_PAINEL              ; coluna do painel da nave
+    MOV R4, PAINEL_NAVE                ; endereço da tabela que define o painel da nave
+    CALL desenha_objeto                ; desenha o objeto a partir da tabela
+
+anima_painel:
+    WAIT
+    RET
+
+
+; **********************************************************************
+; Processo
+;
+; SONDA - Processo que desenha uma sonda e implementa o seu comportamento
+;
+; **********************************************************************
+
+PROCESS SP_inicial_sonda	;
+
+	; desenha a sonda na sua posição inicial
+sonda:
+    MOV R0, 12
+	MOV R1, LINHA_CIMA_PAINEL	       ; linha da sonda
+	MOV R2, COLUNA_CENT	       ; le valor da coluna da sonda
+	MOV R4, SONDA
+
+ciclo_sonda:
+    CALL  desenha_objeto              ; Desenha o objeto novamente na nova posição
+    MOV	R3, [evento_sonda]  	; lê o LOCK e bloqueia até a interrupção escrever nele
+    CALL  apaga_objeto                ; Apaga o objeto em sua posição atual
+    DEC   R1                       ; volta para a linha anterior
+    DEC R0  ; contador - 1
+    JZ  sai_sonda   ; se o contador for 0 sai
+	JMP	ciclo_sonda		;
+
+sai_sonda:
+    WAIT
+    RET
+
+
 
 ; **********************************************************************
 ; Processo
@@ -169,15 +241,16 @@ asteroide:
     MOV R1, 0                          ;  linha do asteroide
     MOV R2, 0                          ; le valor da coluna do asteroide (+2 porque a linha é um WORD)
     MOV R4, ASTEROIDE_PERIGO           ; endereço da tabela que define o asteroide
-ciclo_boneco:
+ciclo_asteroide:
 	CALL	desenha_objeto		; desenha o boneco a partir da tabela
+
 
 	MOV	R3, [evento_asteroide]  	; lê o LOCK e bloqueia até a interrupção escrever nele
 
     CALL  apaga_objeto                    ; Apaga o objeto em sua posição atual
     INC   R1                              ; Incrementa a posição do asteroide para a próxima linha
     INC   R2                              ; Incrementa a posição do asteroide para a próxima coluna
-	JMP	ciclo_boneco		; esta "rotina" nunca retorna porque nunca termina
+	JMP	ciclo_asteroide		; esta "rotina" nunca retorna porque nunca termina
 						; Se se quisesse terminar o processo, era deixar o processo chegar a um RET
 
 
@@ -349,6 +422,7 @@ rot_int_0:
 ; ROT_INT_1 - 	Rotina de atendimento da interrupção 1
 ; **********************************************************************
 rot_int_1:
+	MOV	[evento_sonda], R0	; desbloqueia processo asteroide
 	RFE
 
 ; **********************************************************************

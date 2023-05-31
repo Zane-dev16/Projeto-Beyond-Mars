@@ -67,7 +67,7 @@ TAMANHO_PILHA		EQU  100H      ; tamanho de cada pilha, em words
 SP_inicial_prog_princ:		; este é o endereço com que o SP deste processo deve ser inicializado
 							
 	STACK TAMANHO_PILHA		; espaço reservado para a pilha do processo "teclado"
-SP_inicial_energia:			; este é o endereço com que o SP deste processo deve ser inicializado
+SP_inicial_asteroide:			; este é o endereço com que o SP deste processo deve ser inicializado
 							
 						
 ASTEROIDE_PERIGO:		; tabela que define o asteroide perigoso (cor, largura, pixels, altura)
@@ -109,6 +109,10 @@ PAINEL_NAVE:			; tabela que define o painel da nave (cor, largura, pixels, altur
 SONDA:                  ; tabela que define a sonda (cor, pixels)
     WORD        PIXEL_CAST
 
+posicao_asteroide:          ; posição do asteroide
+    WORD    LINHA_TOPO
+    WORD    COLUNA_ESQ
+
 ; Tabela das rotinas de interrupção
 tab:
 	WORD rot_int_0			; rotina de atendimento da interrupção 0
@@ -116,8 +120,10 @@ tab:
 	WORD rot_int_2			; rotina de atendimento da interrupção 2
 	WORD rot_int_3			; rotina de atendimento da interrupção 3
 
+evento_asteroide:		; LOCKs que controla a temporização do movimento do asteroide
+	LOCK 0				; LOCK para a rotina de interrupção 0
 
-evento_display:			; LOCKs para cada rotina de interrupção comunicar ao processo
+evento_display:			; LOCK que controla a temporização do display
 	LOCK 0				; LOCK para a rotina de interrupção 0
 
 ; *********************************************************************************
@@ -129,21 +135,50 @@ inicio:
 
 	MOV  BTE, tab			; inicializa BTE (registo de Base da Tabela de Exceções)
 
-    EI2                 ; permite interrupções 0
+    MOV [APAGA_AVISO], R1              ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
+    MOV [APAGA_ECRÃ], R1               ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
+
+    EI0                 ; permite interrupções 0
+    EI2                 ; permite interrupções w
 	EI					; permite interrupções (geral)
 
-    MOV R8, INICIO_ENERGIA   ;
-    CALL escreve_display    ; inicia o valor no 100
-    CALL energia
+	; cria processos.
+    CALL asteroide
 
 energia:
     MOV R8, INICIO_ENERGIA
 
-altera_energia:
+atualiza_display:
     CALL escreve_display
     MOV R0, [evento_display]
     ADD R8, R0
-    JMP altera_energia
+    JMP atualiza_display
+
+; **********************************************************************
+; Processo
+;
+; ASTEROIDE - Processo que desenha um asteroide implementa o seu comportamento
+;
+; **********************************************************************
+
+PROCESS SP_inicial_asteroide	;
+
+asteroide:
+	
+	; desenha o asteroide na sua posição inicial
+    MOV R1, 0                          ;  linha do asteroide
+    MOV R2, 0                          ; le valor da coluna do asteroide (+2 porque a linha é um WORD)
+    MOV R4, ASTEROIDE_PERIGO           ; endereço da tabela que define o asteroide
+ciclo_boneco:
+	CALL	desenha_objeto		; desenha o boneco a partir da tabela
+
+	MOV	R3, [evento_asteroide]  	; lê o LOCK e bloqueia até a interrupção escrever nele
+
+    CALL  apaga_objeto                    ; Apaga o objeto em sua posição atual
+    INC   R1                              ; Incrementa a posição do asteroide para a próxima linha
+    INC   R2                              ; Incrementa a posição do asteroide para a próxima coluna
+	JMP	ciclo_boneco		; esta "rotina" nunca retorna porque nunca termina
+						; Se se quisesse terminar o processo, era deixar o processo chegar a um RET
 
 
 ; **********************************************************************
@@ -198,9 +233,116 @@ sai_calcula_display:
     RET
 
 ; **********************************************************************
+; desenha_objeto - Desenha o painel da nave na linha e coluna indicadas
+;                  com a forma e cor definidas na tabela indicada.
+; Argumentos:   R1 - linha
+;               R2 - coluna
+;               R4 - tabela que define o boneco
+; **********************************************************************
+
+desenha_objeto:
+    PUSH  R1
+    PUSH  R2 
+    PUSH  R3 
+    PUSH  R4 
+    PUSH  R5
+    PUSH  R6
+    PUSH  R7
+    PUSH  R8
+    MOV   R5, [R4]            ; Obtém a largura do objeto
+    MOV   R7, R5              ; Guarda a largura do objeto
+    MOV   R8, R2              ; Guarda a coluna inicial
+    ADD   R4, 2               ; Endereço da altura do objeto
+    MOV   R6, [R4]            ; Obtém a altura do objeto
+    ADD   R4, 2               ; Endereço da cor do 1º pixel
+
+desenha_pixels:               ; Desenha os pixels do objeto a partir da tabela
+    MOV   R3, [R4]            ; Obtém a cor do próximo pixel do objeto
+    CALL  escreve_pixel       ; Escreve um pixel do objeto
+    ADD   R4, 2               ; Endereço da cor do próximo pixel
+    ADD   R2, 1               ; Próxima coluna
+    SUB   R5, 1               ; Menos uma coluna para tratar
+    JNZ   desenha_pixels      ; Continua até percorrer toda a largura do objeto
+    MOV   R5, R7              ; Retoma o valor de largura do objeto
+    MOV   R2, R8              ; Retoma o valor da coluna inicial do objeto
+    ADD   R1, 1               ; Próxima linha
+    SUB   R6, 1               ; Verifica se todas as linhas já foram desenhadas
+    JNZ   desenha_pixels      ; Continua até percorrer toda a altura do objeto
+    POP   R8
+    POP   R7
+    POP   R6
+    POP   R5
+    POP   R4
+    POP   R3
+    POP   R2
+    POP   R1
+    RET
+
+; **********************************************************************
+; escreve_pixel - Escreve um pixel na linha e coluna indicadas.
+; Argumentos:   R1 - linha
+;               R2 - coluna
+;               R3 - cor do pixel (em formato ARGB de 16 bits)
+; **********************************************************************
+
+escreve_pixel:
+    MOV  [DEFINE_LINHA], R1   ; Seleciona a linha
+    MOV  [DEFINE_COLUNA], R2  ; Seleciona a coluna
+    MOV  [DEFINE_PIXEL], R3   ; Altera a cor do pixel na linha e coluna já selecionadas
+    RET
+
+
+; **********************************************************************
+; apaga_objeto - Apaga um objeto na linha e coluna indicadas
+;                com a forma definida na tabela indicada.
+; Argumentos:   R1 - linha
+;               R2 - coluna
+;               R4 - tabela que define o objeto
+; **********************************************************************
+
+apaga_objeto:
+    PUSH  R1
+    PUSH  R2
+    PUSH  R3
+    PUSH  R4
+    PUSH  R5
+    PUSH  R6
+    PUSH  R7
+    PUSH  R8
+    MOV   R5, [R4]            ; Obtém a largura do objeto
+    MOV   R7, R5              ; Guarda a altura do objeto
+    MOV   R8, R2              ; Guarda a coluna inicial do painel
+    ADD   R4, 2               ; Endereço da altura do objeto
+    MOV   R6, [R4]            ; Obtém a altura do objeto
+    ADD   R4, 2               ; Endereço da cor do 1º pixel
+
+apaga_pixels:                 ; Apaga os pixels do objeto a partir da tabela
+    MOV   R3, 0               ; Cor para apagar o próximo pixel do objeto
+    CALL  escreve_pixel       ; Escreve cada pixel do objeto
+    ADD   R4, 2               ; Endereço da cor do próximo pixel
+    ADD   R2, 1               ; Próxima coluna
+    SUB   R5, 1               ; Menos uma coluna para tratar
+    JNZ   apaga_pixels        ; Continua até percorrer toda a largura do objeto
+    MOV   R5, R7              ; Retoma o valor de largura do objeto
+    MOV   R2, R8              ; Retoma o valor da coluna inicial do objeto
+    ADD   R1, 1               ; Próxima linha
+    SUB   R6, 1               ; Verifica se todas as linhas já foram apagadas
+    JNZ   apaga_pixels        ; Continua até percorrer toda a altura do objeto
+    POP   R8
+    POP   R7
+    POP   R6
+    POP   R5
+    POP   R4
+    POP   R3
+    POP   R2
+    POP   R1
+    RET
+
+; **********************************************************************
 ; ROT_INT_0 - 	Rotina de atendimento da interrupção 0
 ; **********************************************************************
 rot_int_0:
+	MOV	[evento_asteroide], R0	; desbloqueia processo asteroide
 	RFE
 
 ; **********************************************************************

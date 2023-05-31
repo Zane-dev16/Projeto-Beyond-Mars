@@ -160,9 +160,9 @@ inicio:
 	EI					; permite interrupções (geral)
 
 	; cria processos.
+    CALL asteroide
     CALL sonda
     CALL painel
-    CALL asteroide
 
 energia:
     MOV R8, INICIO_ENERGIA

@@ -25,9 +25,27 @@ DEFINE_LINHA    		    EQU COMANDOS + 0AH		; endereço do comando para definir a 
 DEFINE_COLUNA   		    EQU COMANDOS + 0CH		; endereço do comando para definir a coluna
 DEFINE_PIXEL    		    EQU COMANDOS + 12H		; endereço do comando para escrever um pixel
 APAGA_AVISO     		    EQU COMANDOS + 40H		; endereço do comando para apagar o aviso de nenhum cenário selecionado
-APAGA_ECRÃ	 		        EQU COMANDOS + 02H		; endereço do comando para apagar todos os pixels já desenhados
-SELECIONA_CENARIO_FUNDO     EQU COMANDOS + 42H		; endereço do comando para selecionar uma imagem de fundo
+APAGA_ECRA	 		        EQU COMANDOS + 02H		; endereço do comando para apagar todos os pixels já desenhados
+FUNDO_ECRA                  EQU COMANDOS + 42H		; endereço do comando para selecionar uma imagem de fundo
 TOCA_SOM				    EQU COMANDOS + 5AH		; endereço do comando para tocar um som
+IMAGEM_FRONTAL              EQU COMANDOS + 46H      ; endereço do comando para sobrepor uma imagem à imagem de fundo
+
+FUNDO_INICIAL      EQU 0
+FUNDO_JOGO         EQU 1
+FUNDO_EXPLOSAO     EQU 4
+FUNDO_ENERGIA      EQU 3
+
+IMAGEM_INICIAR     EQU 2
+IMAGEM_PAUSA       EQU 5
+IMAGEM_EXPLOSAO    EQU 6
+IMAGEM_SEM_ENERGIA EQU 7
+
+SOM_INICIO         EQU 0
+SOM_DISPARO        EQU 1
+SOM_AST_DESTRUIDO  EQU 2
+SOM_AST_MINERADO   EQU 3
+SOM_EXPLOSAO       EQU 4
+SOM_SEM_ENERGIA    EQU 5
 
 LINHA_TOPO        	EQU 0       ; linha do topo do ecrã
 COLUNA_ESQ			EQU 0       ; coluna mais à esquerda
@@ -78,7 +96,7 @@ SP_inicial_painel:			; este é o endereço com que o SP deste processo deve ser 
 SP_inicial_sonda:			; este é o endereço com que o SP deste processo deve ser inicializado
 
 	STACK TAMANHO_PILHA		; espaço reservado para a pilha do processo "teclado"
-SP_inicial_asteroide:			; este é o endereço com que o SP deste processo deve ser inicializado
+SP_inicial_asteroide:		; este é o endereço com que o SP deste processo deve ser inicializado
 							
 						
 ASTEROIDE_PERIGO:		; tabela que define o asteroide perigoso (cor, largura, pixels, altura)
@@ -117,12 +135,12 @@ PAINEL_NAVE:			; tabela que define o painel da nave (cor, largura, pixels, altur
     WORD		PIXEL_CINZ_ESC, PIXEL_CINZ_CLA, PIXEL_VERM, PIXEL_CINZ_CLA, PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_VERD, PIXEL_CINZ_CLA, PIXEL_CINZ_ESC
     WORD		PIXEL_CINZ_ESC, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_ESC 
 
-SONDA:                      ; tabela que define a sonda (cor, pixels)
+SONDA:                   ; tabela que define a sonda (cor, pixels)
     WORD    LARGURA_SONDA
     WORD    ALTURA_SONDA
     WORD    PIXEL_CAST
 
-posicao_asteroide:          ; posição do asteroide
+posicao_asteroide:       ; posição do asteroide
     WORD    LINHA_TOPO
     WORD    COLUNA_ESQ
 
@@ -151,8 +169,12 @@ inicio:
 
 	MOV  BTE, tab			; inicializa BTE (registo de Base da Tabela de Exceções)
 
-    MOV [APAGA_AVISO], R1              ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
-    MOV [APAGA_ECRÃ], R1               ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
+    MOV [APAGA_AVISO], R1                   ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
+    MOV [APAGA_ECRA], R1                    ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
+    MOV R1, FUNDO_INICIAL
+    MOV [FUNDO_ECRA], R1         ; coloca imagem de fundo incial
+    MOV R1, IMAGEM_INICIAR
+    MOV [IMAGEM_FRONTAL], R1    ; sobrepoão letras sobre a imagem inicial
 
     EI0                 ; permite interrupções 0
     EI1                 ; permite interrupções 1

@@ -191,7 +191,7 @@ obtem_tecla:
     MOV R2, [linha_carregada]   ; bloqueia neste LOCK a linha carregada
     CMP R2, LINHA1              ; verifica se foi premida uma tecla da 1ª linha
     JZ linha1
-    CMP R2, 8              ; verifica se foi premida uma tecla da 4ª linha
+    CMP R2, LINHA4              ; verifica se foi premida uma tecla da 4ª linha
     JZ linha4
     JMP obtem_tecla             ; se a tecla premida não foi da linha 1 oou 4 ignora a tecla
 

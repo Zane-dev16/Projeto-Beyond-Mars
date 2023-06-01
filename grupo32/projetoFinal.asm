@@ -168,24 +168,64 @@ inicio:
 	MOV  SP, SP_inicial_prog_princ		; inicializa SP do programa principal
 
 	MOV  BTE, tab			; inicializa BTE (registo de Base da Tabela de Exceções)
-
-    MOV [APAGA_AVISO], R1                   ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
+   MOV [APAGA_AVISO], R1                   ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
     MOV [APAGA_ECRA], R1                    ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
     MOV R1, FUNDO_INICIAL
+    MOV [estado_jogo], R1           ; jogo ainda não iniciado
     MOV [FUNDO_ECRA], R1         ; coloca imagem de fundo incial
     MOV R1, IMAGEM_INICIAR
-    MOV [IMAGEM_FRONTAL], R1    ; sobrepoão letras sobre a imagem inicial
+    MOV [IMAGEM_FRONTAL], R1    ; sobrepõe letras sobre a imagem inicial
 
     EI0                 ; permite interrupções 0
     EI1                 ; permite interrupções 1
     EI2                 ; permite interrupções 2
+    EI3                 ; permite interrupções 3
 	EI					; permite interrupções (geral)
 
 	; cria processos.
-    CALL asteroide
-    CALL painel
-    CALL sonda
 
+    CALL teclado
+
+obtem_tecla:	
+	MOV	R1, [coluna_carregada]	; bloqueia neste LOCK a coluna carregada
+    MOV R2, [linha_carregada]   ; bloqueia neste LOCK a linha carregada
+    CMP R2, LINHA1              ; verifica se foi premida uma tecla da 1ª linha
+    JZ linha1
+    CMP R2, 8              ; verifica se foi premida uma tecla da 4ª linha
+    JZ linha4
+    JMP obtem_tecla             ; se a tecla premida não foi da linha 1 oou 4 ignora a tecla
+
+linha1:
+    MOV R3, [estado_jogo]       
+    CMP R3, FUNDO_INICIAL       ; verifica se o jogo já foi iniciado
+    JZ obtem_tecla              ; caso ainda nao tenha sido iniciado ignora a tecla
+    CMP R1, 1                   ; verifica se a tecla premida foi o 0
+    ;JZ sonda_esq
+    CMP R1, 2                   ; verifica se a tecla premida foi o 1
+    ;JZ sonda_centro
+    CMP R1, 3                   ; verifica se a tecla premida foi o 2
+    ;JZ sonda_dir
+    JMP obtem_tecla             ; se a tecla premida não foi nenhuma das anteriores ignora a tecla
+
+linha4:
+    CMP R1, 1                   ; verifica se a tecla premida foi o C
+    JZ inicia_jogo
+    CMP R1, 2                   ; verifica se a tecla premida foi o D
+    ;JZ suspende_continua
+    CMP R1, 3                   ; verifica se a tecla premida foi o E
+    ;JZ termina
+    JMP obtem_tecla             ; se a tecla premida não foi nenhuma das anteriores ignora a tecla
+
+inicia_jogo:
+    MOV R3, [estado_jogo]
+    CMP R3, FUNDO_INICIAL       ; verifica se o jogo já foi iniciado
+    JZ obtem_tecla              ; caso ainda já tenha sido iniciado ignora a tecla
+    MOV R1, FUNDO_JOGO
+    MOV [estado_jogo], R1       ; atualiza estado do jogo
+    MOV [FUNDO_ECRA], R1         ; coloca imagem de fundo para durante o jogo
+    CALL painel
+    CALL asteroide
+    CALL sonda
 energia:
     MOV R8, INICIO_ENERGIA
 
@@ -194,6 +234,59 @@ atualiza_display:
     MOV R0, [evento_display]
     ADD R8, R0
     JMP atualiza_display
+; **********************************************************************
+; Processo
+;
+; TECLADO - Processo que deteta quando se carrega numa tecla na 4ª linha
+;		  do teclado e escreve o valor da coluna num LOCK.
+;
+; **********************************************************************
+
+PROCESS SP_inicial_teclado	; Processo com valor para inicializar o SP
+
+teclado:					; processo que implementa o comportamento do teclado
+	MOV  R2, TEC_LIN		; endereço do periférico das linhas
+	MOV  R3, TEC_COL		; endereço do periférico das colunas
+	MOV  R5, MASCARA		; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
+
+espera_tecla:				; neste ciclo espera-se até uma tecla ser premida
+
+	YIELD				    ; este ciclo é potencialmente bloqueante, pelo que tem de
+						    ; ter um ponto de fuga (aqui pode comutar para outro processo)
+
+	MOV  R1, LINHA1	        ; testar a linha 4
+
+varre_linhas:
+	MOVB [R2], R1			; escrever no periférico de saída (linhas)
+	MOVB R0, [R3]			; ler do periférico de entrada (colunas)
+	AND  R0, R5			    ; elimina bits para além dos bits 0-3
+	CMP  R0, 0			    ; há tecla premida?
+	JNZ   ha_tecla		    ; se há tecla premida espera até não haver
+    CMP R1, 5               ; verifica se é a ultima linha do teclado
+    JGE espera_tecla        ; se ja tiver verificado todas as linhas reinicia
+    SHL R1, 1               ; testar a próxima linha
+    JMP varre_linhas        ; continua o ciclo na próxima linha
+
+						
+	MOV	[coluna_carregada], R0	; informa quem estiver bloqueado neste LOCK que uma tecla foi carregada
+							; (o valor escrito é o número da coluna da tecla no teclado)
+
+ha_tecla:					; neste ciclo espera-se até NENHUMA tecla estar premida
+
+	YIELD				; este ciclo é potencialmente bloqueante, pelo que tem de
+						; ter um ponto de fuga (aqui pode comutar para outro processo)
+
+	MOV	[coluna_carregada], R0	; guarda a coluna carregada
+    MOV [linha_carregada], R1   ; guarda a linha carregada
+    MOVB [R2], R1			; escrever no periférico de saída (linhas)
+    MOVB R0, [R3]			; ler do periférico de entrada (colunas)
+	AND  R0, R5			; elimina bits para além dos bits 0-3
+    CMP  R0, 0			; há tecla premida?
+    JNZ  ha_tecla			; se ainda houver uma tecla premida, espera até não haver
+
+	JMP	espera_tecla		; esta "rotina" nunca retorna porque nunca termina
+						; Se se quisesse terminar o processo, era deixar o processo chegar a um RET
+
 
 ; **********************************************************************
 ; Processo

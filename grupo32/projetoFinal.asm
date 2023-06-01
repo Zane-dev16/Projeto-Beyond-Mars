@@ -161,8 +161,8 @@ inicio:
 
 	; cria processos.
     CALL asteroide
-    CALL sonda
     CALL painel
+    CALL sonda
 
 energia:
     MOV R8, INICIO_ENERGIA

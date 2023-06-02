@@ -13,7 +13,8 @@ TEC_LIN             EQU 0C000H  ; endereço das linhas do teclado (periférico P
 TEC_COL             EQU 0E000H  ; endereço das colunas do teclado (periférico PIN)
 LINHA1              EQU 1       ; 1ª linha
 LINHA4              EQU 8       ; 4ª linha
-MASCARA             EQU 0FH     ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
+MASCARA_TECLA       EQU 0FH     ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
+MASCARA_GERADOR_ALEATORIO   EQU 0F0H    ; para isolar os 4 bits do maior peso (pseudo-aleatórias)
 TECLA_ESQUERDA		EQU 1		; tecla na primeira coluna do teclado (tecla C)
 TECLA_DIREITA		EQU 2		; tecla na segunda coluna do teclado (tecla D)
 INICIO_ENERGIA      EQU 100     ;
@@ -90,6 +91,9 @@ N_SONDA             EQU 3       ; nº de sondas em simultaneo
 ; Reserva do espaço para as pilhas dos processos
 	STACK TAMANHO_PILHA		; espaço reservado para a pilha do processo "programa principal"
 SP_inicial_prog_princ:		; este é o endereço com que o SP deste processo deve ser inicializado
+
+	STACK TAMANHO_PILHA		; espaço reservado para a pilha do processo "programa principal"
+SP_inicial_energia:		; este é o endereço com que o SP deste processo deve ser inicializado
 
 	STACK TAMANHO_PILHA		; espaço reservado para a pilha do processo "teclado"
 SP_inicial_teclado:		; este é o endereço com que o SP deste processo deve ser inicializado
@@ -214,7 +218,10 @@ inicio:
 	EI					; permite interrupções (geral)
 
 	; cria processos.
-
+    CALL energia
+    CALL asteroide
+    CALL sonda
+    CALL painel
     CALL teclado
 
 obtem_tecla:	
@@ -259,6 +266,17 @@ inicia_jogo:
     CALL painel
     CALL asteroide
     CALL sonda
+
+
+; **********************************************************************
+; Processo
+;
+; ENERGIA - Processo que controla o calculo da energia e escrita ns displays
+;
+; **********************************************************************
+
+PROCESS SP_inicial_energia	; Processo com valor para inicializar o SP
+
 energia:
     MOV R8, INICIO_ENERGIA
 
@@ -267,6 +285,8 @@ atualiza_display:
     MOV R0, [evento_display]
     ADD R8, R0
     JMP atualiza_display
+
+
 ; **********************************************************************
 ; Processo
 ;
@@ -280,7 +300,7 @@ PROCESS SP_inicial_teclado	; Processo com valor para inicializar o SP
 teclado:					; processo que implementa o comportamento do teclado
 	MOV  R2, TEC_LIN		; endereço do periférico das linhas
 	MOV  R3, TEC_COL		; endereço do periférico das colunas
-	MOV  R5, MASCARA		; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
+	MOV  R5, MASCARA_TECLA		; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
 
 espera_tecla:				; neste ciclo espera-se até uma tecla ser premida
 
@@ -319,7 +339,6 @@ ha_tecla:					; neste ciclo espera-se até NENHUMA tecla estar premida
 
 	JMP	espera_tecla		; esta "rotina" nunca retorna porque nunca termina
 						; Se se quisesse terminar o processo, era deixar o processo chegar a um RET
-
 
 ; **********************************************************************
 ; Processo
@@ -399,7 +418,6 @@ ciclo_asteroide:
     INC   R2                              ; Incrementa a posição do asteroide para a próxima coluna
 	JMP	ciclo_asteroide		; esta "rotina" nunca retorna porque nunca termina
 						; Se se quisesse terminar o processo, era deixar o processo chegar a um RET
-
 
 ; **********************************************************************
 ; ESCREVE_DISPLAY - escreve um valor decimal no display hexadecimal
@@ -579,9 +597,15 @@ rot_int_1:
 rot_int_2:
     PUSH R0
     PUSH R1
+    PUSH R5
     MOV R1, evento_display
     MOV R0, -3
     MOV [R1], R0
+    MOV R9, [TEC_COL]
+    MOV R5, MASCARA_GERADOR_ALEATORIO
+    AND R9, R5
+    SHR R9, 6
+    POP R5
     POP R1
     POP R0
 	RFE

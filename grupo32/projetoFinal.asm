@@ -549,9 +549,8 @@ rot_int_2:
     MOV R1, evento_display
     MOV R0, -3
     MOV [R1], R0
-    INC R2
-    POP R0
     POP R1
+    POP R0
 	RFE
 
 ; **********************************************************************

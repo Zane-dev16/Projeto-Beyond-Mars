@@ -11,8 +11,8 @@
 DISPLAYS            EQU 0A000H  ; endereço dos displays de 7 segmentos (periférico POUT-1)
 TEC_LIN             EQU 0C000H  ; endereço das linhas do teclado (periférico POUT-2)
 TEC_COL             EQU 0E000H  ; endereço das colunas do teclado (periférico PIN)
-LINHA1              EQU 1       ; linha a testar (4ª linha, 1000b)
-LINHA4              EQU 8;
+LINHA1              EQU 1       ; 1ª linha
+LINHA4              EQU 8       ; 4ª linha
 MASCARA             EQU 0FH     ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
 TECLA_ESQUERDA		EQU 1		; tecla na primeira coluna do teclado (tecla C)
 TECLA_DIREITA		EQU 2		; tecla na segunda coluna do teclado (tecla D)
@@ -78,7 +78,9 @@ PIXEL_AMAR_TRANS    EQU 05FF0H  ; pixel amarelo translucido
 PIXEL_CINZ_ESC      EQU 0F777H  ; pixel cinzento escuro opaco 
 PIXEL_CINZ_CLA      EQU 0FFFFH  ; pixel cinzento claro opaco 
 
-TAMANHO_PILHA		EQU  100H      ; tamanho de cada pilha, em words
+TAMANHO_PILHA		EQU 100H      ; tamanho de cada pilha, em words
+N_ASTEROIDES        EQU 4       ; nº de asteroides em simultaneo
+N_SONDA             EQU 3       ; nº de sondas em simultaneo
 
 ; *********************************************************************************
 ; * Dados 
@@ -88,14 +90,17 @@ TAMANHO_PILHA		EQU  100H      ; tamanho de cada pilha, em words
 ; Reserva do espaço para as pilhas dos processos
 	STACK TAMANHO_PILHA		; espaço reservado para a pilha do processo "programa principal"
 SP_inicial_prog_princ:		; este é o endereço com que o SP deste processo deve ser inicializado
+
+	STACK TAMANHO_PILHA		; espaço reservado para a pilha do processo "teclado"
+SP_inicial_teclado:		; este é o endereço com que o SP deste processo deve ser inicializado
 							
 	STACK TAMANHO_PILHA		; espaço reservado para a pilha do processo "teclado"
 SP_inicial_painel:			; este é o endereço com que o SP deste processo deve ser inicializado
 		
-	STACK TAMANHO_PILHA		; espaço reservado para a pilha do processo "teclado"
+	STACK TAMANHO_PILHA * N_SONDA		; espaço reservado para a pilha do processo "teclado"
 SP_inicial_sonda:			; este é o endereço com que o SP deste processo deve ser inicializado
 
-	STACK TAMANHO_PILHA		; espaço reservado para a pilha do processo "teclado"
+	STACK TAMANHO_PILHA	* N_ASTEROIDES	; espaço reservado para a pilha do processo "teclado"
 SP_inicial_asteroide:		; este é o endereço com que o SP deste processo deve ser inicializado
 							
 						
@@ -144,6 +149,22 @@ posicao_asteroide:       ; posição do asteroide
     WORD    LINHA_TOPO
     WORD    COLUNA_ESQ
 
+mov_diag_direita:
+    WORD 1              ; desce uma linha
+    WORD 1              ; avança uma coluna
+
+mov_diag_esquerda:
+    WORD 1              ; desce uma linha
+    WORD -1              ; recua uma coluna 
+
+mov_baixo:
+    WORD 1              ; desce uma linha
+    WORD 0              ; mantem coluna 
+
+mov_cima:
+    WORD -1              ; sobe uma linha
+    WORD 0              ; mantem coluna   
+
 ; Tabela das rotinas de interrupção
 tab:
 	WORD rot_int_0			; rotina de atendimento da interrupção 0
@@ -159,6 +180,16 @@ evento_asteroide:		; LOCKs que controla a temporização do movimento do asteroi
 
 evento_display:			; LOCK que controla a temporização do display
 	LOCK 0				; LOCK para a rotina de interrupção 0
+
+coluna_carregada:
+    LOCK 0              ; LOCK para o teclado comunicar aos restantes processos que tecla detetou
+
+linha_carregada:
+    LOCK 0              ; LOCK para o teclado comunicar aos restantes processos que tecla detetou
+
+estado_jogo:            ; LOCK para controlar se o jogo já foi iniciado
+    LOCK 0
+
 
 ; *********************************************************************************
 ; * Código
@@ -189,9 +220,11 @@ inicio:
 obtem_tecla:	
 	MOV	R1, [coluna_carregada]	; bloqueia neste LOCK a coluna carregada
     MOV R2, [linha_carregada]   ; bloqueia neste LOCK a linha carregada
-    CMP R2, LINHA1              ; verifica se foi premida uma tecla da 1ª linha
+    MOV R3, LINHA1
+    CMP R2, R3                  ; verifica se foi premida uma tecla da 1ª linha
     JZ linha1
-    CMP R2, LINHA4              ; verifica se foi premida uma tecla da 4ª linha
+    MOV R3, LINHA4
+    CMP R2, R3                  ; verifica se foi premida uma tecla da 4ª linha
     JZ linha4
     JMP obtem_tecla             ; se a tecla premida não foi da linha 1 oou 4 ignora a tecla
 

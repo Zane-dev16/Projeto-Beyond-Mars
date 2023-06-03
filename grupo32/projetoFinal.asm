@@ -29,17 +29,20 @@ APAGA_AVISO     		    EQU COMANDOS + 40H		; endereço do comando para apagar o a
 APAGA_ECRA	 		        EQU COMANDOS + 02H		; endereço do comando para apagar todos os pixels já desenhados
 FUNDO_ECRA                  EQU COMANDOS + 42H		; endereço do comando para selecionar uma imagem de fundo
 TOCA_SOM				    EQU COMANDOS + 5AH		; endereço do comando para tocar um som
-IMAGEM_FRONTAL              EQU COMANDOS + 46H      ; endereço do comando para sobrepor uma imagem à imagem de fundo
+MSG                         EQU COMANDOS + 46H      ; endereço do comando para sobrepor uma imagem (mensagem) à imagem de fundo
 
-FUNDO_INICIAL      EQU 0
-FUNDO_JOGO         EQU 1
-FUNDO_EXPLOSAO     EQU 4
-FUNDO_ENERGIA      EQU 3
+FUNDO_INICIAL       EQU 0
+FUNDO_JOGO          EQU 1
+FUNDO_EXPLOSAO      EQU 4
+FUNDO_ENERGIA       EQU 8
+FUNDO_CHEGA         EQU 9
 
-IMAGEM_INICIAR     EQU 2
-IMAGEM_PAUSA       EQU 5
-IMAGEM_EXPLOSAO    EQU 6
-IMAGEM_SEM_ENERGIA EQU 7
+MSG_TRANSPARENTE    EQU 3
+MSG_INICIAR         EQU 2
+MSG_PAUSA           EQU 5
+MSG_EXPLOSAO        EQU 6
+MSG_SEM_ENERGIA     EQU 7
+MSG_CHEGA           EQU 10
 
 SOM_INICIO         EQU 0
 SOM_DISPARO        EQU 1
@@ -79,9 +82,13 @@ PIXEL_AMAR_TRANS    EQU 05FF0H  ; pixel amarelo translucido
 PIXEL_CINZ_ESC      EQU 0F777H  ; pixel cinzento escuro opaco 
 PIXEL_CINZ_CLA      EQU 0FFFFH  ; pixel cinzento claro opaco 
 
-TAMANHO_PILHA		EQU 100H      ; tamanho de cada pilha, em words
+TAMANHO_PILHA		EQU 100H    ; tamanho de cada pilha, em words
 N_ASTEROIDES        EQU 4       ; nº de asteroides em simultaneo
 N_SONDA             EQU 3       ; nº de sondas em simultaneo
+
+JOGO_INICIADO       EQU 1       ; jogo iniciado
+JOGO_PAUSA       EQU 0       ; jogo em pausa
+JOGO_TERMINADO      EQU -1      ; jogo terminado
 
 ; *********************************************************************************
 ; * Dados 
@@ -186,13 +193,16 @@ evento_display:			; LOCK que controla a temporização do display
 	LOCK 0				; LOCK para a rotina de interrupção 0
 
 coluna_carregada:
-    LOCK 0              ; LOCK para o teclado comunicar aos restantes processos que tecla detetou
+    LOCK 0              ; LOCK para o teclado comunicar aos restantes processos que coluna detetou
 
 linha_carregada:
-    LOCK 0              ; LOCK para o teclado comunicar aos restantes processos que tecla detetou
+    LOCK 0              ; LOCK para o teclado comunicar aos restantes processos que linha detetou
 
-estado_jogo:            ; LOCK para controlar se o jogo já foi iniciado
+momento_jogo:            ; controlar se o jogo já foi iniciado
     WORD 0
+
+estado_jogo:          ; LOCK para o teclado comunicar aos restantes processos o estado do jogo
+    LOCK 0
 
 
 ; *********************************************************************************
@@ -203,13 +213,13 @@ inicio:
 	MOV  SP, SP_inicial_prog_princ		; inicializa SP do programa principal
 
 	MOV  BTE, tab			; inicializa BTE (registo de Base da Tabela de Exceções)
-   MOV [APAGA_AVISO], R1                   ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
+    MOV [APAGA_AVISO], R1                   ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
     MOV [APAGA_ECRA], R1                    ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
     MOV R1, FUNDO_INICIAL
-    MOV [estado_jogo], R1           ; jogo ainda não iniciado
+    MOV [momento_jogo], R1           ; jogo ainda não iniciado
     MOV [FUNDO_ECRA], R1         ; coloca imagem de fundo incial
-    MOV R1, IMAGEM_INICIAR
-    MOV [IMAGEM_FRONTAL], R1    ; sobrepõe letras sobre a imagem inicial
+    MOV R1, MSG_INICIAR
+    MOV [MSG], R1    ; sobrepõe letras sobre a imagem inicial
 
     EI0                 ; permite interrupções 0
     EI1                 ; permite interrupções 1
@@ -233,7 +243,7 @@ obtem_tecla:
     JMP obtem_tecla             ; se a tecla premida não foi da linha 1 oou 4 ignora a tecla
 
 linha1:
-    MOV R3, [estado_jogo]       
+    MOV R3, [momento_jogo]       
     CMP R3, FUNDO_INICIAL       ; verifica se o jogo já foi iniciado
     JZ obtem_tecla              ; caso ainda nao tenha sido iniciado ignora a tecla
     MOV	R1, [coluna_carregada]	; bloqueia neste LOCK a coluna carregada
@@ -250,22 +260,51 @@ linha4:
     CMP R1, 1                   ; verifica se a tecla premida foi o C
     JZ inicia_jogo
     CMP R1, 2                   ; verifica se a tecla premida foi o D
-    ;JZ suspende_continua
+    JZ suspende_continua
     CMP R1, 3                   ; verifica se a tecla premida foi o E
     ;JZ termina
     JMP obtem_tecla             ; se a tecla premida não foi nenhuma das anteriores ignora a tecla
 
 inicia_jogo:
-    MOV R3, [estado_jogo]
-    CMP R3, FUNDO_JOGO       ; verifica se o jogo já foi iniciado
+    MOV R3, [momento_jogo]
+    CMP R3, FUNDO_JOGO          ; verifica se o jogo já foi iniciado
     JZ obtem_tecla              ; caso ainda já tenha sido iniciado ignora a tecla
+    MOV R1, JOGO_INICIADO
+    MOV [estado_jogo], R1
     MOV R1, FUNDO_JOGO
-    MOV [estado_jogo], R1       ; atualiza estado do jogo
-    MOV [FUNDO_ECRA], R1         ; coloca imagem de fundo para durante o jogo
+    MOV [momento_jogo], R1       ; atualiza estado do jogo
+    MOV [FUNDO_ECRA], R1        ; coloca imagem de fundo para durante o jogo
+    MOV R1, MSG_TRANSPARENTE
+    MOV [MSG], R1    ; apaga as letras de inicio de jogo
     CALL painel
     CALL asteroide
     CALL sonda
     CALL energia
+
+suspende_continua:
+    MOV R2, [estado_jogo]
+    MOV R1, JOGO_INICIADO
+    CMP R2, R1
+    JZ suspende
+    MOV R1, JOGO_PAUSA
+    CMP R2, R1
+    JZ reinicia
+    MOV R1, JOGO_TERMINADO
+    CMP R2, R1
+    JZ obtem_tecla
+
+suspende:
+    MOV R1, JOGO_PAUSA
+    MOV [estado_jogo], R1
+    MOV R1, [estado_jogo]
+
+reinicia:
+    MOV R1, JOGO_INICIADO
+    MOV [estado_jogo], R1
+
+
+;termina:
+
 
 ; **********************************************************************
 ; Processo
@@ -406,9 +445,10 @@ asteroide:
     MOV R1, 0                          ;  linha do asteroide
     MOV R2, 0                          ; le valor da coluna do asteroide (+2 porque a linha é um WORD)
     MOV R4, ASTEROIDE_PERIGO           ; endereço da tabela que define o asteroide
+
 ciclo_asteroide:
 	CALL	desenha_objeto		; desenha o boneco a partir da tabela
-
+    
 
 	MOV	R3, [evento_asteroide]  	; lê o LOCK e bloqueia até a interrupção escrever nele
 

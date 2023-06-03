@@ -23,9 +23,6 @@ TECLA_INICIO_JOGO   EQU 12      ; tecla para iniciar o jogo (tecla C)
 TECLA_PAUSA         EQU 13      ; tecla para pausa e continuar o jogo (tecla D)
 TECLA_TERMINA       EQU 13      ; tecla para pausa e continuar o jogo (tecla E)
 
-DIRECAO_ESQ         EQU -1      ; para mover um objeto a esquerda
-DIRECAO_CENT         EQU 0       ; para mover um objeto verticalmente
-DIRECAO_DIR         EQU 1       ; para mover um objeto a direita
 
 INICIO_ENERGIA      EQU 100     ;
 FATOR_INICIAL       EQU 1000    ;
@@ -70,6 +67,13 @@ LINHA_PAINEL        EQU 27      ; linha do painel da nave
 COLUNA_PAINEL       EQU 25      ; coluna do painel da nave
 
 LINHA_CIMA_PAINEL	EQU 26		 ; linha acima do painel
+
+DIRECAO_ESQ         EQU -1      ; para mover um objeto a esquerda
+DIRECAO_CENT        EQU 0       ; para mover um objeto verticalmente
+DIRECAO_DIR         EQU 1       ; para mover um objeto a direita
+
+COLUNA_SONDA_ESQ    EQU 26      ; coluna inicial de uma sonda a esquerda
+COLUNA_SONDA_DIR    EQU 38      ; coluna inicial de uma sonda a direita
 
 LARGURA_SONDA       EQU 1        ; largura das sondas
 ALTURA_SONDA        EQU 1        ; altura das sondas
@@ -395,7 +399,7 @@ anima_painel:
 ;
 ; SONDA - Processo que desenha uma sonda e implementa o seu comportamento
 ;
-; Argumento:    R5 - direção da sonda da sonda (em formato -1, 0, 1)
+; Argumento:    R5 - direção da sonda (em formato -1, 0, 1)
 ;
 ; **********************************************************************
 
@@ -404,18 +408,33 @@ PROCESS SP_inicial_sonda	;
 	; desenha a sonda na sua posição inicial
 sonda:
     MOV R0, 12
-	MOV R1, LINHA_CIMA_PAINEL	       ; linha da sonda
-	MOV R2, COLUNA_CENT	       ; le valor da coluna da sonda
+	MOV R1, LINHA_CIMA_PAINEL   ; linha da sonda
 	MOV R4, SONDA
 
+    CMP R5, DIRECAO_ESQ ; se for lancada uma sonda a esquerda
+    JZ pos_sonda_esq    ; inicia coluna a esquerda do painel
+    
+    CMP R5, DIRECAO_DIR ; se for lancada uma sonda a esquerda
+    JZ pos_sonda_dir    ; inicia coluna a esquerda do painel
+
+	MOV R2, COLUNA_CENT	        ; coluna da sonda no centro
+    JMP ciclo_sonda
+
+pos_sonda_esq:
+	MOV R2, COLUNA_SONDA_ESQ     ; inicia coluna a esquerda do painel
+    JMP ciclo_sonda
+
+pos_sonda_dir:
+	MOV R2, COLUNA_SONDA_DIR     ; inicia coluna a direita do painel
+
 ciclo_sonda:
-    CALL  desenha_objeto              ; Desenha o objeto novamente na nova posição
-    MOV	R3, [evento_sonda]  	; lê o LOCK e bloqueia até a interrupção escrever nele
-    CALL  apaga_objeto                ; Apaga o objeto em sua posição atual
-    DEC R1    ; a sonda sobe uma linha
+    CALL  desenha_objeto    ; Desenha o objeto novamente na nova posição
+    MOV	R3, [evento_sonda]  ; lê o LOCK e bloqueia até a interrupção escrever nele
+    CALL  apaga_objeto      ; Apaga o objeto em sua posição atual
+    DEC R1      ; a sonda sobe uma linha
     ADD R2, R5  ;  atualiza posição com argumento do direção
-    DEC R0  ; contador - 1
-    JZ  sai_sonda   ; se o contador for 0 sai
+    DEC R0      ; decrementa contador
+    JZ  sai_sonda       ; se o contador for 0 sai
 	JMP	ciclo_sonda		;
 
 sai_sonda:

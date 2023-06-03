@@ -192,7 +192,7 @@ linha_carregada:
     LOCK 0              ; LOCK para o teclado comunicar aos restantes processos que tecla detetou
 
 estado_jogo:            ; LOCK para controlar se o jogo já foi iniciado
-    LOCK 0
+    WORD 0
 
 
 ; *********************************************************************************
@@ -257,7 +257,7 @@ linha4:
 
 inicia_jogo:
     MOV R3, [estado_jogo]
-    CMP R3, FUNDO_INICIAL       ; verifica se o jogo já foi iniciado
+    CMP R3, FUNDO_JOGO       ; verifica se o jogo já foi iniciado
     JZ obtem_tecla              ; caso ainda já tenha sido iniciado ignora a tecla
     MOV R1, FUNDO_JOGO
     MOV [estado_jogo], R1       ; atualiza estado do jogo

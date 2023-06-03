@@ -84,6 +84,9 @@ ALTURA_AST          EQU 5       ; altura do asteroide
 LARGURA_PAINEL      EQU 15      ; largura do painel da nave
 ALTURA_PAINEL       EQU 5       ; altura do painel da nave
 
+LARGURA_LUZES       EQU 11      ; largura dos luzes do painel
+ALTURA_LUZES       EQU 2       ; altura dos luzes do painel
+
 PIXEL_VERM		    EQU	0FF00H	; pixel vermelho opaco
 PIXEL_VERM_TRANS    EQU	0FF00H	; pixel vermelho translucido
 PIXEL_VERD          EQU 0F0F0H  ; pixel verde opaco 
@@ -165,6 +168,18 @@ PAINEL_NAVE:			; tabela que define o painel da nave (cor, largura, pixels, altur
     WORD		PIXEL_CINZ_ESC, PIXEL_CINZ_CLA, PIXEL_VERM, PIXEL_CINZ_CLA, PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_VERD, PIXEL_CINZ_CLA, PIXEL_CINZ_ESC
     WORD		PIXEL_CINZ_ESC, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_CLA, PIXEL_CINZ_ESC 
 
+ANIMACAO_PAINEL_1:
+	WORD		LARGURA_LUZES
+    WORD        ALTURA_LUZES
+    WORD		PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_AMAR_TRANS, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_AMAR_TRANS, PIXEL_CINZ_CLA, PIXEL_VERD_TRANS
+    WORD		PIXEL_VERM, PIXEL_CINZ_CLA, PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_VERD
+
+ANIMACAO_PAINEL_2:
+	WORD		LARGURA_LUZES
+    WORD        ALTURA_LUZES
+    WORD		PIXEL_VERM_TRANS, PIXEL_CINZ_CLA, PIXEL_AMAR_TRANS, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_AMAR_TRANS, PIXEL_CINZ_CLA, PIXEL_VERD_TRANS
+    WORD		PIXEL_VERM, PIXEL_CINZ_CLA, PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_VERD
+
 SONDA:                   ; tabela que define a sonda (cor, pixels)
     WORD    LARGURA_SONDA
     WORD    ALTURA_SONDA
@@ -197,14 +212,17 @@ tab:
 	WORD rot_int_2			; rotina de atendimento da interrupção 2
 	WORD rot_int_3			; rotina de atendimento da interrupção 3
 
-evento_sonda:			; LOCK que controla a temporização do movimento da sonda
-	LOCK 0				; LOCK para a rotina de interrupção 0
-
 evento_asteroide:		; LOCKs que controla a temporização do movimento do asteroide
 	LOCK 0				; LOCK para a rotina de interrupção 0
 
+evento_sonda:			; LOCK que controla a temporização do movimento da sonda
+	LOCK 0				; LOCK para a rotina de interrupção 1
+
 evento_display:			; LOCK que controla a temporização do display
-	LOCK 0				; LOCK para a rotina de interrupção 0
+	LOCK 0				; LOCK para a rotina de interrupção 2
+
+evento_painel:			; LOCK que controla a temporização do animação do painel
+	LOCK 0				; LOCK para a rotina de interrupção 3
 
 tecla_carregada:
     LOCK 0              ; LOCK para o teclado comunicar aos restantes processos que coluna detetou
@@ -389,9 +407,17 @@ painel:
     MOV R4, PAINEL_NAVE                ; endereço da tabela que define o painel da nave
     CALL desenha_objeto                ; desenha o objeto a partir da tabela
 
+    MOV R1, LINHA_PAINEL + 2
+    MOV R2, COLUNA_PAINEL + 2
 anima_painel:
-    WAIT
-    RET
+    MOV R0, [evento_painel]     ; Bloqueia até interrupção 3
+    MOV R4, ANIMACAO_PAINEL_1   ; Muda cor das luzes do painel
+    CALL desenha_objeto
+
+    MOV R0, [evento_painel]     ; Bloqueia até interrupção 3
+    MOV R4, ANIMACAO_PAINEL_2   ; Muda cor das luzes do painel
+    CALL desenha_objeto
+    JMP anima_painel    ; repete ciclo da animação
 
 
 ; **********************************************************************
@@ -638,7 +664,7 @@ sai_calcula_display:
     RET
 
 ; **********************************************************************
-; desenha_objeto - Desenha o painel da nave na linha e coluna indicadas
+; desenha_objeto - Desenha o objeto na linha e coluna indicadas
 ;                  com a forma e cor definidas na tabela indicada.
 ; Argumentos:   R1 - linha
 ;               R2 - coluna
@@ -781,4 +807,5 @@ rot_int_2:
 ; ROT_INT_3 - 	Rotina de atendimento da interrupção 3
 ; **********************************************************************
 rot_int_3:
+	MOV	[evento_painel], R0	; desbloqueia processo painel
 	RFE

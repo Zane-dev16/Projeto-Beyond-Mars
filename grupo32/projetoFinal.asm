@@ -23,6 +23,9 @@ TECLA_INICIO_JOGO   EQU 12      ; tecla para iniciar o jogo (tecla C)
 TECLA_PAUSA         EQU 13      ; tecla para pausa e continuar o jogo (tecla D)
 TECLA_TERMINA       EQU 13      ; tecla para pausa e continuar o jogo (tecla E)
 
+DIRECAO_ESQ         EQU -1      ; para mover um objeto a esquerda
+DIRECAO_CENT         EQU 0       ; para mover um objeto verticalmente
+DIRECAO_DIR         EQU 1       ; para mover um objeto a direita
 
 INICIO_ENERGIA      EQU 100     ;
 FATOR_INICIAL       EQU 1000    ;
@@ -260,17 +263,17 @@ inicia_jogo:
 obtem_tecla:
     MOV R1, [tecla_carregada]   ; bloqueia neste LOCK até uma tecla ser carregada
 
-    MOV R2, TECLA_SONDA_CENT    ; tecla para lancar uma sonda no centro (tecla 0)
+    MOV R2, TECLA_SONDA_ESQ    ; tecla para lancar uma sonda no centro (tecla 0)
     CMP R1, R2                  ; tecla para lancar uma sonda a esquerda (tecla 0)
-    ;JZ sonda_esq               ; verifica se a tecla premida foi o 0
+    JZ sonda_esq               ; verifica se a tecla premida foi o 0
 
     MOV R2, TECLA_SONDA_CENT    ; tecla para lancar uma sonda no centro (tecla 1)
     CMP R1, R2                  ; verifica se a tecla premida foi o 1
-    JZ sonda_centro
+    JZ sonda_cent
 
     MOV R2, TECLA_SONDA_DIR     ; tecla para lancar uma sonda a direita (tecla 2)
     CMP R1, R2                  ; verifica se a tecla premida foi o 2
-    ;JZ sonda_dir
+    JZ sonda_dir
 
     MOV R2, TECLA_PAUSA        ; tecla para pausa e continuar o jogo
     CMP R1, R2                 ; verifica se a tecla premida foi o D
@@ -282,7 +285,18 @@ obtem_tecla:
 
     JMP obtem_tecla             ; se a tecla premida não foi nenhuma das anteriores ignora a tecla
 
-sonda_centro:
+sonda_esq:
+    MOV R5, DIRECAO_ESQ
+    CALL sonda
+    JMP obtem_tecla
+
+sonda_cent:
+    MOV R5, DIRECAO_CENT
+    CALL sonda
+    JMP obtem_tecla
+
+sonda_dir:
+    MOV R5, DIRECAO_DIR
     CALL sonda
     JMP obtem_tecla
 
@@ -381,6 +395,8 @@ anima_painel:
 ;
 ; SONDA - Processo que desenha uma sonda e implementa o seu comportamento
 ;
+; Argumento:    R5 - direção da sonda da sonda (em formato -1, 0, 1)
+;
 ; **********************************************************************
 
 PROCESS SP_inicial_sonda	;
@@ -396,7 +412,8 @@ ciclo_sonda:
     CALL  desenha_objeto              ; Desenha o objeto novamente na nova posição
     MOV	R3, [evento_sonda]  	; lê o LOCK e bloqueia até a interrupção escrever nele
     CALL  apaga_objeto                ; Apaga o objeto em sua posição atual
-    DEC   R1                       ; volta para a linha anterior
+    DEC R1    ; a sonda sobe uma linha
+    ADD R2, R5  ;  atualiza posição com argumento do direção
     DEC R0  ; contador - 1
     JZ  sai_sonda   ; se o contador for 0 sai
 	JMP	ciclo_sonda		;

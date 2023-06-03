@@ -64,7 +64,7 @@ COLUNA_CENT         EQU 32      ; coluna central
 COLUNA_DIR          EQU 63      ; coluna mais à direita
 
 LINHA_PAINEL        EQU 27      ; linha do painel da nave
-COLUNA_PAINEL       EQU 27      ; coluna do painel da nave
+COLUNA_PAINEL       EQU 25      ; coluna do painel da nave
 
 LINHA_CIMA_PAINEL	EQU 26		 ; linha acima do painel
 

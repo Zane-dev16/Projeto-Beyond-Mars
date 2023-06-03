@@ -235,35 +235,11 @@ inicio:
 
     CALL teclado
 
-obtem_tecla:	
-
+espera_inicio:
     MOV R1, [tecla_carregada]   ; bloqueia neste LOCK até uma tecla ser carregada
-
-    MOV R2, TECLA_SONDA_CENT    ; tecla para lancar uma sonda no centro (tecla 0)
-    CMP R1, R2                  ; tecla para lancar uma sonda a esquerda (tecla 0)
-    ;JZ sonda_esq               ; verifica se a tecla premida foi o 0
-
-    MOV R2, TECLA_SONDA_CENT    ; tecla para lancar uma sonda no centro (tecla 1)
-    CMP R1, R2                  ; verifica se a tecla premida foi o 1
-    ;JZ sonda_centro
-
-    MOV R2, TECLA_SONDA_DIR     ; tecla para lancar uma sonda a direita (tecla 2)
-    CMP R1, R2                  ; verifica se a tecla premida foi o 2
-    ;JZ sonda_dir
-
-    MOV R2, TECLA_INICIO_JOGO                ;
-    CMP R1, R2                 ; verifica se a tecla premida foi o C
-    JZ inicia_jogo
-
-    MOV R2, TECLA_PAUSA        ; tecla para pausa e continuar o jogo
-    CMP R1, R2                 ; verifica se a tecla premida foi o D
-    JZ suspende_continua
-
-    MOV R2, 0EH
-    CMP R1, R2                   ; verifica se a tecla premida foi o E
-    ;JZ termina
-
-    JMP obtem_tecla             ; se a tecla premida não foi nenhuma das anteriores ignora a tecla
+    MOV R2, TECLA_INICIO_JOGO   ;
+    CMP R1, R2                  ; verifica se a tecla premida foi o C
+    JNZ espera_inicio             ; se a tecla premida não for C repete ciclo
 
 inicia_jogo:
     MOV R3, [momento_jogo]
@@ -278,8 +254,37 @@ inicia_jogo:
     MOV [MSG], R1    ; apaga as letras de inicio de jogo
     CALL painel
     CALL asteroide
-    CALL sonda
     CALL energia
+
+
+obtem_tecla:
+    MOV R1, [tecla_carregada]   ; bloqueia neste LOCK até uma tecla ser carregada
+
+    MOV R2, TECLA_SONDA_CENT    ; tecla para lancar uma sonda no centro (tecla 0)
+    CMP R1, R2                  ; tecla para lancar uma sonda a esquerda (tecla 0)
+    ;JZ sonda_esq               ; verifica se a tecla premida foi o 0
+
+    MOV R2, TECLA_SONDA_CENT    ; tecla para lancar uma sonda no centro (tecla 1)
+    CMP R1, R2                  ; verifica se a tecla premida foi o 1
+    JZ sonda_centro
+
+    MOV R2, TECLA_SONDA_DIR     ; tecla para lancar uma sonda a direita (tecla 2)
+    CMP R1, R2                  ; verifica se a tecla premida foi o 2
+    ;JZ sonda_dir
+
+    MOV R2, TECLA_PAUSA        ; tecla para pausa e continuar o jogo
+    CMP R1, R2                 ; verifica se a tecla premida foi o D
+    JZ suspende_continua
+
+    MOV R2, 0EH
+    CMP R1, R2                   ; verifica se a tecla premida foi o E
+    ;JZ termina
+
+    JMP obtem_tecla             ; se a tecla premida não foi nenhuma das anteriores ignora a tecla
+
+sonda_centro:
+    CALL sonda
+    JMP obtem_tecla
 
 suspende_continua:
     MOV R2, [estado_jogo]

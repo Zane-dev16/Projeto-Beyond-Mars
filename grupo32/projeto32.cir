@@ -10,14 +10,14 @@
   "primary screen width" : 1920,
   "primary screen height" : 1080,
   "window" : {
-    "X absolute" : -8,
-    "Y absolute" : -8,
-    "X relative" : -8,
-    "Y relative" : -8,
-    "width" : 1936,
-    "height" : 1096,
-    "leftRightDividerLocation" : 296,
-    "topBottomDividerLocation" : 912
+    "X absolute" : 0,
+    "Y absolute" : 0,
+    "X relative" : 0,
+    "Y relative" : 0,
+    "width" : 1440,
+    "height" : 900,
+    "leftRightDividerLocation" : 222,
+    "topBottomDividerLocation" : 771
   },
   "connections" : [ {
     "className" : "Connection",
@@ -75,11 +75,11 @@
         "X" : 552,
         "Y" : 415
       }, {
-        "X" : 568,
-        "Y" : 415
+        "X" : 425,
+        "Y" : 312
       }, {
-        "X" : 568,
-        "Y" : 187
+        "X" : 425,
+        "Y" : 142
       }, {
         "X" : 806,
         "Y" : 187
@@ -104,14 +104,14 @@
       "sourcePinID" : 69,
       "targetPinID" : 11,
       "points" : [ {
-        "X" : 806,
-        "Y" : 767
+        "X" : 604,
+        "Y" : 577
       }, {
-        "X" : 720,
-        "Y" : 767
+        "X" : 539,
+        "Y" : 577
       }, {
-        "X" : 720,
-        "Y" : 213
+        "X" : 539,
+        "Y" : 160
       }, {
         "X" : 407,
         "Y" : 207
@@ -123,11 +123,11 @@
         "X" : 806,
         "Y" : 371
       }, {
-        "X" : 720,
-        "Y" : 371
+        "X" : 539,
+        "Y" : 282
       }, {
-        "X" : 720,
-        "Y" : 213
+        "X" : 539,
+        "Y" : 160
       }, {
         "X" : 407,
         "Y" : 207
@@ -155,11 +155,11 @@
         "X" : 806,
         "Y" : 391
       }, {
-        "X" : 672,
-        "Y" : 397
+        "X" : 503,
+        "Y" : 298
       }, {
-        "X" : 672,
-        "Y" : 227
+        "X" : 503,
+        "Y" : 170
       }, {
         "X" : 406,
         "Y" : 227
@@ -171,17 +171,17 @@
         "X" : 406,
         "Y" : 227
       }, {
-        "X" : 672,
-        "Y" : 227
+        "X" : 503,
+        "Y" : 170
       }, {
-        "X" : 672,
-        "Y" : 456
+        "X" : 503,
+        "Y" : 342
       }, {
-        "X" : 776,
-        "Y" : 456
+        "X" : 581,
+        "Y" : 342
       }, {
-        "X" : 776,
-        "Y" : 539
+        "X" : 581,
+        "Y" : 408
       }, {
         "X" : 806,
         "Y" : 539
@@ -209,11 +209,11 @@
         "X" : 806,
         "Y" : 559
       }, {
-        "X" : 752,
-        "Y" : 565
+        "X" : 563,
+        "Y" : 424
       }, {
-        "X" : 752,
-        "Y" : 247
+        "X" : 563,
+        "Y" : 185
       }, {
         "X" : 407,
         "Y" : 247
@@ -222,14 +222,14 @@
       "sourcePinID" : 62,
       "targetPinID" : 12,
       "points" : [ {
-        "X" : 806,
-        "Y" : 663
+        "X" : 604,
+        "Y" : 499
       }, {
-        "X" : 752,
-        "Y" : 663
+        "X" : 563,
+        "Y" : 499
       }, {
-        "X" : 752,
-        "Y" : 247
+        "X" : 563,
+        "Y" : 185
       }, {
         "X" : 407,
         "Y" : 247
@@ -241,11 +241,11 @@
         "X" : 806,
         "Y" : 411
       }, {
-        "X" : 752,
-        "Y" : 411
+        "X" : 563,
+        "Y" : 308
       }, {
-        "X" : 752,
-        "Y" : 247
+        "X" : 563,
+        "Y" : 185
       }, {
         "X" : 407,
         "Y" : 247
@@ -269,11 +269,11 @@
         "X" : 248,
         "Y" : 360
       }, {
-        "X" : 488,
-        "Y" : 360
+        "X" : 365,
+        "Y" : 270
       }, {
-        "X" : 488,
-        "Y" : 127
+        "X" : 365,
+        "Y" : 96
       }, {
         "X" : 406,
         "Y" : 127
@@ -291,11 +291,11 @@
         "X" : 248,
         "Y" : 360
       }, {
-        "X" : 488,
-        "Y" : 360
+        "X" : 365,
+        "Y" : 270
       }, {
-        "X" : 488,
-        "Y" : 127
+        "X" : 365,
+        "Y" : 96
       }, {
         "X" : 406,
         "Y" : 127
@@ -313,11 +313,11 @@
         "X" : 248,
         "Y" : 360
       }, {
-        "X" : 488,
-        "Y" : 360
+        "X" : 365,
+        "Y" : 270
       }, {
-        "X" : 488,
-        "Y" : 127
+        "X" : 365,
+        "Y" : 96
       }, {
         "X" : 406,
         "Y" : 127
@@ -329,11 +329,11 @@
         "X" : 806,
         "Y" : 167
       }, {
-        "X" : 756,
-        "Y" : 167
+        "X" : 566,
+        "Y" : 126
       }, {
-        "X" : 756,
-        "Y" : 127
+        "X" : 566,
+        "Y" : 96
       }, {
         "X" : 406,
         "Y" : 127
@@ -345,17 +345,17 @@
         "X" : 806,
         "Y" : 311
       }, {
-        "X" : 648,
-        "Y" : 311
+        "X" : 485,
+        "Y" : 234
       }, {
-        "X" : 648,
-        "Y" : 280
+        "X" : 485,
+        "Y" : 210
       }, {
-        "X" : 488,
-        "Y" : 280
+        "X" : 365,
+        "Y" : 210
       }, {
-        "X" : 488,
-        "Y" : 127
+        "X" : 365,
+        "Y" : 96
       }, {
         "X" : 406,
         "Y" : 127
@@ -367,17 +367,17 @@
         "X" : 806,
         "Y" : 479
       }, {
-        "X" : 648,
-        "Y" : 479
+        "X" : 485,
+        "Y" : 360
       }, {
-        "X" : 648,
-        "Y" : 280
+        "X" : 485,
+        "Y" : 210
       }, {
-        "X" : 488,
-        "Y" : 280
+        "X" : 365,
+        "Y" : 210
       }, {
-        "X" : 488,
-        "Y" : 127
+        "X" : 365,
+        "Y" : 96
       }, {
         "X" : 406,
         "Y" : 127
@@ -408,11 +408,11 @@
       "sourcePinID" : 57,
       "targetPinID" : 71,
       "points" : [ {
-        "X" : 945,
-        "Y" : 623
+        "X" : 706,
+        "Y" : 467
       }, {
-        "X" : 974,
-        "Y" : 623
+        "X" : 730,
+        "Y" : 467
       } ]
     } ]
   }, {
@@ -424,17 +424,17 @@
       "sourcePinID" : 64,
       "targetPinID" : 72,
       "points" : [ {
-        "X" : 945,
-        "Y" : 727
+        "X" : 706,
+        "Y" : 545
       }, {
-        "X" : 1096,
-        "Y" : 727
+        "X" : 821,
+        "Y" : 545
       }, {
-        "X" : 1096,
-        "Y" : 623
+        "X" : 821,
+        "Y" : 467
       }, {
-        "X" : 1072,
-        "Y" : 623
+        "X" : 816,
+        "Y" : 467
       } ]
     } ]
   }, {
@@ -449,11 +449,11 @@
         "X" : 806,
         "Y" : 499
       }, {
-        "X" : 664,
-        "Y" : 499
+        "X" : 497,
+        "Y" : 376
       }, {
-        "X" : 664,
-        "Y" : 539
+        "X" : 497,
+        "Y" : 404
       }, {
         "X" : 395,
         "Y" : 539
@@ -468,14 +468,14 @@
       "sourcePinID" : 61,
       "targetPinID" : 35,
       "points" : [ {
-        "X" : 806,
-        "Y" : 623
+        "X" : 604,
+        "Y" : 467
       }, {
-        "X" : 664,
-        "Y" : 623
+        "X" : 497,
+        "Y" : 467
       }, {
-        "X" : 664,
-        "Y" : 559
+        "X" : 497,
+        "Y" : 419
       }, {
         "X" : 395,
         "Y" : 559
@@ -490,14 +490,14 @@
       "sourcePinID" : 68,
       "targetPinID" : 36,
       "points" : [ {
-        "X" : 806,
-        "Y" : 727
+        "X" : 604,
+        "Y" : 545
       }, {
-        "X" : 608,
-        "Y" : 727
+        "X" : 455,
+        "Y" : 545
       }, {
-        "X" : 608,
-        "Y" : 579
+        "X" : 455,
+        "Y" : 434
       }, {
         "X" : 395,
         "Y" : 579
@@ -515,17 +515,17 @@
         "X" : 923,
         "Y" : 167
       }, {
-        "X" : 948,
-        "Y" : 167
+        "X" : 710,
+        "Y" : 126
       }, {
-        "X" : 948,
-        "Y" : 96
+        "X" : 710,
+        "Y" : 72
       }, {
-        "X" : 696,
-        "Y" : 96
+        "X" : 521,
+        "Y" : 72
       }, {
-        "X" : 696,
-        "Y" : 167
+        "X" : 521,
+        "Y" : 128
       }, {
         "X" : 406,
         "Y" : 167
@@ -534,17 +534,17 @@
       "sourcePinID" : 60,
       "targetPinID" : 8,
       "points" : [ {
-        "X" : 806,
-        "Y" : 643
+        "X" : 604,
+        "Y" : 483
       }, {
-        "X" : 696,
-        "Y" : 643
+        "X" : 521,
+        "Y" : 483
       }, {
-        "X" : 696,
-        "Y" : 168
+        "X" : 521,
+        "Y" : 126
       }, {
-        "X" : 692,
-        "Y" : 167
+        "X" : 518,
+        "Y" : 128
       }, {
         "X" : 406,
         "Y" : 167
@@ -553,14 +553,14 @@
       "sourcePinID" : 67,
       "targetPinID" : 8,
       "points" : [ {
-        "X" : 806,
-        "Y" : 747
+        "X" : 604,
+        "Y" : 561
       }, {
-        "X" : 696,
-        "Y" : 747
+        "X" : 521,
+        "Y" : 561
       }, {
-        "X" : 696,
-        "Y" : 167
+        "X" : 521,
+        "Y" : 128
       }, {
         "X" : 406,
         "Y" : 167
@@ -572,17 +572,17 @@
         "X" : 923,
         "Y" : 311
       }, {
-        "X" : 948,
-        "Y" : 311
+        "X" : 710,
+        "Y" : 234
       }, {
-        "X" : 948,
-        "Y" : 96
+        "X" : 710,
+        "Y" : 72
       }, {
-        "X" : 696,
-        "Y" : 96
+        "X" : 521,
+        "Y" : 72
       }, {
-        "X" : 696,
-        "Y" : 167
+        "X" : 521,
+        "Y" : 128
       }, {
         "X" : 406,
         "Y" : 167
@@ -594,11 +594,11 @@
         "X" : 806,
         "Y" : 519
       }, {
-        "X" : 696,
-        "Y" : 519
+        "X" : 521,
+        "Y" : 392
       }, {
-        "X" : 696,
-        "Y" : 167
+        "X" : 521,
+        "Y" : 128
       }, {
         "X" : 406,
         "Y" : 167
@@ -616,11 +616,11 @@
         "X" : 806,
         "Y" : 351
       }, {
-        "X" : 616,
-        "Y" : 351
+        "X" : 461,
+        "Y" : 266
       }, {
-        "X" : 616,
-        "Y" : 525
+        "X" : 461,
+        "Y" : 394
       }, {
         "X" : 395,
         "Y" : 519
@@ -638,11 +638,11 @@
         "X" : 806,
         "Y" : 331
       }, {
-        "X" : 592,
-        "Y" : 331
+        "X" : 443,
+        "Y" : 250
       }, {
-        "X" : 592,
-        "Y" : 499
+        "X" : 443,
+        "Y" : 378
       }, {
         "X" : 395,
         "Y" : 499
@@ -740,10 +740,10 @@
     "positionX" : 259,
     "positionY" : 112,
     "simGuiVisibleInSimulation" : true,
-    "simGuiXRelative" : 348,
-    "simGuiYRelative" : 108,
-    "simGuiWidth" : 807,
-    "simGuiHeight" : 901,
+    "simGuiXRelative" : 70,
+    "simGuiYRelative" : 81,
+    "simGuiWidth" : 769,
+    "simGuiHeight" : 819,
     "clockPeriod" : 200,
     "startAutomatically" : true,
     "simulationMaster" : true,
@@ -1314,8 +1314,8 @@
     "name" : "POUT-2",
     "numberOfBits" : 8,
     "moduleDelay" : 5,
-    "positionX" : 811,
-    "positionY" : 608,
+    "positionX" : 608,
+    "positionY" : 455,
     "nOutputPinsArray" : [ {
       "className" : "TristateOutPin",
       "elementID" : 57,
@@ -1382,8 +1382,8 @@
     "name" : "PIN",
     "numberOfBits" : 8,
     "moduleDelay" : 5,
-    "positionX" : 811,
-    "positionY" : 712,
+    "positionX" : 608,
+    "positionY" : 533,
     "nInputPinsArray" : [ {
       "className" : "InPin",
       "elementID" : 64,
@@ -1451,13 +1451,13 @@
     "name" : "Teclado",
     "numberOfBits" : 4,
     "moduleDelay" : 5,
-    "positionX" : 979,
-    "positionY" : 608,
+    "positionX" : 734,
+    "positionY" : 455,
     "simGuiVisibleInSimulation" : true,
-    "simGuiXRelative" : 1581,
-    "simGuiYRelative" : 735,
-    "simGuiWidth" : 166,
-    "simGuiHeight" : 187,
+    "simGuiXRelative" : 1185,
+    "simGuiYRelative" : 520,
+    "simGuiWidth" : 110,
+    "simGuiHeight" : 140,
     "columns" : 4,
     "key numbers radix" : "Hexadecimal",
     "key color" : "Default",
@@ -1497,10 +1497,10 @@
     "positionX" : 1027,
     "positionY" : 464,
     "simGuiVisibleInSimulation" : true,
-    "simGuiXRelative" : 1521,
-    "simGuiYRelative" : 520,
-    "simGuiWidth" : 265,
-    "simGuiHeight" : 212,
+    "simGuiXRelative" : 1140,
+    "simGuiYRelative" : 389,
+    "simGuiWidth" : 192,
+    "simGuiHeight" : 160,
     "nHexaDigits" : 3,
     "onColor" : "Red",
     "zColor" : "Black_White",
@@ -1525,16 +1525,16 @@
     "positionX" : 811,
     "positionY" : 296,
     "simGuiVisibleInSimulation" : true,
-    "simGuiXRelative" : 896,
-    "simGuiYRelative" : 0,
-    "simGuiWidth" : 1024,
-    "simGuiHeight" : 512,
+    "simGuiXRelative" : 671,
+    "simGuiYRelative" : 20,
+    "simGuiWidth" : 768,
+    "simGuiHeight" : 384,
     "columnAddressNBits" : 6,
     "lineAddressNBits" : 5,
     "windowScreenWidthPixels" : 1024,
     "windowScreenHeightixels" : 512,
     "defaultPenColor" : 65280,
-    "image paths" : [ "1.jpg", "2.jpg" ],
+    "image paths" : [ "1.jpg", "2.jpg", "INICIAR.gif", "TRANSPARENTE.png" ],
     "sounds/videos settings" : [ {
       "filePathName" : "disparo_laser.wav",
       "relative sound volume" : 1.0,

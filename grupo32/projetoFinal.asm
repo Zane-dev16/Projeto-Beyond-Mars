@@ -15,8 +15,15 @@ LINHA1              EQU 1       ; 1ª linha
 LINHA4              EQU 8       ; 4ª linha
 MASCARA_TECLA       EQU 0FH     ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
 MASCARA_GERADOR_ALEATORIO   EQU 0F0H    ; para isolar os 4 bits do maior peso (pseudo-aleatórias)
-TECLA_ESQUERDA		EQU 1		; tecla na primeira coluna do teclado (tecla C)
-TECLA_DIREITA		EQU 2		; tecla na segunda coluna do teclado (tecla D)
+
+TECLA_SONDA_ESQ     EQU 0       ; tecla para lancar uma sonda a esquerda (tecla 0)
+TECLA_SONDA_CENT    EQU 1       ; tecla para lancar uma sonda no centro (tecla 1)
+TECLA_SONDA_DIR     EQU 2       ; tecla para lancar uma sonda a direita (tecla 2)
+TECLA_INICIO_JOGO   EQU 12      ; tecla para iniciar o jogo (tecla C)
+TECLA_PAUSA         EQU 13      ; tecla para pausa e continuar o jogo (tecla D)
+TECLA_TERMINA       EQU 13      ; tecla para pausa e continuar o jogo (tecla E)
+
+
 INICIO_ENERGIA      EQU 100     ;
 FATOR_INICIAL       EQU 1000    ;
 
@@ -29,17 +36,20 @@ APAGA_AVISO     		    EQU COMANDOS + 40H		; endereço do comando para apagar o a
 APAGA_ECRA	 		        EQU COMANDOS + 02H		; endereço do comando para apagar todos os pixels já desenhados
 FUNDO_ECRA                  EQU COMANDOS + 42H		; endereço do comando para selecionar uma imagem de fundo
 TOCA_SOM				    EQU COMANDOS + 5AH		; endereço do comando para tocar um som
-IMAGEM_FRONTAL              EQU COMANDOS + 46H      ; endereço do comando para sobrepor uma imagem à imagem de fundo
+MSG                         EQU COMANDOS + 46H      ; endereço do comando para sobrepor uma imagem (mensagem) à imagem de fundo
 
-FUNDO_INICIAL      EQU 0
-FUNDO_JOGO         EQU 1
-FUNDO_EXPLOSAO     EQU 4
-FUNDO_ENERGIA      EQU 3
+FUNDO_INICIAL       EQU 0
+FUNDO_JOGO          EQU 1
+FUNDO_EXPLOSAO      EQU 4
+FUNDO_ENERGIA       EQU 8
+FUNDO_CHEGA         EQU 9
 
-IMAGEM_INICIAR     EQU 2
-IMAGEM_PAUSA       EQU 5
-IMAGEM_EXPLOSAO    EQU 6
-IMAGEM_SEM_ENERGIA EQU 7
+MSG_TRANSPARENTE    EQU 3
+MSG_INICIAR         EQU 2
+MSG_PAUSA           EQU 5
+MSG_EXPLOSAO        EQU 6
+MSG_SEM_ENERGIA     EQU 7
+MSG_CHEGA           EQU 10
 
 SOM_INICIO         EQU 0
 SOM_DISPARO        EQU 1
@@ -54,9 +64,16 @@ COLUNA_CENT         EQU 32      ; coluna central
 COLUNA_DIR          EQU 63      ; coluna mais à direita
 
 LINHA_PAINEL        EQU 27      ; linha do painel da nave
-COLUNA_PAINEL       EQU 27      ; coluna do painel da nave
+COLUNA_PAINEL       EQU 25      ; coluna do painel da nave
 
 LINHA_CIMA_PAINEL	EQU 26		 ; linha acima do painel
+
+DIRECAO_ESQ         EQU -1      ; para mover um objeto a esquerda
+DIRECAO_CENT        EQU 0       ; para mover um objeto verticalmente
+DIRECAO_DIR         EQU 1       ; para mover um objeto a direita
+
+COLUNA_SONDA_ESQ    EQU 26      ; coluna inicial de uma sonda a esquerda
+COLUNA_SONDA_DIR    EQU 38      ; coluna inicial de uma sonda a direita
 
 LARGURA_SONDA       EQU 1        ; largura das sondas
 ALTURA_SONDA        EQU 1        ; altura das sondas
@@ -79,9 +96,13 @@ PIXEL_AMAR_TRANS    EQU 05FF0H  ; pixel amarelo translucido
 PIXEL_CINZ_ESC      EQU 0F777H  ; pixel cinzento escuro opaco 
 PIXEL_CINZ_CLA      EQU 0FFFFH  ; pixel cinzento claro opaco 
 
-TAMANHO_PILHA		EQU 100H      ; tamanho de cada pilha, em words
+TAMANHO_PILHA		EQU 100H    ; tamanho de cada pilha, em words
 N_ASTEROIDES        EQU 4       ; nº de asteroides em simultaneo
 N_SONDA             EQU 3       ; nº de sondas em simultaneo
+
+JOGO_INICIADO       EQU 1       ; jogo iniciado
+JOGO_PAUSA       EQU 0       ; jogo em pausa
+JOGO_TERMINADO      EQU -1      ; jogo terminado
 
 ; *********************************************************************************
 ; * Dados 
@@ -185,13 +206,13 @@ evento_asteroide:		; LOCKs que controla a temporização do movimento do asteroi
 evento_display:			; LOCK que controla a temporização do display
 	LOCK 0				; LOCK para a rotina de interrupção 0
 
-coluna_carregada:
-    LOCK 0              ; LOCK para o teclado comunicar aos restantes processos que tecla detetou
+tecla_carregada:
+    LOCK 0              ; LOCK para o teclado comunicar aos restantes processos que coluna detetou
 
-linha_carregada:
-    LOCK 0              ; LOCK para o teclado comunicar aos restantes processos que tecla detetou
+momento_jogo:            ; controlar se o jogo já foi iniciado
+    WORD 0
 
-estado_jogo:            ; LOCK para controlar se o jogo já foi iniciado
+estado_jogo:          ; LOCK para o teclado comunicar aos restantes processos o estado do jogo
     LOCK 0
 
 
@@ -203,13 +224,13 @@ inicio:
 	MOV  SP, SP_inicial_prog_princ		; inicializa SP do programa principal
 
 	MOV  BTE, tab			; inicializa BTE (registo de Base da Tabela de Exceções)
-   MOV [APAGA_AVISO], R1                   ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
+    MOV [APAGA_AVISO], R1                   ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
     MOV [APAGA_ECRA], R1                    ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
     MOV R1, FUNDO_INICIAL
-    MOV [estado_jogo], R1           ; jogo ainda não iniciado
+    MOV [momento_jogo], R1           ; jogo ainda não iniciado
     MOV [FUNDO_ECRA], R1         ; coloca imagem de fundo incial
-    MOV R1, IMAGEM_INICIAR
-    MOV [IMAGEM_FRONTAL], R1    ; sobrepõe letras sobre a imagem inicial
+    MOV R1, MSG_INICIAR
+    MOV [MSG], R1    ; sobrepõe letras sobre a imagem inicial
 
     EI0                 ; permite interrupções 0
     EI1                 ; permite interrupções 1
@@ -218,54 +239,94 @@ inicio:
 	EI					; permite interrupções (geral)
 
 	; cria processos.
-    CALL energia
-    CALL asteroide
-    CALL sonda
-    CALL painel
+
     CALL teclado
 
-obtem_tecla:	
-	MOV	R1, [coluna_carregada]	; bloqueia neste LOCK a coluna carregada
-    MOV R2, [linha_carregada]   ; bloqueia neste LOCK a linha carregada
-    MOV R3, LINHA1
-    CMP R2, R3                  ; verifica se foi premida uma tecla da 1ª linha
-    JZ linha1
-    MOV R3, LINHA4
-    CMP R2, R3                  ; verifica se foi premida uma tecla da 4ª linha
-    JZ linha4
-    JMP obtem_tecla             ; se a tecla premida não foi da linha 1 oou 4 ignora a tecla
-
-linha1:
-    MOV R3, [estado_jogo]       
-    CMP R3, FUNDO_INICIAL       ; verifica se o jogo já foi iniciado
-    JZ obtem_tecla              ; caso ainda nao tenha sido iniciado ignora a tecla
-    CMP R1, 1                   ; verifica se a tecla premida foi o 0
-    ;JZ sonda_esq
-    CMP R1, 2                   ; verifica se a tecla premida foi o 1
-    ;JZ sonda_centro
-    CMP R1, 3                   ; verifica se a tecla premida foi o 2
-    ;JZ sonda_dir
-    JMP obtem_tecla             ; se a tecla premida não foi nenhuma das anteriores ignora a tecla
-
-linha4:
-    CMP R1, 1                   ; verifica se a tecla premida foi o C
-    JZ inicia_jogo
-    CMP R1, 2                   ; verifica se a tecla premida foi o D
-    ;JZ suspende_continua
-    CMP R1, 3                   ; verifica se a tecla premida foi o E
-    ;JZ termina
-    JMP obtem_tecla             ; se a tecla premida não foi nenhuma das anteriores ignora a tecla
+espera_inicio:
+    MOV R1, [tecla_carregada]   ; bloqueia neste LOCK até uma tecla ser carregada
+    MOV R2, TECLA_INICIO_JOGO   ;
+    CMP R1, R2                  ; verifica se a tecla premida foi o C
+    JNZ espera_inicio             ; se a tecla premida não for C repete ciclo
 
 inicia_jogo:
-    MOV R3, [estado_jogo]
-    CMP R3, FUNDO_INICIAL       ; verifica se o jogo já foi iniciado
+    MOV R3, [momento_jogo]
+    CMP R3, FUNDO_JOGO          ; verifica se o jogo já foi iniciado
     JZ obtem_tecla              ; caso ainda já tenha sido iniciado ignora a tecla
+    MOV R1, JOGO_INICIADO
+    MOV [estado_jogo], R1
     MOV R1, FUNDO_JOGO
-    MOV [estado_jogo], R1       ; atualiza estado do jogo
-    MOV [FUNDO_ECRA], R1         ; coloca imagem de fundo para durante o jogo
+    MOV [momento_jogo], R1       ; atualiza estado do jogo
+    MOV [FUNDO_ECRA], R1        ; coloca imagem de fundo para durante o jogo
+    MOV R1, MSG_TRANSPARENTE
+    MOV [MSG], R1    ; apaga as letras de inicio de jogo
     CALL painel
     CALL asteroide
+    CALL energia
+
+
+obtem_tecla:
+    MOV R1, [tecla_carregada]   ; bloqueia neste LOCK até uma tecla ser carregada
+
+    MOV R2, TECLA_SONDA_ESQ    ; tecla para lancar uma sonda no centro (tecla 0)
+    CMP R1, R2                  ; tecla para lancar uma sonda a esquerda (tecla 0)
+    JZ sonda_esq               ; verifica se a tecla premida foi o 0
+
+    MOV R2, TECLA_SONDA_CENT    ; tecla para lancar uma sonda no centro (tecla 1)
+    CMP R1, R2                  ; verifica se a tecla premida foi o 1
+    JZ sonda_cent
+
+    MOV R2, TECLA_SONDA_DIR     ; tecla para lancar uma sonda a direita (tecla 2)
+    CMP R1, R2                  ; verifica se a tecla premida foi o 2
+    JZ sonda_dir
+
+    MOV R2, TECLA_PAUSA        ; tecla para pausa e continuar o jogo
+    CMP R1, R2                 ; verifica se a tecla premida foi o D
+    JZ suspende_continua
+
+    MOV R2, 0EH
+    CMP R1, R2                   ; verifica se a tecla premida foi o E
+    ;JZ termina
+
+    JMP obtem_tecla             ; se a tecla premida não foi nenhuma das anteriores ignora a tecla
+
+sonda_esq:
+    MOV R5, DIRECAO_ESQ
     CALL sonda
+    JMP obtem_tecla
+
+sonda_cent:
+    MOV R5, DIRECAO_CENT
+    CALL sonda
+    JMP obtem_tecla
+
+sonda_dir:
+    MOV R5, DIRECAO_DIR
+    CALL sonda
+    JMP obtem_tecla
+
+suspende_continua:
+    MOV R2, [estado_jogo]
+    MOV R1, JOGO_INICIADO
+    CMP R2, R1
+    JZ suspende
+    MOV R1, JOGO_PAUSA
+    CMP R2, R1
+    JZ reinicia
+    MOV R1, JOGO_TERMINADO
+    CMP R2, R1
+    JZ obtem_tecla
+
+suspende:
+    MOV R1, JOGO_PAUSA
+    MOV [estado_jogo], R1
+    MOV R1, [estado_jogo]
+
+reinicia:
+    MOV R1, JOGO_INICIADO
+    MOV [estado_jogo], R1
+
+
+;termina:
 
 
 ; **********************************************************************
@@ -298,46 +359,17 @@ atualiza_display:
 PROCESS SP_inicial_teclado	; Processo com valor para inicializar o SP
 
 teclado:					; processo que implementa o comportamento do teclado
-	MOV  R2, TEC_LIN		; endereço do periférico das linhas
-	MOV  R3, TEC_COL		; endereço do periférico das colunas
-	MOV  R5, MASCARA_TECLA		; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
-
-espera_tecla:				; neste ciclo espera-se até uma tecla ser premida
-
-	YIELD				    ; este ciclo é potencialmente bloqueante, pelo que tem de
-						    ; ter um ponto de fuga (aqui pode comutar para outro processo)
-
-	MOV  R1, LINHA1	        ; testar a linha 4
-
-varre_linhas:
-	MOVB [R2], R1			; escrever no periférico de saída (linhas)
-	MOVB R0, [R3]			; ler do periférico de entrada (colunas)
-	AND  R0, R5			    ; elimina bits para além dos bits 0-3
-	CMP  R0, 0			    ; há tecla premida?
-	JNZ   ha_tecla		    ; se há tecla premida espera até não haver
-    CMP R1, 5               ; verifica se é a ultima linha do teclado
-    JGE espera_tecla        ; se ja tiver verificado todas as linhas reinicia
-    SHL R1, 1               ; testar a próxima linha
-    JMP varre_linhas        ; continua o ciclo na próxima linha
-
-						
-	MOV	[coluna_carregada], R0	; informa quem estiver bloqueado neste LOCK que uma tecla foi carregada
-							; (o valor escrito é o número da coluna da tecla no teclado)
-
+    CALL espera_tecla
 ha_tecla:					; neste ciclo espera-se até NENHUMA tecla estar premida
 
 	YIELD				; este ciclo é potencialmente bloqueante, pelo que tem de
 						; ter um ponto de fuga (aqui pode comutar para outro processo)
 
-	MOV	[coluna_carregada], R0	; guarda a coluna carregada
-    MOV [linha_carregada], R1   ; guarda a linha carregada
-    MOVB [R2], R1			; escrever no periférico de saída (linhas)
-    MOVB R0, [R3]			; ler do periférico de entrada (colunas)
-	AND  R0, R5			; elimina bits para além dos bits 0-3
-    CMP  R0, 0			; há tecla premida?
-    JNZ  ha_tecla			; se ainda houver uma tecla premida, espera até não haver
+    CALL calcula_tecla
+	MOV	[tecla_carregada], R2	; guarda a coluna carregada
+    CALL espera_libertar_tecla
 
-	JMP	espera_tecla		; esta "rotina" nunca retorna porque nunca termina
+	JMP	teclado		; esta "rotina" nunca retorna porque nunca termina
 						; Se se quisesse terminar o processo, era deixar o processo chegar a um RET
 
 ; **********************************************************************
@@ -367,6 +399,8 @@ anima_painel:
 ;
 ; SONDA - Processo que desenha uma sonda e implementa o seu comportamento
 ;
+; Argumento:    R5 - direção da sonda (em formato -1, 0, 1)
+;
 ; **********************************************************************
 
 PROCESS SP_inicial_sonda	;
@@ -374,17 +408,33 @@ PROCESS SP_inicial_sonda	;
 	; desenha a sonda na sua posição inicial
 sonda:
     MOV R0, 12
-	MOV R1, LINHA_CIMA_PAINEL	       ; linha da sonda
-	MOV R2, COLUNA_CENT	       ; le valor da coluna da sonda
+	MOV R1, LINHA_CIMA_PAINEL   ; linha da sonda
 	MOV R4, SONDA
 
+    CMP R5, DIRECAO_ESQ ; se for lancada uma sonda a esquerda
+    JZ pos_sonda_esq    ; inicia coluna a esquerda do painel
+    
+    CMP R5, DIRECAO_DIR ; se for lancada uma sonda a esquerda
+    JZ pos_sonda_dir    ; inicia coluna a esquerda do painel
+
+	MOV R2, COLUNA_CENT	        ; coluna da sonda no centro
+    JMP ciclo_sonda
+
+pos_sonda_esq:
+	MOV R2, COLUNA_SONDA_ESQ     ; inicia coluna a esquerda do painel
+    JMP ciclo_sonda
+
+pos_sonda_dir:
+	MOV R2, COLUNA_SONDA_DIR     ; inicia coluna a direita do painel
+
 ciclo_sonda:
-    CALL  desenha_objeto              ; Desenha o objeto novamente na nova posição
-    MOV	R3, [evento_sonda]  	; lê o LOCK e bloqueia até a interrupção escrever nele
-    CALL  apaga_objeto                ; Apaga o objeto em sua posição atual
-    DEC   R1                       ; volta para a linha anterior
-    DEC R0  ; contador - 1
-    JZ  sai_sonda   ; se o contador for 0 sai
+    CALL  desenha_objeto    ; Desenha o objeto novamente na nova posição
+    MOV	R3, [evento_sonda]  ; lê o LOCK e bloqueia até a interrupção escrever nele
+    CALL  apaga_objeto      ; Apaga o objeto em sua posição atual
+    DEC R1      ; a sonda sobe uma linha
+    ADD R2, R5  ;  atualiza posição com argumento do direção
+    DEC R0      ; decrementa contador
+    JZ  sai_sonda       ; se o contador for 0 sai
 	JMP	ciclo_sonda		;
 
 sai_sonda:
@@ -407,9 +457,10 @@ asteroide:
     MOV R1, 0                          ;  linha do asteroide
     MOV R2, 0                          ; le valor da coluna do asteroide (+2 porque a linha é um WORD)
     MOV R4, ASTEROIDE_PERIGO           ; endereço da tabela que define o asteroide
+
 ciclo_asteroide:
 	CALL	desenha_objeto		; desenha o boneco a partir da tabela
-
+    
 
 	MOV	R3, [evento_asteroide]  	; lê o LOCK e bloqueia até a interrupção escrever nele
 
@@ -418,6 +469,122 @@ ciclo_asteroide:
     INC   R2                              ; Incrementa a posição do asteroide para a próxima coluna
 	JMP	ciclo_asteroide		; esta "rotina" nunca retorna porque nunca termina
 						; Se se quisesse terminar o processo, era deixar o processo chegar a um RET
+
+; **********************************************************************
+; ESPERA_TECLA - Espera até uma tecla seja premida e lê a coluna e linha
+;
+; Retorna: 	R1 - linha da tecla premida
+;           R0 - coluna da tecla premida
+;
+; **********************************************************************
+
+espera_tecla:				; neste ciclo espera-se até uma tecla ser premida
+
+	YIELD				    ; este ciclo é potencialmente bloqueante, pelo que tem de
+						    ; ter um ponto de fuga (aqui pode comutar para outro processo)
+
+	MOV  R1, LINHA1	        ; testar a linha 1
+varre_linhas:
+    CALL escreve_linha      ; ativar linha no teclado
+    CALL le_coluna          ; leitura na linha ativada do teclado
+    CMP  R0, 0              ; há tecla premida?
+    JNZ sai_varre_linhas    
+    CMP R1, 5               ; chegou à última linha?
+    JGE espera_tecla        
+    SHL R1, 1               ; testar a próxima linha
+    JMP varre_linhas        ; continua o ciclo na próxima linha
+
+sai_varre_linhas:
+    RET
+
+; **********************************************************************
+; ESCREVE_LINHA - Faz uma leitura às teclas de uma linha do teclado e retorna o valor lido
+; Argumentos:	R1 - linha a testar (em formato 1, 2, 4 ou 8)
+;
+; **********************************************************************
+escreve_linha:
+	PUSH R0
+	MOV  R0, TEC_LIN        ; endereço do periférico das linhas
+	MOVB [R0], R1           ; escrever no periférico de saída (linhas)
+    POP  R0
+    RET
+
+; **********************************************************************
+; LE_COLUNA - Faz uma leitura às teclas de uma linha do teclado e retorna o valor lido
+;
+; Retorna: 	R0 - valor lido das colunas do teclado (0, 1, 2, 4, ou 8)	
+; **********************************************************************
+
+le_coluna:
+	PUSH  R1
+	PUSH  R2
+	MOV   R1, TEC_COL        ; endereço do periférico das colunas
+	MOV   R2, MASCARA_TECLA  ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
+	MOVB  R0, [R1]           ; ler do periférico de entrada (colunas)
+	AND   R0, R2             ; elimina bits para além dos bits 0-3
+	POP	  R2
+	POP	  R1
+	RET
+
+; **********************************************************************
+; CALCULA_TECLA - calcula o valor da tecla premida
+; Argumentos:	R0 - coluna da tecla (em formato 1, 2, 4 ou 8)
+;               R1 - linha da tecla (em formato 1, 2, 4 ou 8)
+;
+; Retorna: 	R2 - total
+; **********************************************************************
+
+calcula_tecla:                 ; calcula o valor da tecla
+    PUSH  R1
+    MOV   R2, 0                ; inicia valor da tecla no 0
+    CALL  conta_linhas_colunas
+    ADD   R2, R3               ; adicionar numero de linhas
+    SHL   R2, 2                ; linhas * 4
+    MOV   R1, R0               ; conta as colunas
+    CALL  conta_linhas_colunas
+    ADD   R2, R3               ; adicionar numero de colunas
+    POP   R1
+    RET
+
+; **********************************************************************
+; CONTA_LINHAS_COLUNAS - conta numero das linhas/colunas
+; Argumentos:	R1 - linha/coluna da tecla (em formato 1, 2, 4 ou 8)
+;
+; Retorna: 	R3 - total contada
+; **********************************************************************
+
+conta_linhas_colunas:
+    PUSH R1
+    MOV  R3, 0                      ; inicia contador no 0
+
+calc_val_lin_col:                   ; neste ciclo calcula-se o valor da linha/coluna
+    SHR  R1, 1                      ; desloca à direita 1 bit
+    CMP  R1, 0                      ; a quantidade das linhas/colunas ja foi contada?
+    JZ   sai_conta_linhas_colunas   ; se ja for contada, salta
+    INC  R3                         ; incrementa o valor calculada
+    JMP  calc_val_lin_col           ; repete ciclo
+
+sai_conta_linhas_colunas:
+    POP  R1
+    RET
+
+; **********************************************************************
+; espera_libertar_tecla - espera até a tecla premida seja libertada
+;
+; **********************************************************************
+
+espera_libertar_tecla:              ; neste ciclo espera-se até a tecla estar libertada
+    PUSH R0
+
+
+tecla_premida:
+    YIELD				    ; este ciclo é potencialmente bloqueante, pelo que tem de
+                        ; ter um ponto de fuga (aqui pode comutar para outro processo)
+    CALL le_coluna                  ; leitura na linha ativada do teclado
+    CMP  R0, 0                      ; há tecla premida?
+    JNZ  tecla_premida              ; se a tecla ainda for premida, espera até não haver
+    POP R0
+    RET
 
 ; **********************************************************************
 ; ESCREVE_DISPLAY - escreve um valor decimal no display hexadecimal

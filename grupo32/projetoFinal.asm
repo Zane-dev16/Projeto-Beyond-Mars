@@ -218,14 +218,11 @@ inicio:
 	EI					; permite interrupções (geral)
 
 	; cria processos.
-    CALL energia
-    CALL asteroide
-    CALL sonda
-    CALL painel
+
     CALL teclado
 
 obtem_tecla:	
-	MOV	R1, [coluna_carregada]	; bloqueia neste LOCK a coluna carregada
+
     MOV R2, [linha_carregada]   ; bloqueia neste LOCK a linha carregada
     MOV R3, LINHA1
     CMP R2, R3                  ; verifica se foi premida uma tecla da 1ª linha
@@ -239,6 +236,7 @@ linha1:
     MOV R3, [estado_jogo]       
     CMP R3, FUNDO_INICIAL       ; verifica se o jogo já foi iniciado
     JZ obtem_tecla              ; caso ainda nao tenha sido iniciado ignora a tecla
+    MOV	R1, [coluna_carregada]	; bloqueia neste LOCK a coluna carregada
     CMP R1, 1                   ; verifica se a tecla premida foi o 0
     ;JZ sonda_esq
     CMP R1, 2                   ; verifica se a tecla premida foi o 1
@@ -248,6 +246,7 @@ linha1:
     JMP obtem_tecla             ; se a tecla premida não foi nenhuma das anteriores ignora a tecla
 
 linha4:
+	MOV	R1, [coluna_carregada]	; bloqueia neste LOCK a coluna carregada
     CMP R1, 1                   ; verifica se a tecla premida foi o C
     JZ inicia_jogo
     CMP R1, 2                   ; verifica se a tecla premida foi o D
@@ -266,7 +265,7 @@ inicia_jogo:
     CALL painel
     CALL asteroide
     CALL sonda
-
+    CALL energia
 
 ; **********************************************************************
 ; Processo

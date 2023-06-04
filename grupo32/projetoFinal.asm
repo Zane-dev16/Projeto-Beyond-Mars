@@ -368,7 +368,7 @@ suspende_continua:
     JZ suspende
     MOV R1, JOGO_PAUSA
     CMP R2, R1
-    ;JZ continua
+    JZ continua
     MOV R1, JOGO_TERMINADO
     CMP R2, R1
     JZ obtem_tecla
@@ -376,7 +376,7 @@ suspende_continua:
 suspende:
     MOV R1, JOGO_PAUSA
     MOV [estado_jogo], R1
-    JMP pausa_energia
+    ;JMP pausa_energia
 
 continua:
     MOV [evento_asteroide], R0
@@ -396,9 +396,9 @@ continua:
 
 PROCESS SP_inicial_energia	; Processo com valor para inicializar o SP
 
-pausa_energia:
-    MOV R0, [evento_display]
-    JMP pausa_painel
+;pausa_energia:
+;    MOV R0, [evento_display]
+;    JMP pausa_painel
 
 energia:
     MOV R8, INICIO_ENERGIA
@@ -608,9 +608,9 @@ anima_painel:
 
     JMP anima_painel    ; repete ciclo da animação
 
-pausa_painel:
-    MOV R0, [evento_painel]
-    JMP pausa_sonda
+;pausa_painel:
+;    MOV R0, [evento_painel]
+;    JMP pausa_sonda
 
 
 ; **********************************************************************
@@ -659,9 +659,9 @@ ciclo_sonda:
 sai_sonda:
     RET
 
-pausa_sonda:
-    MOV R0, [evento_sonda]
-    JMP pausa_asteroide
+;pausa_sonda:
+;    MOV R0, [evento_sonda]
+;    JMP pausa_asteroide
 
 ; **********************************************************************
 ; Processo
@@ -691,9 +691,9 @@ ciclo_asteroide:
 	JMP	ciclo_asteroide		; esta "rotina" nunca retorna porque nunca termina
 						; Se se quisesse terminar o processo, era deixar o processo chegar a um RET
 
-pausa_asteroide:
-    MOV R0, [evento_asteroide]
-    JMp obtem_tecla
+;pausa_asteroide:
+;    MOV R0, [evento_asteroide]
+;    JMP obtem_tecla
 
 
 ; **********************************************************************

@@ -21,7 +21,7 @@ TECLA_SONDA_CENT    EQU 1       ; tecla para lancar uma sonda no centro (tecla 1
 TECLA_SONDA_DIR     EQU 2       ; tecla para lancar uma sonda a direita (tecla 2)
 TECLA_INICIO_JOGO   EQU 12      ; tecla para iniciar o jogo (tecla C)
 TECLA_PAUSA         EQU 13      ; tecla para pausa e continuar o jogo (tecla D)
-TECLA_TERMINA       EQU 13      ; tecla para pausa e continuar o jogo (tecla E)
+TECLA_TERMINA       EQU 14      ; tecla para pausa e continuar o jogo (tecla E)
 
 
 INICIO_ENERGIA      EQU 100     ;
@@ -104,8 +104,8 @@ N_ASTEROIDES        EQU 4       ; nº de asteroides em simultaneo
 N_SONDA             EQU 3       ; nº de sondas em simultaneo
 
 JOGO_INICIADO       EQU 1       ; jogo iniciado
-JOGO_PAUSA       EQU 0       ; jogo em pausa
-JOGO_TERMINADO      EQU -1      ; jogo terminado
+JOGO_PAUSA          EQU 0       ; jogo em pausa
+JOGO_TERMINADO      EQU 2      ; jogo terminado
 
 ; *********************************************************************************
 ; * Dados 
@@ -177,8 +177,46 @@ ANIMACAO_PAINEL_1:
 ANIMACAO_PAINEL_2:
 	WORD		LARGURA_LUZES
     WORD        ALTURA_LUZES
-    WORD		PIXEL_VERM_TRANS, PIXEL_CINZ_CLA, PIXEL_AMAR_TRANS, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_AMAR_TRANS, PIXEL_CINZ_CLA, PIXEL_VERD_TRANS
+    WORD		PIXEL_VERD_TRANS, PIXEL_CINZ_CLA, PIXEL_AMAR_TRANS, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_AMAR_TRANS, PIXEL_CINZ_CLA, PIXEL_VERM_TRANS
+    WORD		PIXEL_VERD, PIXEL_CINZ_CLA, PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_VERM
+
+ANIMACAO_PAINEL_3:
+	WORD		LARGURA_LUZES
+    WORD        ALTURA_LUZES
+    WORD		PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_VERD, PIXEL_CINZ_CLA, PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_CAST, PIXEL_CINZ_CLA, PIXEL_VERM, PIXEL_CINZ_CLA, PIXEL_AMAR
+    WORD		PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_VERD_TRANS, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_AMAR_TRANS, PIXEL_CINZ_CLA, PIXEL_CAST, PIXEL_CINZ_CLA, PIXEL_AMAR_TRANS
+
+ANIMACAO_PAINEL_4:
+	WORD		LARGURA_LUZES
+    WORD        ALTURA_LUZES
+    WORD		PIXEL_CAST, PIXEL_CINZ_CLA, PIXEL_VERM, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_VERM_TRANS, PIXEL_CINZ_CLA, PIXEL_VERM, PIXEL_CINZ_CLA, PIXEL_AZUL
+    WORD		PIXEL_VERD, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_AMAR_TRANS, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_CAST, PIXEL_CINZ_CLA, PIXEL_VIOLETA
+
+ANIMACAO_PAINEL_5:
+	WORD		LARGURA_LUZES
+    WORD        ALTURA_LUZES
+    WORD		PIXEL_VERD, PIXEL_CINZ_CLA, PIXEL_VERD_TRANS, PIXEL_CINZ_CLA, PIXEL_CAST, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_VERM, PIXEL_CINZ_CLA, PIXEL_CAST
+    WORD		PIXEL_VERM, PIXEL_CINZ_CLA, PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_AMAR_TRANS, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_VERD, PIXEL_CINZ_CLA, PIXEL_AZUL
+
+ANIMACAO_PAINEL_6:
+	WORD		LARGURA_LUZES
+    WORD        ALTURA_LUZES
     WORD		PIXEL_VERM, PIXEL_CINZ_CLA, PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_VERD
+    WORD		PIXEL_VERM_TRANS, PIXEL_CINZ_CLA, PIXEL_AMAR_TRANS, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_AMAR_TRANS, PIXEL_CINZ_CLA, PIXEL_VERD_TRANS
+
+ANIMACAO_PAINEL_7:
+	WORD		LARGURA_LUZES
+    WORD        ALTURA_LUZES
+    WORD		PIXEL_VERD, PIXEL_CINZ_CLA, PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_VERM
+    WORD		PIXEL_VERD_TRANS, PIXEL_CINZ_CLA, PIXEL_AMAR_TRANS, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_AMAR_TRANS, PIXEL_CINZ_CLA, PIXEL_VERM_TRANS
+
+ANIMACAO_PAINEL_8:
+	WORD		LARGURA_LUZES
+    WORD        ALTURA_LUZES
+    WORD		PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_CAST, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_VERD, PIXEL_CINZ_CLA, PIXEL_VERM
+    WORD		PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_AMAR_TRANS, PIXEL_CINZ_CLA, PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_CAST, PIXEL_CINZ_CLA, PIXEL_VERM_TRANS, PIXEL_CINZ_CLA, PIXEL_VERD_TRANS
+
+
 
 SONDA:                   ; tabela que define a sonda (cor, pixels)
     WORD    LARGURA_SONDA
@@ -231,7 +269,7 @@ momento_jogo:            ; controlar se o jogo já foi iniciado
     WORD 0
 
 estado_jogo:          ; LOCK para o teclado comunicar aos restantes processos o estado do jogo
-    LOCK 0
+    WORD 0
 
 
 ; *********************************************************************************
@@ -282,6 +320,7 @@ inicia_jogo:
     CALL energia
 
 
+
 obtem_tecla:
     MOV R1, [tecla_carregada]   ; bloqueia neste LOCK até uma tecla ser carregada
 
@@ -301,7 +340,7 @@ obtem_tecla:
     CMP R1, R2                 ; verifica se a tecla premida foi o D
     JZ suspende_continua
 
-    MOV R2, 0EH
+    MOV R2, TECLA_TERMINA
     CMP R1, R2                   ; verifica se a tecla premida foi o E
     ;JZ termina
 
@@ -329,7 +368,7 @@ suspende_continua:
     JZ suspende
     MOV R1, JOGO_PAUSA
     CMP R2, R1
-    JZ reinicia
+    ;JZ continua
     MOV R1, JOGO_TERMINADO
     CMP R2, R1
     JZ obtem_tecla
@@ -337,12 +376,13 @@ suspende_continua:
 suspende:
     MOV R1, JOGO_PAUSA
     MOV [estado_jogo], R1
-    MOV R1, [estado_jogo]
+    JMP pausa_energia
 
-reinicia:
-    MOV R1, JOGO_INICIADO
-    MOV [estado_jogo], R1
-
+continua:
+    MOV [evento_asteroide], R0
+    MOV [evento_display], R0
+    MOV [evento_painel], R0
+    MOV [evento_sonda], R0
 
 ;termina:
 
@@ -356,6 +396,10 @@ reinicia:
 
 PROCESS SP_inicial_energia	; Processo com valor para inicializar o SP
 
+pausa_energia:
+    MOV R0, [evento_display]
+    JMP pausa_painel
+
 energia:
     MOV R8, INICIO_ENERGIA
 
@@ -364,6 +408,8 @@ atualiza_display:
     MOV R0, [evento_display]
     ADD R8, R0
     JMP atualiza_display
+
+
 
 
 ; **********************************************************************
@@ -390,112 +436,6 @@ ha_tecla:					; neste ciclo espera-se até NENHUMA tecla estar premida
 	JMP	teclado		; esta "rotina" nunca retorna porque nunca termina
 						; Se se quisesse terminar o processo, era deixar o processo chegar a um RET
 
-; **********************************************************************
-; Processo
-;
-; PAINEL - Processo que desenha um painel controla a sua animação
-;
-; **********************************************************************
-
-PROCESS SP_inicial_painel	;
-
-painel:
-	
-	; desenha o painel
-    MOV R1, LINHA_PAINEL               ; linha do painel da nave
-    MOV R2, COLUNA_PAINEL              ; coluna do painel da nave
-    MOV R4, PAINEL_NAVE                ; endereço da tabela que define o painel da nave
-    CALL desenha_objeto                ; desenha o objeto a partir da tabela
-
-    MOV R1, LINHA_PAINEL + 2
-    MOV R2, COLUNA_PAINEL + 2
-anima_painel:
-    MOV R0, [evento_painel]     ; Bloqueia até interrupção 3
-    MOV R4, ANIMACAO_PAINEL_1   ; Muda cor das luzes do painel
-    CALL desenha_objeto
-
-    MOV R0, [evento_painel]     ; Bloqueia até interrupção 3
-    MOV R4, ANIMACAO_PAINEL_2   ; Muda cor das luzes do painel
-    CALL desenha_objeto
-
-    JMP anima_painel    ; repete ciclo da animação
-
-
-; **********************************************************************
-; Processo
-;
-; SONDA - Processo que desenha uma sonda e implementa o seu comportamento
-;
-; Argumento:    R5 - direção da sonda (em formato -1, 0, 1)
-;
-; **********************************************************************
-
-PROCESS SP_inicial_sonda	;
-
-	; desenha a sonda na sua posição inicial
-sonda:
-    MOV R0, 12
-	MOV R1, LINHA_CIMA_PAINEL   ; linha da sonda
-	MOV R4, SONDA
-
-    CMP R5, DIRECAO_ESQ ; se for lancada uma sonda a esquerda
-    JZ pos_sonda_esq    ; inicia coluna a esquerda do painel
-    
-    CMP R5, DIRECAO_DIR ; se for lancada uma sonda a esquerda
-    JZ pos_sonda_dir    ; inicia coluna a esquerda do painel
-
-	MOV R2, COLUNA_CENT	        ; coluna da sonda no centro
-    JMP ciclo_sonda
-
-pos_sonda_esq:
-	MOV R2, COLUNA_SONDA_ESQ     ; inicia coluna a esquerda do painel
-    JMP ciclo_sonda
-
-pos_sonda_dir:
-	MOV R2, COLUNA_SONDA_DIR     ; inicia coluna a direita do painel
-
-ciclo_sonda:
-    CALL  desenha_objeto    ; Desenha o objeto novamente na nova posição
-    MOV	R3, [evento_sonda]  ; lê o LOCK e bloqueia até a interrupção escrever nele
-    CALL  apaga_objeto      ; Apaga o objeto em sua posição atual
-    DEC R1      ; a sonda sobe uma linha
-    ADD R2, R5  ;  atualiza posição com argumento do direção
-    DEC R0      ; decrementa contador
-    JZ  sai_sonda       ; se o contador for 0 sai
-	JMP	ciclo_sonda		;
-
-sai_sonda:
-    RET
-
-
-
-; **********************************************************************
-; Processo
-;
-; ASTEROIDE - Processo que desenha um asteroide implementa o seu comportamento
-;
-; **********************************************************************
-
-PROCESS SP_inicial_asteroide	;
-
-asteroide:
-	
-	; desenha o asteroide na sua posição inicial
-    MOV R1, 0                          ;  linha do asteroide
-    MOV R2, 0                          ; le valor da coluna do asteroide (+2 porque a linha é um WORD)
-    MOV R4, ASTEROIDE_PERIGO           ; endereço da tabela que define o asteroide
-
-ciclo_asteroide:
-	CALL	desenha_objeto		; desenha o boneco a partir da tabela
-    
-
-	MOV	R3, [evento_asteroide]  	; lê o LOCK e bloqueia até a interrupção escrever nele
-
-    CALL  apaga_objeto                    ; Apaga o objeto em sua posição atual
-    INC   R1                              ; Incrementa a posição do asteroide para a próxima linha
-    INC   R2                              ; Incrementa a posição do asteroide para a próxima coluna
-	JMP	ciclo_asteroide		; esta "rotina" nunca retorna porque nunca termina
-						; Se se quisesse terminar o processo, era deixar o processo chegar a um RET
 
 ; **********************************************************************
 ; ESPERA_TECLA - Espera até uma tecla seja premida e lê a coluna e linha
@@ -612,6 +552,149 @@ tecla_premida:
     JNZ  tecla_premida              ; se a tecla ainda for premida, espera até não haver
     POP R0
     RET
+
+; **********************************************************************
+; Processo
+;
+; PAINEL - Processo que desenha um painel controla a sua animação
+;
+; **********************************************************************
+
+PROCESS SP_inicial_painel	;
+
+painel:
+	
+	; desenha o painel
+    MOV R1, LINHA_PAINEL               ; linha do painel da nave
+    MOV R2, COLUNA_PAINEL              ; coluna do painel da nave
+    MOV R4, PAINEL_NAVE                ; endereço da tabela que define o painel da nave
+    CALL desenha_objeto                ; desenha o objeto a partir da tabela
+
+    MOV R1, LINHA_PAINEL + 2
+    MOV R2, COLUNA_PAINEL + 2
+    
+anima_painel:
+    MOV R0, [evento_painel]     ; Bloqueia até interrupção 3
+    MOV R4, ANIMACAO_PAINEL_1   ; Muda cor das luzes do painel
+    CALL desenha_objeto
+
+    MOV R0, [evento_painel]     ; Bloqueia até interrupção 3
+    MOV R4, ANIMACAO_PAINEL_2   ; Muda cor das luzes do painel
+    CALL desenha_objeto
+
+    MOV R0, [evento_painel]     ; Bloqueia até interrupção 3
+    MOV R4, ANIMACAO_PAINEL_3   ; Muda cor das luzes do painel
+    CALL desenha_objeto
+
+    MOV R0, [evento_painel]     ; Bloqueia até interrupção 3
+    MOV R4, ANIMACAO_PAINEL_4   ; Muda cor das luzes do painel
+    CALL desenha_objeto
+
+    MOV R0, [evento_painel]     ; Bloqueia até interrupção 3
+    MOV R4, ANIMACAO_PAINEL_5   ; Muda cor das luzes do painel
+    CALL desenha_objeto
+
+    MOV R0, [evento_painel]     ; Bloqueia até interrupção 3
+    MOV R4, ANIMACAO_PAINEL_6   ; Muda cor das luzes do painel
+    CALL desenha_objeto
+
+    MOV R0, [evento_painel]     ; Bloqueia até interrupção 3
+    MOV R4, ANIMACAO_PAINEL_7   ; Muda cor das luzes do painel
+    CALL desenha_objeto
+
+    MOV R0, [evento_painel]     ; Bloqueia até interrupção 3
+    MOV R4, ANIMACAO_PAINEL_8   ; Muda cor das luzes do painel
+    CALL desenha_objeto
+
+    JMP anima_painel    ; repete ciclo da animação
+
+pausa_painel:
+    MOV R0, [evento_painel]
+    JMP pausa_sonda
+
+
+; **********************************************************************
+; Processo
+;
+; SONDA - Processo que desenha uma sonda e implementa o seu comportamento
+;
+; Argumento:    R5 - direção da sonda (em formato -1, 0, 1)
+;
+; **********************************************************************
+
+PROCESS SP_inicial_sonda	;
+
+	; desenha a sonda na sua posição inicial
+sonda:
+    MOV R0, 12
+	MOV R1, LINHA_CIMA_PAINEL   ; linha da sonda
+	MOV R4, SONDA
+
+    CMP R5, DIRECAO_ESQ ; se for lancada uma sonda a esquerda
+    JZ pos_sonda_esq    ; inicia coluna a esquerda do painel
+    
+    CMP R5, DIRECAO_DIR ; se for lancada uma sonda a esquerda
+    JZ pos_sonda_dir    ; inicia coluna a esquerda do painel
+
+	MOV R2, COLUNA_CENT	        ; coluna da sonda no centro
+    JMP ciclo_sonda
+
+pos_sonda_esq:
+	MOV R2, COLUNA_SONDA_ESQ     ; inicia coluna a esquerda do painel
+    JMP ciclo_sonda
+
+pos_sonda_dir:
+	MOV R2, COLUNA_SONDA_DIR     ; inicia coluna a direita do painel
+
+ciclo_sonda:
+    CALL  desenha_objeto    ; Desenha o objeto novamente na nova posição
+    MOV	R3, [evento_sonda]  ; lê o LOCK e bloqueia até a interrupção escrever nele
+    CALL  apaga_objeto      ; Apaga o objeto em sua posição atual
+    DEC R1      ; a sonda sobe uma linha
+    ADD R2, R5  ;  atualiza posição com argumento do direção
+    DEC R0      ; decrementa contador
+    JZ  sai_sonda       ; se o contador for 0 sai
+	JMP	ciclo_sonda		;
+
+sai_sonda:
+    RET
+
+pausa_sonda:
+    MOV R0, [evento_sonda]
+    JMP pausa_asteroide
+
+; **********************************************************************
+; Processo
+;
+; ASTEROIDE - Processo que desenha um asteroide implementa o seu comportamento
+;
+; **********************************************************************
+
+PROCESS SP_inicial_asteroide	;
+
+asteroide:
+	
+	; desenha o asteroide na sua posição inicial
+    MOV R1, 0                          ;  linha do asteroide
+    MOV R2, 0                          ; le valor da coluna do asteroide (+2 porque a linha é um WORD)
+    MOV R4, ASTEROIDE_PERIGO           ; endereço da tabela que define o asteroide
+
+ciclo_asteroide:
+	CALL	desenha_objeto		; desenha o boneco a partir da tabela
+    
+
+	MOV	R3, [evento_asteroide]  	; lê o LOCK e bloqueia até a interrupção escrever nele
+
+    CALL  apaga_objeto                    ; Apaga o objeto em sua posição atual
+    INC   R1                              ; Incrementa a posição do asteroide para a próxima linha
+    INC   R2                              ; Incrementa a posição do asteroide para a próxima coluna
+	JMP	ciclo_asteroide		; esta "rotina" nunca retorna porque nunca termina
+						; Se se quisesse terminar o processo, era deixar o processo chegar a um RET
+
+pausa_asteroide:
+    MOV R0, [evento_asteroide]
+    JMp obtem_tecla
+
 
 ; **********************************************************************
 ; ESCREVE_DISPLAY - escreve um valor decimal no display hexadecimal

@@ -189,21 +189,10 @@ posicao_asteroide:       ; posição do asteroide
     WORD    LINHA_TOPO
     WORD    COLUNA_ESQ
 
-mov_diag_direita:
-    WORD 1              ; desce uma linha
-    WORD 1              ; avança uma coluna
-
-mov_diag_esquerda:
-    WORD 1              ; desce uma linha
-    WORD -1              ; recua uma coluna 
-
-mov_baixo:
-    WORD 1              ; desce uma linha
-    WORD 0              ; mantem coluna 
-
-mov_cima:
-    WORD -1              ; sobe uma linha
-    WORD 0              ; mantem coluna   
+sondas_lancadas:
+    WORD    0   ; guarda se a sonda esquerda for em disparo
+    WORD    0   ; guarda se a sonda central for em disparo
+    WORD    0   ; guarda se a sonda direita for em disparo
 
 ; Tabela das rotinas de interrupção
 tab:
@@ -308,16 +297,29 @@ obtem_tecla:
     JMP obtem_tecla             ; se a tecla premida não foi nenhuma das anteriores ignora a tecla
 
 sonda_esq:
+    MOV R1, [sondas_lancadas]
+    CMP R1, 0
+    JNZ obtem_tecla
+    MOV R1, 1
+    MOV [sondas_lancadas], R1
     MOV R5, DIRECAO_ESQ
     CALL sonda
     JMP obtem_tecla
 
 sonda_cent:
+    MOV R1, [sondas_lancadas + 2]
+    JNZ obtem_tecla
+    MOV R1, 1
+    MOV [sondas_lancadas + 2], R1
     MOV R5, DIRECAO_CENT
     CALL sonda
     JMP obtem_tecla
 
 sonda_dir:
+    MOV R1, [sondas_lancadas + 4]
+    JNZ obtem_tecla
+    MOV R1, 1
+    MOV [sondas_lancadas + 4], R1
     MOV R5, DIRECAO_DIR
     CALL sonda
     JMP obtem_tecla
@@ -388,7 +390,6 @@ ha_tecla:					; neste ciclo espera-se até NENHUMA tecla estar premida
     CALL espera_libertar_tecla
 
 	JMP	teclado		; esta "rotina" nunca retorna porque nunca termina
-						; Se se quisesse terminar o processo, era deixar o processo chegar a um RET
 
 ; **********************************************************************
 ; Processo
@@ -465,6 +466,13 @@ ciclo_sonda:
 	JMP	ciclo_sonda		;
 
 sai_sonda:
+    INC R5
+    MOV R6, 2
+    MUL R5, R6   ; para calcular qual das sondas lancadas
+    MOV R6, sondas_lancadas
+    ADD R5, R6 ; para obter endereço nas sondas lancadas
+    MOV R6, 0
+    MOV [R5], R6   ; sonda deixa de estar em disparo
     RET
 
 

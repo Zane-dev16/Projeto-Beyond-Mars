@@ -277,7 +277,6 @@ inicio:
     MOV [APAGA_AVISO], R1                   ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
     MOV [APAGA_ECRA], R1                    ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
     MOV R1, FUNDO_INICIAL
-    MOV [momento_jogo], R1           ; jogo ainda não iniciado
     MOV [FUNDO_ECRA], R1         ; coloca imagem de fundo incial
     MOV R1, MSG_INICIAR
     MOV [MSG], R1    ; sobrepõe letras sobre a imagem inicial
@@ -299,13 +298,9 @@ espera_inicio:
     JNZ espera_inicio             ; se a tecla premida não for C repete ciclo
 
 inicia_jogo:
-    MOV R3, [momento_jogo]
-    CMP R3, FUNDO_JOGO          ; verifica se o jogo já foi iniciado
-    JZ obtem_tecla              ; caso ainda já tenha sido iniciado ignora a tecla
     MOV R1, JOGO_INICIADO
     MOV [estado_jogo], R1
     MOV R1, FUNDO_JOGO
-    MOV [momento_jogo], R1       ; atualiza estado do jogo
     MOV [FUNDO_ECRA], R1        ; coloca imagem de fundo para durante o jogo
     MOV R1, MSG_TRANSPARENTE
     MOV [MSG], R1    ; apaga as letras de inicio de jogo
@@ -332,11 +327,11 @@ obtem_tecla:
 
     MOV R2, TECLA_PAUSA        ; tecla para pausa e continuar o jogo
     CMP R1, R2                 ; verifica se a tecla premida foi o D
-    JZ suspende
+    JZ suspende_jogo
 
     MOV R2, TECLA_TERMINA
     CMP R1, R2                   ; verifica se a tecla premida foi o E
-    ;JZ termina
+    JZ termina_jogo
 
     JMP obtem_tecla             ; se a tecla premida não foi nenhuma das anteriores ignora a tecla
 
@@ -370,12 +365,7 @@ sonda_dir:
     CALL sonda
     JMP obtem_tecla
 
-suspende_cont:
-    MOV R1, JOGO_TERMINADO
-    CMP R2, R1
-    JZ obtem_tecla
-
-suspende:
+suspende_jogo:
     MOV R1, JOGO_PAUSA
     MOV [estado_jogo], R1       ; bloqueia os processos
 pausa_prog_principal:           ; neste ciclo o jogo está em modo pausa
@@ -389,7 +379,186 @@ pausa_prog_principal:           ; neste ciclo o jogo está em modo pausa
     MOV [pausa_processos], R1   ; desbloqueia os processos
     JZ obtem_tecla              ; volta ao ciclo de funciomento da prog_principal
 
-;termina:
+
+termina_jogo:
+    MOV R1, JOGO_TERMINADO
+    WAIT
+    MOV [estado_jogo], R1
+    MOV [APAGA_AVISO], R1                   ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
+    MOV R1, FUNDO_INICIAL
+    MOV [FUNDO_ECRA], R1         ; coloca imagem de fundo incial
+    MOV R1, MSG_INICIAR
+    MOV [MSG], R1    ; sobrepõe letras sobre a imagem inicial
+    MOV [APAGA_ECRA], R1                    ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
+    JMP espera_inicio
+
+; **********************************************************************
+; Processo
+;
+; PAINEL - Processo que desenha um painel controla a sua animação
+;
+; **********************************************************************
+
+PROCESS SP_inicial_painel	;
+
+painel:
+	
+	; desenha o painel
+    MOV R1, LINHA_PAINEL               ; linha do painel da nave
+    MOV R2, COLUNA_PAINEL              ; coluna do painel da nave
+    MOV R4, PAINEL_NAVE                ; endereço da tabela que define o painel da nave
+    CALL desenha_objeto                ; desenha o objeto a partir da tabela
+
+    MOV R1, LINHA_PAINEL + 2
+    MOV R2, COLUNA_PAINEL + 2
+
+ciclo_anima_painel:
+    MOV R4, ANIMACAO_PAINEL_1       ; Primeira forma das luzes do painel
+anima_painel:
+    MOV R3, JOGO_INICIADO
+    MOV R0, [estado_jogo]
+    CMP R0, R3                  ; O modo do jogo alterou?
+    JNZ altera_modo_painel      ; Se for, salta
+
+    MOV R0, [evento_painel]     ; Bloqueia até interrupção 3
+    CALL desenha_objeto
+
+    MOV R0, ANIMACAO_PAINEL_8
+    CMP R4, R0                  ; Já foi desenhado o ultimo animação
+    JZ  ciclo_anima_painel      ; se for, repete a partir da primeira animação
+
+    MOV R0, PROX_ANIM_PAINEL
+    ADD R4, R0                  ; obtem o proximo tabela do animação
+    JMP anima_painel            ; desenha proximo animação
+
+altera_modo_painel:
+    MOV R3, JOGO_PAUSA          ; para verificar se o jogo está em pausa
+    CMP R0, R3                  ; O jogo está em pausa?
+    JZ  pausa_painel            ; se for, pausa o painel
+    MOV [APAGA_ECRA], R1                    ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
+    RET                         ; se não a tecla premida foi para terminar o jogo
+
+pausa_painel:
+   MOV R0, [pausa_processos]    ; bloqueia neste lock até o jogo continuar
+   JMP anima_painel
+
+; **********************************************************************
+; Processo
+;
+; SONDA - Processo que desenha uma sonda e implementa o seu comportamento
+;
+; Argumento:    R5 - direção da sonda (em formato -1, 0, 1)
+;
+; **********************************************************************
+
+PROCESS SP_inicial_sonda
+
+	; desenha a sonda na sua posição inicial
+sonda:
+    MOV R0, 12
+	MOV R1, LINHA_CIMA_PAINEL   ; linha da sonda
+	MOV R4, SONDA
+
+    CMP R5, DIRECAO_ESQ ; se for lancada uma sonda a esquerda
+    JZ pos_sonda_esq    ; inicia coluna a esquerda do painel
+    
+    CMP R5, DIRECAO_DIR ; se for lancada uma sonda a esquerda
+    JZ pos_sonda_dir    ; inicia coluna a esquerda do painel
+
+	MOV R2, COLUNA_CENT	        ; coluna da sonda no centro
+    JMP ciclo_sonda
+
+pos_sonda_esq:
+	MOV R2, COLUNA_SONDA_ESQ     ; inicia coluna a esquerda do painel
+    JMP ciclo_sonda
+
+pos_sonda_dir:
+	MOV R2, COLUNA_SONDA_DIR     ; inicia coluna a direita do painel
+
+ciclo_sonda:
+    CALL  desenha_objeto    ; Desenha o objeto novamente na nova posição
+
+    MOV R3, JOGO_INICIADO       ; para verificar se o jogo ainda está a continuar
+    MOV R6, [estado_jogo]       ; obtem o estado do jogo
+    CMP R6, R3                  ; O modo do jogo alterou?
+    JNZ altera_modo_sonda       ; Se for, salta
+
+    MOV	R3, [evento_sonda]  ; lê o LOCK e bloqueia até a interrupção escrever nele
+    CALL  apaga_objeto      ; Apaga o objeto em sua posição atual
+    DEC R1      ; a sonda sobe uma linha
+    ADD R2, R5  ;  atualiza posição com argumento do direção
+
+    DEC R0      ; decrementa contador
+    JZ  sai_sonda       ; se o contador for 0 sai
+    
+	JMP	ciclo_sonda		;
+
+altera_modo_sonda:
+    MOV R3, JOGO_PAUSA          ; para verificar se o jogo está em pausa
+    MOV R6, [estado_jogo]       ; obtem estado do jogo
+    CMP R6, R3                  ; O jogo está em pausa?
+    JZ  pausa_sonda             ; se for, pausa
+    RET                         ; se não a tecla premida foi para terminar o jogo
+
+pausa_sonda:
+   MOV R6, [pausa_processos]    ; bloqueia neste lock até o jogo continuar
+   JMP ciclo_sonda              ; volta ao ciclo, a continuar o jogo
+
+sai_sonda:
+    INC R5
+    MOV R0, 2
+    MUL R5, R0  ; calcula posicao na tabela da sondas lançadas
+    MOV R0, sondas_lancadas
+    ADD R5, R0 ; obtém endereço nas sondas lançadas
+    MOV R0, 0
+    MOV [R5], R0 ; sonda já não está lançada
+    MOV [APAGA_ECRA], R1                    ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
+    RET
+
+; **********************************************************************
+; Processo
+;
+; ASTEROIDE - Processo que desenha um asteroide implementa o seu comportamento
+;
+; **********************************************************************
+
+PROCESS SP_inicial_asteroide	;
+
+asteroide:
+	
+	; desenha o asteroide na sua posição inicial
+    MOV R1, 0                          ;  linha do asteroide
+    MOV R2, 0                          ; le valor da coluna do asteroide (+2 porque a linha é um WORD)
+    MOV R4, ASTEROIDE_PERIGO           ; endereço da tabela que define o asteroide
+
+ciclo_asteroide:
+	CALL	desenha_objeto		; desenha o boneco a partir da tabela
+    
+    MOV R3, JOGO_INICIADO       ; para verificar se o jogo ainda está a continuar
+    MOV R0, [estado_jogo]
+    CMP R0, R3                  ; O modo do jogo alterou?
+    JNZ altera_modo_asteroide      ; Se for, salta
+
+	MOV	R3, [evento_asteroide]  	; lê o LOCK e bloqueia até a interrupção escrever nele
+
+    CALL  apaga_objeto                    ; Apaga o objeto em sua posição atual
+    INC   R1                              ; Incrementa a posição do asteroide para a próxima linha
+    INC   R2                              ; Incrementa a posição do asteroide para a próxima coluna
+	JMP	ciclo_asteroide		; esta "rotina" nunca retorna porque nunca termina
+						; Se se quisesse terminar o processo, era deixar o processo chegar a um RET
+
+altera_modo_asteroide:
+    MOV R3, JOGO_PAUSA          ; para verificar se o jogo está em pausa
+    MOV R0, [estado_jogo]       ; obtem estado do jogo
+    CMP R0, R3                  ; O jogo está em pausa?
+    JZ  pausa_asteroide         ; se for, pausa
+    MOV [APAGA_ECRA], R1                    ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
+    RET                         ; se não a tecla premida foi para terminar o jogo
+
+pausa_asteroide:
+   MOV R0, [pausa_processos]    ; bloqueia neste lock até o jogo continuar
+   JMP ciclo_asteroide              ; volta ao ciclo, a continuar o jogo
+
 
 
 ; **********************************************************************
@@ -409,12 +578,28 @@ energia:
     MOV R8, INICIO_ENERGIA
 
 atualiza_display:
+
+    MOV R1, JOGO_INICIADO       ; para verificar se o jogo ainda está a continuar
+    MOV R0, [estado_jogo]
+    CMP R0, R1                  ; O modo do jogo alterou?
+    JNZ altera_modo_energia      ; Se for, salta
+
     CALL escreve_display
     MOV R0, [evento_display]
     ADD R8, R0
     JMP atualiza_display
 
+altera_modo_energia:
+    MOV R1, JOGO_PAUSA          ; para verificar se o jogo está em pausa
+    MOV R0, [estado_jogo]       ; obtem estado do jogo
+    CMP R0, R1                  ; O jogo está em pausa?
+    JZ  pausa_energia           ; se for, pausa
+    MOV [APAGA_ECRA], R1                    ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
+    RET                         ; se não a tecla premida foi para terminar o jogo
 
+pausa_energia:
+   MOV R0, [pausa_processos]    ; bloqueia neste lock até o jogo continuar
+   JMP atualiza_display              ; volta ao ciclo, a continuar o jogo
 
 
 ; **********************************************************************
@@ -556,140 +741,6 @@ tecla_premida:
     JNZ  tecla_premida              ; se a tecla ainda for premida, espera até não haver
     POP R0
     RET
-
-; **********************************************************************
-; Processo
-;
-; PAINEL - Processo que desenha um painel controla a sua animação
-;
-; **********************************************************************
-
-PROCESS SP_inicial_painel	;
-
-painel:
-	
-	; desenha o painel
-    MOV R1, LINHA_PAINEL               ; linha do painel da nave
-    MOV R2, COLUNA_PAINEL              ; coluna do painel da nave
-    MOV R4, PAINEL_NAVE                ; endereço da tabela que define o painel da nave
-    CALL desenha_objeto                ; desenha o objeto a partir da tabela
-
-    MOV R1, LINHA_PAINEL + 2
-    MOV R2, COLUNA_PAINEL + 2
-    MOV R3, JOGO_PAUSA
-
-ciclo_anima_painel:
-    MOV R4, ANIMACAO_PAINEL_1       ; Primeira forma das luzes do painel
-anima_painel:
-    MOV R0, [estado_jogo]
-    CMP R0, R3                  ; O jogo está em pausa?
-    JZ  pausa_painel            ; Se for em pausa, salta
-
-    MOV R0, [evento_painel]     ; Bloqueia até interrupção 3
-    CALL desenha_objeto
-
-    MOV R0, ANIMACAO_PAINEL_8
-    CMP R4, R0                  ; Já foi desenhado o ultimo animação
-    JZ  ciclo_anima_painel      ; se for, repete a partir da primeira animação
-
-    MOV R0, PROX_ANIM_PAINEL
-    ADD R4, R0                  ; obtem o proximo tabela do animação
-    JMP anima_painel            ; desenha proximo animação
-
-pausa_painel:
-   MOV R0, [pausa_processos]
-   JMP anima_painel
-
-
-; **********************************************************************
-; Processo
-;
-; SONDA - Processo que desenha uma sonda e implementa o seu comportamento
-;
-; Argumento:    R5 - direção da sonda (em formato -1, 0, 1)
-;
-; **********************************************************************
-
-PROCESS SP_inicial_sonda	;
-
-	; desenha a sonda na sua posição inicial
-sonda:
-    MOV R0, 12
-	MOV R1, LINHA_CIMA_PAINEL   ; linha da sonda
-	MOV R4, SONDA
-
-    CMP R5, DIRECAO_ESQ ; se for lancada uma sonda a esquerda
-    JZ pos_sonda_esq    ; inicia coluna a esquerda do painel
-    
-    CMP R5, DIRECAO_DIR ; se for lancada uma sonda a esquerda
-    JZ pos_sonda_dir    ; inicia coluna a esquerda do painel
-
-	MOV R2, COLUNA_CENT	        ; coluna da sonda no centro
-    JMP ciclo_sonda
-
-pos_sonda_esq:
-	MOV R2, COLUNA_SONDA_ESQ     ; inicia coluna a esquerda do painel
-    JMP ciclo_sonda
-
-pos_sonda_dir:
-	MOV R2, COLUNA_SONDA_DIR     ; inicia coluna a direita do painel
-
-ciclo_sonda:
-    CALL  desenha_objeto    ; Desenha o objeto novamente na nova posição
-    MOV	R3, [evento_sonda]  ; lê o LOCK e bloqueia até a interrupção escrever nele
-    CALL  apaga_objeto      ; Apaga o objeto em sua posição atual
-    DEC R1      ; a sonda sobe uma linha
-    ADD R2, R5  ;  atualiza posição com argumento do direção
-    DEC R0      ; decrementa contador
-    JZ  sai_sonda       ; se o contador for 0 sai
-	JMP	ciclo_sonda		;
-
-sai_sonda:
-    INC R5
-    MOV R0, 2
-    MUL R5, R0  ; calcula posicao na tabela da sondas lançadas
-    MOV R0, sondas_lancadas
-    ADD R5, R0 ; obtém endereço nas sondas lançadas
-    MOV R0, 0
-    MOV [R5], R0 ; sonda já não está lançada
-    RET
-
-;pausa_sonda:
-;    MOV R0, [evento_sonda]
-;    JMP pausa_asteroide
-
-; **********************************************************************
-; Processo
-;
-; ASTEROIDE - Processo que desenha um asteroide implementa o seu comportamento
-;
-; **********************************************************************
-
-PROCESS SP_inicial_asteroide	;
-
-asteroide:
-	
-	; desenha o asteroide na sua posição inicial
-    MOV R1, 0                          ;  linha do asteroide
-    MOV R2, 0                          ; le valor da coluna do asteroide (+2 porque a linha é um WORD)
-    MOV R4, ASTEROIDE_PERIGO           ; endereço da tabela que define o asteroide
-
-ciclo_asteroide:
-	CALL	desenha_objeto		; desenha o boneco a partir da tabela
-    
-
-	MOV	R3, [evento_asteroide]  	; lê o LOCK e bloqueia até a interrupção escrever nele
-
-    CALL  apaga_objeto                    ; Apaga o objeto em sua posição atual
-    INC   R1                              ; Incrementa a posição do asteroide para a próxima linha
-    INC   R2                              ; Incrementa a posição do asteroide para a próxima coluna
-	JMP	ciclo_asteroide		; esta "rotina" nunca retorna porque nunca termina
-						; Se se quisesse terminar o processo, era deixar o processo chegar a um RET
-
-;pausa_asteroide:
-;    MOV R0, [evento_asteroide]
-;    JMP obtem_tecla
-
 
 ; **********************************************************************
 ; ESCREVE_DISPLAY - escreve um valor decimal no display hexadecimal

@@ -347,6 +347,7 @@ sonda_esq:
 
 sonda_cent:
     MOV R1, [sondas_lancadas + 2]
+    CMP R1, 0
     JNZ obtem_tecla
     MOV R1, 1
     MOV [sondas_lancadas + 2], R1
@@ -356,6 +357,7 @@ sonda_cent:
 
 sonda_dir:
     MOV R1, [sondas_lancadas + 4]
+    CMP R1, 0
     JNZ obtem_tecla
     MOV R1, 1
     MOV [sondas_lancadas + 4], R1
@@ -658,6 +660,13 @@ ciclo_sonda:
 	JMP	ciclo_sonda		;
 
 sai_sonda:
+    INC R5
+    MOV R0, 2
+    MUL R5, R0  ; calcula posicao na tabela da sondas lançadas
+    MOV R0, sondas_lancadas
+    ADD R5, R0 ; obtém endereço nas sondas lançadas
+    MOV R0, 0
+    MOV [R5], R0 ; sonda já não está lançada
     RET
 
 ;pausa_sonda:

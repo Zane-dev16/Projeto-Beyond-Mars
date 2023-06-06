@@ -85,7 +85,9 @@ LARGURA_PAINEL      EQU 15      ; largura do painel da nave
 ALTURA_PAINEL       EQU 5       ; altura do painel da nave
 
 LARGURA_LUZES       EQU 11      ; largura dos luzes do painel
-ALTURA_LUZES       EQU 2       ; altura dos luzes do painel
+ALTURA_LUZES        EQU 2       ; altura dos luzes do painel
+
+PROX_ANIM_PAINEL    EQU 48      ; para obter os pixels do proximo animação do painel      
 
 PIXEL_VERM		    EQU	0FF00H	; pixel vermelho opaco
 PIXEL_VERM_TRANS    EQU	0FF00H	; pixel vermelho translucido
@@ -254,6 +256,9 @@ evento_painel:			; LOCK que controla a temporização do animação do painel
 tecla_carregada:
     LOCK 0              ; LOCK para o teclado comunicar aos restantes processos que coluna detetou
 
+pausa_processos:        ; LOCK para pausar os processos quando o jogo está em pausa
+	LOCK 0
+
 momento_jogo:            ; controlar se o jogo já foi iniciado
     WORD 0
 
@@ -327,7 +332,7 @@ obtem_tecla:
 
     MOV R2, TECLA_PAUSA        ; tecla para pausa e continuar o jogo
     CMP R1, R2                 ; verifica se a tecla premida foi o D
-    JZ suspende_continua
+    JZ suspende
 
     MOV R2, TECLA_TERMINA
     CMP R1, R2                   ; verifica se a tecla premida foi o E
@@ -365,28 +370,24 @@ sonda_dir:
     CALL sonda
     JMP obtem_tecla
 
-suspende_continua:
-    MOV R2, [estado_jogo]
-    MOV R1, JOGO_INICIADO
-    CMP R2, R1
-    JZ suspende
-    MOV R1, JOGO_PAUSA
-    CMP R2, R1
-    JZ continua
+suspende_cont:
     MOV R1, JOGO_TERMINADO
     CMP R2, R1
     JZ obtem_tecla
 
 suspende:
     MOV R1, JOGO_PAUSA
-    MOV [estado_jogo], R1
-    ;JMP pausa_energia
-
-continua:
-    MOV [evento_asteroide], R0
-    MOV [evento_display], R0
-    MOV [evento_painel], R0
-    MOV [evento_sonda], R0
+    MOV [estado_jogo], R1       ; bloqueia os processos
+pausa_prog_principal:           ; neste ciclo o jogo está em modo pausa
+                                ; e apenas sai quando a tecla D for premida
+    MOV R1, [tecla_carregada]   ; bloqueia neste LOCK até uma tecla ser carregada
+    MOV R2, TECLA_PAUSA         ; tecla para pausa e continuar o jogo
+    CMP R1, R2                  ; verifica se a tecla premida foi o D
+    JNZ pausa_prog_principal    ; repete o ciclo
+    MOV R1, JOGO_INICIADO
+    MOV [estado_jogo], R1       ; volta ao estado jogo iniciado
+    MOV [pausa_processos], R1   ; desbloqueia os processos
+    JZ obtem_tecla              ; volta ao ciclo de funciomento da prog_principal
 
 ;termina:
 
@@ -450,7 +451,7 @@ ha_tecla:					; neste ciclo espera-se até NENHUMA tecla estar premida
 
 espera_tecla:				; neste ciclo espera-se até uma tecla ser premida
 
-	YIELD				    ; este ciclo é potencialmente bloqueante, pelo que tem de
+	WAIT			        ; este ciclo é potencialmente bloqueante, pelo que tem de
 						    ; ter um ponto de fuga (aqui pode comutar para outro processo)
 
 	MOV  R1, LINHA1	        ; testar a linha 1
@@ -575,45 +576,29 @@ painel:
 
     MOV R1, LINHA_PAINEL + 2
     MOV R2, COLUNA_PAINEL + 2
-    
+    MOV R3, JOGO_PAUSA
+
+ciclo_anima_painel:
+    MOV R4, ANIMACAO_PAINEL_1       ; Primeira forma das luzes do painel
 anima_painel:
-    MOV R0, [evento_painel]     ; Bloqueia até interrupção 3
-    MOV R4, ANIMACAO_PAINEL_1   ; Muda cor das luzes do painel
-    CALL desenha_objeto
+    MOV R0, [estado_jogo]
+    CMP R0, R3                  ; O jogo está em pausa?
+    JZ  pausa_painel            ; Se for em pausa, salta
 
     MOV R0, [evento_painel]     ; Bloqueia até interrupção 3
-    MOV R4, ANIMACAO_PAINEL_2   ; Muda cor das luzes do painel
     CALL desenha_objeto
 
-    MOV R0, [evento_painel]     ; Bloqueia até interrupção 3
-    MOV R4, ANIMACAO_PAINEL_3   ; Muda cor das luzes do painel
-    CALL desenha_objeto
+    MOV R0, ANIMACAO_PAINEL_8
+    CMP R4, R0                  ; Já foi desenhado o ultimo animação
+    JZ  ciclo_anima_painel      ; se for, repete a partir da primeira animação
 
-    MOV R0, [evento_painel]     ; Bloqueia até interrupção 3
-    MOV R4, ANIMACAO_PAINEL_4   ; Muda cor das luzes do painel
-    CALL desenha_objeto
+    MOV R0, PROX_ANIM_PAINEL
+    ADD R4, R0                  ; obtem o proximo tabela do animação
+    JMP anima_painel            ; desenha proximo animação
 
-    MOV R0, [evento_painel]     ; Bloqueia até interrupção 3
-    MOV R4, ANIMACAO_PAINEL_5   ; Muda cor das luzes do painel
-    CALL desenha_objeto
-
-    MOV R0, [evento_painel]     ; Bloqueia até interrupção 3
-    MOV R4, ANIMACAO_PAINEL_6   ; Muda cor das luzes do painel
-    CALL desenha_objeto
-
-    MOV R0, [evento_painel]     ; Bloqueia até interrupção 3
-    MOV R4, ANIMACAO_PAINEL_7   ; Muda cor das luzes do painel
-    CALL desenha_objeto
-
-    MOV R0, [evento_painel]     ; Bloqueia até interrupção 3
-    MOV R4, ANIMACAO_PAINEL_8   ; Muda cor das luzes do painel
-    CALL desenha_objeto
-
-    JMP anima_painel    ; repete ciclo da animação
-
-;pausa_painel:
-;    MOV R0, [evento_painel]
-;    JMP pausa_sonda
+pausa_painel:
+   MOV R0, [pausa_processos]
+   JMP anima_painel
 
 
 ; **********************************************************************

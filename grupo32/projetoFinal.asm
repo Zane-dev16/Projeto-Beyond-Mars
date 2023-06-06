@@ -512,7 +512,7 @@ sai_sonda:
     ADD R5, R0 ; obtém endereço nas sondas lançadas
     MOV R0, 0
     MOV [R5], R0 ; sonda já não está lançada
-    MOV [APAGA_ECRA], R1                    ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
+    MOV R4, R0                    ; apaga a sonda
     RET
 
 ; **********************************************************************

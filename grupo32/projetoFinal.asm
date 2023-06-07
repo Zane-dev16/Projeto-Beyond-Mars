@@ -25,6 +25,7 @@ TECLA_TERMINA       EQU 14      ; tecla para pausa e continuar o jogo (tecla E)
 
 
 INICIO_ENERGIA      EQU 100     ;
+ENERGIA_SONDA       EQU -5      ; corresponde ao gasto da energia pelo disparo de uma sonda
 FATOR_INICIAL       EQU 1000    ;
 
 COMANDOS				EQU	6000H			; endereço de base dos comandos do MediaCenter
@@ -455,8 +456,13 @@ pausa_painel:
 
 PROCESS SP_inicial_sonda
 
-	; desenha a sonda na sua posição inicial
 sonda:
+    ; atualiza display de energia
+    MOV R0, ENERGIA_SONDA
+    MOV R1, evento_display
+    MOV [R1], R0
+
+	; desenha a sonda na sua posição inicial
     MOV R0, 12
 	MOV R1, LINHA_CIMA_PAINEL   ; linha da sonda
 	MOV R4, SONDA
@@ -515,7 +521,7 @@ sai_sonda:
     ADD R5, R0 ; obtém endereço nas sondas lançadas
     MOV R0, 0
     MOV [R5], R0 ; sonda já não está lançada
-    MOV [APAGA_ECRA], R1                    ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
+    MOV R4, R0                    ; apaga a sonda
     RET
 
 ; **********************************************************************
@@ -677,10 +683,6 @@ termina:
 ; **********************************************************************
 
 PROCESS SP_inicial_energia	; Processo com valor para inicializar o SP
-
-;pausa_energia:
-;    MOV R0, [evento_display]
-;    JMP pausa_painel
 
 energia:
     MOV R8, INICIO_ENERGIA
@@ -1032,10 +1034,6 @@ rot_int_2:
     MOV R1, evento_display
     MOV R0, -3
     MOV [R1], R0
-    MOV R9, [TEC_COL]
-    MOV R5, MASCARA_GERADOR_ALEATORIO
-    AND R9, R5
-    SHR R9, 6
     POP R5
     POP R1
     POP R0

@@ -313,6 +313,7 @@ inicia_jogo:
 
 
 
+
 obtem_tecla:
     MOV R1, [tecla_carregada]   ; bloqueia neste LOCK até uma tecla ser carregada
 
@@ -544,6 +545,7 @@ asteroide:
 ciclo_asteroide:
 	CALL 	colisao_painel
 	CALL	desenha_objeto		; desenha o boneco a partir da tabela
+
     MOV R3, JOGO_INICIADO       ; para verificar se o jogo ainda está a continuar
     MOV R0, [estado_jogo]
     CMP R0, R3                  ; O modo do jogo alterou?

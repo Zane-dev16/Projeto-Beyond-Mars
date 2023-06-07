@@ -924,10 +924,6 @@ rot_int_2:
     MOV R1, evento_display
     MOV R0, -3
     MOV [R1], R0
-    MOV R9, [TEC_COL]
-    MOV R5, MASCARA_GERADOR_ALEATORIO
-    AND R9, R5
-    SHR R9, 6
     POP R5
     POP R1
     POP R0

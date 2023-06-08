@@ -573,6 +573,9 @@ pausa_asteroide:
    MOV R0, [pausa_processos]    ; bloqueia neste lock até o jogo continuar
    JMP ciclo_asteroide              ; volta ao ciclo, a continuar o jogo
 
+asteroide_destruido:
+    RET
+
 ; **********************************************************************
 ; Processos de colisao
 ;
@@ -710,11 +713,12 @@ altera_modo_energia:
     CMP R0, R1                  ; O jogo está em pausa?
     JZ  pausa_energia           ; se for, pausa
     MOV [APAGA_ECRA], R1                    ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
-    RET                         ; se não a tecla premida foi para terminar o jogo
+    RET
 
 pausa_energia:
    MOV R0, [pausa_processos]    ; bloqueia neste lock até o jogo continuar
    JMP atualiza_display              ; volta ao ciclo, a continuar o jogo
+   
 
 
 ; **********************************************************************

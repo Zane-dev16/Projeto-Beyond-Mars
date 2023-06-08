@@ -239,6 +239,13 @@ sondas_lancadas:
     WORD    0, 0   ; coordenadas da segunda sonda
     WORD    0, 0   ; coordenadas da terceir sonda
 
+;sonda_colidida:
+	;WORD	LINHA
+	;WORD	COLUNA
+    WORD    0, 0   ; coordenadas da primeira sonda
+    WORD    0, 0   ; coordenadas da segunda sonda
+    WORD    0, 0   ; coordenadas da terceira sonda
+
 ; Tabela das rotinas de interrupção
 tab:
 	WORD rot_int_0			; rotina de atendimento da interrupção 0
@@ -518,11 +525,12 @@ calcula_endereço_sondas_lancadas:
     ADD R7, R0 ; obtém endereço nas sondas lançadas
 
 ciclo_sonda:
+	;CALL colisao_sonda
 
     ; guarda posição na tabela
     MOV [R7], R1
     MOV [R7 + 2], R2
-	;CALL colisao_sonda
+
     CALL  desenha_objeto    ; Desenha o objeto novamente na nova posição
 
     MOV R3, JOGO_INICIADO       ; para verificar se o jogo ainda está a continuar

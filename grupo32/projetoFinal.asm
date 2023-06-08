@@ -660,52 +660,63 @@ colisao_asteroide:
 	PUSH R5
 	PUSH R7
 	PUSH R8
+	PUSH R9
 	MOV	R5, R1
 	MOV R7, R2
-	ADD R5,4
-	ADD R7,4
-	MOV R8,[sondas_lancadas]
+	MOV R10,R1
+	MOV R11,R2
+	SUB R10,1
+	SUB R11,1
+	ADD R5,6
+	ADD R7,6
+	MOV R8,sondas_lancadas
 verifica_primeira_sonda:
-	CMP R8, R5
+	MOV R9, [R8]
+	CMP R9, R5
 	JGE verifica_segunda_sonda
-	CMP R8, R1
+	CMP R9, R10
 	JLE verifica_segunda_sonda
 	ADD R8, 2
-	CMP R8, R7
+	MOV R9, [R8]
+	CMP R9, R7
 	JGE verifica_segunda_sonda
-	CMP R8, R2
+	CMP R9, R11
 	JLE verifica_segunda_sonda
 	CALL muda_fundo
 	JMP final
 verifica_segunda_sonda:
 	ADD R8, 2
-	CMP R8, R5
+	MOV R9, [R8]
+	CMP R9, R5
 	JGE verifica_terceira_sonda
-	CMP R8, R1
+	CMP R9, R10
 	JLE verifica_terceira_sonda
 	ADD R8, 2
-	CMP R8, R7
+	MOV R9, [R8]
+	CMP R9, R7
 	JGE verifica_terceira_sonda
-	CMP R8, R2
+	CMP R9, R11
 	JLE verifica_terceira_sonda
 	CALL muda_fundo
 	JMP final
 verifica_terceira_sonda:
 	ADD R8, 2
-	CMP R8, R5
+	MOV R9, [R8]
+	CMP R9, R5
 	JGE final
-	CMP R8, R1
+	CMP R9, R10
 	JLE final
 	ADD R8, 2
-	CMP R8, R7
+	MOV R9, [R8]
+	CMP R9, R7
 	JGE final
-	CMP R8, R2
+	CMP R9, R11
 	JLE final
 	CALL muda_fundo
 	JMP final
 
 final:
-	
+	POP R9
 	POP R8
 	POP R7
 	POP R5

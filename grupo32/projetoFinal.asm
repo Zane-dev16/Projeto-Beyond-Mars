@@ -82,6 +82,7 @@ COLUNA_SONDA_DIR    EQU 38      ; coluna inicial de uma sonda a direita
 
 LARGURA_SONDA       EQU 1        ; largura das sondas
 ALTURA_SONDA        EQU 1        ; altura das sondas
+ALCANCE_SONDA       EQU 12
 
 LARGURA_AST			EQU	5		; largura do asteroide
 ALTURA_AST          EQU 5       ; altura do asteroide 
@@ -477,7 +478,9 @@ sonda:
     MOV [R1], R0
 
 	; desenha a sonda na sua posição inicial
-    MOV R0, 12
+    MOV R1, SOM_DISPARO
+    MOV [REPRODUZ_SOM_VIDEO], R1
+    MOV R0, ALCANCE_SONDA
 	MOV R1, LINHA_CIMA_PAINEL   ; linha da sonda
 	MOV R4, SONDA
 

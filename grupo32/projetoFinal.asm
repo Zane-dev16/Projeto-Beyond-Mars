@@ -239,6 +239,10 @@ sondas_lancadas:
     WORD    0   ; guarda se a sonda esquerda for em disparo
     WORD    0   ; guarda se a sonda central for em disparo
     WORD    0   ; guarda se a sonda direita for em disparo
+	
+;sonda_colidida:
+	;WORD	LINHA
+	;WORD	COLUNA
 
 ; Tabela das rotinas de interrupção
 tab:
@@ -498,7 +502,7 @@ pos_sonda_dir:
 	MOV R2, COLUNA_SONDA_DIR     ; inicia coluna a direita do painel
 
 ciclo_sonda:
-	CALL colisao_sonda
+	;CALL colisao_sonda
     CALL  desenha_objeto    ; Desenha o objeto novamente na nova posição
 
     MOV R3, JOGO_INICIADO       ; para verificar se o jogo ainda está a continuar
@@ -554,6 +558,7 @@ asteroide:
     MOV R1, LINHA_TOPO  ; linha do asteroide
 
 ciclo_asteroide:
+	
 	CALL 	colisao_painel
 	CALL	desenha_objeto		; desenha o boneco a partir da tabela
 
@@ -567,6 +572,7 @@ ciclo_asteroide:
     CALL  apaga_objeto                    ; Apaga o objeto em sua posição atual
     INC   R1    ; Atualiza o posição do asteroide para a próxima linha
     ADD   R2, R5    ; Atualiza o posição do asteroide para a próxima coluna
+	CALL	colisao_asteroide
 	JMP	ciclo_asteroide		; esta "rotina" nunca retorna porque nunca termina
 						; Se se quisesse terminar o processo, era deixar o processo chegar a um RET
 
@@ -595,54 +601,79 @@ muda_fundo:
 	MOV [FUNDO_ECRA], R0         ; coloca imagem de fundo incial
 	POP R0
 	RET
-colisao_sonda:
-	PUSH R0
+	
+colisao_asteroide:
 	PUSH R5
 	PUSH R6
 	PUSH R7
 	PUSH R8
 	PUSH R9
 	PUSH R10
-	MOV R5, R1
-	MOV R6, R1
-	MOV R7, R2
-	MOV R10,PIXEL_VERM
-	SUB R5, 1							;linha acima da sonda
-	SUB R7, 1							;coluna à esquerda da sonda 
-	ADD R6, 1							;coluna à direita de sonda 
-	MOV [DEFINE_LINHA],R7				;define a linha do pixel
-verifica_asteroide_cima:
-	MOV [DEFINE_COLUNA],R1				;define a coluna do pixel
-	MOV R8, [ESTADO_PIXEL]				;lê o estado do pixel (ligado-1 desligao-0)
-	JZ  verifica_asteroide_direita		;salta para verificar se o asteroide está no canto superior direito da sonda caso o pixel esteja desligado
-	MOV R9,[LE_COR_PIXEL]				;lê a cor do pixel 
-	CMP R9,R10							;verifica se é um pixel vermelho 
-	JNZ  verifica_asteroide_direita		;salta para verificar se o asteroide está no canto superior direito da sonda caso não seja um pixel vermelho
-    CALL muda_fundo						;muda o fundo caso seja um pixel ligado e vermelho
-verifica_asteroide_direita:
-	MOV [DEFINE_COLUNA],R6				;define a coluna do pixel
-	MOV R8, [ESTADO_PIXEL]				;lê o estado do pixel (ligado-1 desligao-0)
-	JZ  verifica_asteroide_esquerda		;salta para verificar se o asteroide está no canto superior esquerdo da sonda caso o pixel esteja desligado
-	MOV R9,[LE_COR_PIXEL]				;lê a cor do pixel 
-	CMP R9,R10							;verifica se é um pixel vermelho 
-	JNZ  verifica_asteroide_esquerda	;salta para verificar se o asteroide está no canto superior esquerdo da sonda caso não seja um pixel vermelho
-	CALL muda_fundo						;muda o fundo caso seja um pixel ligado e vermelho
-verifica_asteroide_esquerda:
-	MOV [DEFINE_COLUNA],R5				;define a coluna do pixel
-	MOV R8, [ESTADO_PIXEL]				;lê o estado do pixel (ligado-1 desligao-0)
-	JZ  final							;termina a rotina caso o pixel esteja desligado
-	MOV R9,[LE_COR_PIXEL]				;lê a cor do pixel 
-	CMP R9,R10							;verifica se é um pixel vermelho 
-	JNZ  final							;termina a rotina caso não seja um pixel vermelho
-	CALL muda_fundo						;muda o fundo caso seja um pixel ligado e vermelho
+	PUSH R11
+	PUSH R12
+	MOV	R5, R1
+	MOV R6, R2
+	MOV R7, R1
+	MOV R8, R2
+	MOV R12, PIXEL_CAST
+	SUB R6, 1
+	ADD R7, 5
+	ADD R8, 5
+verifica_objeto_abaixo:
+	MOV R9,R6
+	MOV [DEFINE_LINHA],R7
+	INC R8
+iteracao_1:
+	CMP R9,R8
+	JGE verifica_objeto_esquerda
+	MOV [DEFINE_COLUNA],R9
+	MOV R10,[ESTADO_PIXEL]
+	JNZ verifica_cor
+	INC R9
+	JMP iteracao_1
+	
+verifica_objeto_esquerda:
+	MOV [DEFINE_COLUNA],R6
+	SUB R8,1
+	INC R7
+iteracao_2:
+	CMP R5,R7
+	JGE verifica_objeto_direita
+	MOV [DEFINE_LINHA],R5
+	MOV R10,[ESTADO_PIXEL]
+	JNZ verifica_cor
+	INC R5
+	JMP iteracao_2
+	
+verifica_objeto_direita:
+	MOV [DEFINE_COLUNA],R8
+	MOV	R5, R1
+iteracao_3:
+	CMP R5,R7
+	JGE final
+	MOV [DEFINE_LINHA],R5
+	MOV R10,[ESTADO_PIXEL]
+	JNZ verifica_cor
+	INC R5
+	JMP iteracao_3
+	
+verifica_cor:
+	MOV R11,[LE_COR_PIXEL]
+	CMP R11,R12
+	JNZ final
+	CALL  muda_fundo
+
+
 final:
+	POP R12
+	POP R11
 	POP R10
 	POP R9
 	POP R8
 	POP R7
 	POP R6
 	POP R5
-	POP R0
+	
 	RET
 
 colisao_painel:

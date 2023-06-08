@@ -604,11 +604,15 @@ ciclo_asteroide:
     CALL  apaga_objeto                    ; Apaga o objeto em sua posição atual
     INC   R1    ; Atualiza o posição do asteroide para a próxima linha
     ADD   R2, R5    ; Atualiza o posição do asteroide para a próxima coluna
+<<<<<<< HEAD
+	
+=======
 
 	CALL	colisao_asteroide
     CMP R6, 1   ; teve colisão?
     JZ  sai_asteroide   ; se tiver sai 
 
+>>>>>>> d67ff003df1b2fa9db264a26514b7d81b0a1332d
 	JMP	ciclo_asteroide		; esta "rotina" nunca retorna porque nunca termina
 						; Se se quisesse terminar o processo, era deixar o processo chegar a um RET
 
@@ -651,57 +655,33 @@ colisao_asteroide:
 	PUSH R11
 	PUSH R3
 	MOV	R5, R1
-	MOV R6, R2
-	MOV R7, R1
+	MOV R7, R2
 	MOV R8, R2
+	MOV R9,R1
+	ADD R9,5
+	ADD R8,5
 	MOV R3, PIXEL_CAST
-	SUB R6, 1
-	ADD R7, 5
-	ADD R8, 5
-verifica_objeto_abaixo:
-	MOV R9,R6
-	MOV [DEFINE_LINHA],R7
-	INC R8
-iteracao_1:
-	CMP R9,R8
-	JGE verifica_objeto_esquerda
-	MOV [DEFINE_COLUNA],R9
+
+desce:
+	CMP R5, R9
+	JZ final
+	MOV R7, R2
+	MOV [DEFINE_LINHA], R5
+le_linha:
+	MOV	[DEFINE_COLUNA],R7
 	MOV R10,[ESTADO_PIXEL]
-	JNZ verifica_cor
-	INC R9
-	JMP iteracao_1
-	
-verifica_objeto_esquerda:
-	MOV [DEFINE_COLUNA],R6
-	SUB R8,1
-	INC R7
-iteracao_2:
-	CMP R5,R7
-	JGE verifica_objeto_direita
-	MOV [DEFINE_LINHA],R5
-	MOV R10,[ESTADO_PIXEL]
-	JNZ verifica_cor
-	INC R5
-	JMP iteracao_2
-	
-verifica_objeto_direita:
-	MOV [DEFINE_COLUNA],R8
-	MOV	R5, R1
-iteracao_3:
-	CMP R5,R7
-	JGE final
-	MOV [DEFINE_LINHA],R5
-	MOV R10,[ESTADO_PIXEL]
-	JNZ verifica_cor
-	INC R5
-	JMP iteracao_3
-	
-verifica_cor:
+	JZ loopa
 	MOV R11,[LE_COR_PIXEL]
 	CMP R11,R3
-	JNZ final
-	CALL  muda_fundo
-
+	JNZ loopa
+	CALL muda_fundo
+	JMP final
+loopa:
+	INC R7
+	CMP R7, R8
+	JNZ le_linha
+	INC R5
+	JMP desce
 
 final:
 	POP R3

@@ -236,9 +236,9 @@ posicao_asteroide:       ; posição do asteroide
     WORD    COLUNA_ESQ
 
 sondas_lancadas:
-    WORD    0, 0   ; coordenadas da primeira sonda
-    WORD    0, 0   ; coordenadas da segunda sonda
-    WORD    0, 0   ; coordenadas da terceira sonda
+    WORD    30, 32   ; coordenadas da primeira sonda
+    WORD    30, 32   ; coordenadas da segunda sonda
+    WORD    30, 32   ; coordenadas da terceira sonda
 
 
 ; Tabela das rotinas de interrupção

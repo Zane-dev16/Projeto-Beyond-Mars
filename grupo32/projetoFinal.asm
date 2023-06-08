@@ -318,9 +318,6 @@ inicia_jogo:
     CALL energia
     CALL inicia_asteroides
 
-
-
-
 obtem_tecla:
     MOV R1, [tecla_carregada]   ; bloqueia neste LOCK até uma tecla ser carregada
 

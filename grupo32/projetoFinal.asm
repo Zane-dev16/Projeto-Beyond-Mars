@@ -235,19 +235,9 @@ posicao_asteroide:       ; posição do asteroide
     WORD    COLUNA_ESQ
 
 sondas_lancadas:
-<<<<<<< HEAD
-    WORD    0   ; guarda se a sonda esquerda for em disparo
-    WORD    0   ; guarda se a sonda central for em disparo
-    WORD    0   ; guarda se a sonda direita for em disparo
-	
-;sonda_colidida:
-	;WORD	LINHA
-	;WORD	COLUNA
-=======
     WORD    0, 0   ; coordenadas da primeira sonda
     WORD    0, 0   ; coordenadas da segunda sonda
     WORD    0, 0   ; coordenadas da terceir sonda
->>>>>>> 4a37dd907af76c7acd71a78c88a5b7b56e10f9cf
 
 ; Tabela das rotinas de interrupção
 tab:

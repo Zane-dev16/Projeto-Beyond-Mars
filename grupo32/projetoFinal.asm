@@ -456,7 +456,6 @@ anima_painel:
     MOV R0, ANIMACAO_PAINEL_8
     CMP R4, R0                  ; Já foi desenhado o ultimo animação
     JZ  ciclo_anima_painel      ; se for, repete a partir da primeira animação
-
     MOV R0, PROX_ANIM_PAINEL
     ADD R4, R0                  ; obtem o proximo tabela do animação
     JMP anima_painel            ; desenha proximo animação
@@ -535,6 +534,11 @@ ciclo_sonda:
     JNZ altera_modo_sonda       ; Se for, salta
 
     MOV	R3, [evento_sonda]  ; lê o LOCK e bloqueia até a interrupção escrever nele
+    MOV R9, R5
+    INC R9  ; para comparar com referência de colisão (0-2)
+    CMP R3, R9
+    JZ sai_sonda   ; se tiver colisão sai
+
     CALL  apaga_objeto      ; Apaga o objeto em sua posição atual
     DEC R1      ; a sonda sobe uma linha
     ADD R2, R5  ;  atualiza posição com argumento do direção
@@ -573,11 +577,12 @@ PROCESS SP_inicial_asteroide	;
 
 asteroide:
 	; gera e desenha o asteroide na sua posição inicial
+    MOV R6, 0           ; reinicia valor
     MOV R1, LINHA_TOPO  ; linha do asteroide
     CALL gera_tipo_asteroide
 
 ciclo_asteroide:
-	CALL  colisao_asteroide
+	
 	CALL 	colisao_painel
 	CALL	desenha_objeto		; desenha o boneco a partir da tabela
 
@@ -591,7 +596,15 @@ ciclo_asteroide:
     CALL  apaga_objeto                    ; Apaga o objeto em sua posição atual
     INC   R1    ; Atualiza o posição do asteroide para a próxima linha
     ADD   R2, R5    ; Atualiza o posição do asteroide para a próxima coluna
+<<<<<<< HEAD
 	
+=======
+
+	CALL	colisao_asteroide
+    CMP R6, 1   ; teve colisão?
+    JZ  sai_asteroide   ; se tiver sai 
+
+>>>>>>> d67ff003df1b2fa9db264a26514b7d81b0a1332d
 	JMP	ciclo_asteroide		; esta "rotina" nunca retorna porque nunca termina
 						; Se se quisesse terminar o processo, era deixar o processo chegar a um RET
 
@@ -606,6 +619,9 @@ altera_modo_asteroide:
 pausa_asteroide:
    MOV R0, [pausa_processos]    ; bloqueia neste lock até o jogo continuar
    JMP ciclo_asteroide              ; volta ao ciclo, a continuar o jogo
+
+sai_asteroide:
+    RET
 
 ; **********************************************************************
 ; Processos de colisao
@@ -1286,7 +1302,10 @@ rot_int_0:
 ; ROT_INT_1 - 	Rotina de atendimento da interrupção 1
 ; **********************************************************************
 rot_int_1:
+    PUSH    R0
+    MOV R0, 3
 	MOV	[evento_sonda], R0	; desbloqueia processo asteroide
+    POP     R0
 	RFE
 
 ; **********************************************************************

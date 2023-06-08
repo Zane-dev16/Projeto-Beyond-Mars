@@ -22,7 +22,7 @@ TECLA_SONDA_DIR     EQU 2       ; tecla para lancar uma sonda a direita (tecla 2
 TECLA_INICIO_JOGO   EQU 12      ; tecla para iniciar o jogo (tecla C)
 TECLA_PAUSA         EQU 13      ; tecla para pausa e continuar o jogo (tecla D)
 TECLA_TERMINA       EQU 14      ; tecla para pausa e continuar o jogo (tecla E)
-TECLA_REINICIA      EQU 15      ; tecla para reiniciar o jogo (tecla F)
+TECLA_REINICIA      EQU 12      ; tecla para reiniciar o jogo (tecla F)
 
 
 INICIO_ENERGIA      EQU 100     ;
@@ -296,20 +296,12 @@ inicio:
 
     CALL teclado
 
-reinicia:
+espera_inicio:
     MOV R1, [tecla_carregada]   ; bloqueia neste LOCK até uma tecla ser carregada
-    MOV R2, TECLA_REINICIA   ;
+    MOV R2, TECLA_INICIO_JOGO   ;
     CMP R1, R2                  ; verifica se a tecla premida foi o C
-    JNZ reinicia             ; se a tecla premida não for C repete ciclo
-    CMP R1, R2
-    JZ prepara_reinicio
-
-prepara_reinicio:
-    MOV [APAGA_ECRA], R1
-    MOV [APAGA_MSG], R1
-    MOV [PARA_SOM_VIDEO], R1
-    JMP inicio
-
+    JNZ espera_inicio       ; se a tecla premida não for C repete ciclo
+    
 inicia_jogo:
     MOV R1, SOM_INICIO
     MOV [REPRODUZ_SOM_VIDEO], R1
@@ -413,7 +405,7 @@ termina_jogo:
     MOV [FUNDO_ECRA], R1         ; coloca imagem de fundo incial
     MOV [APAGA_MSG], R1    ; apaga a mensagem sobreposta, valor de R1 irrelevante
     MOV [APAGA_ECRA], R1                    ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
-    JMP reinicia
+    JMP espera_inicio
 
 ; **********************************************************************
 ; Processo
@@ -560,7 +552,6 @@ asteroide:
 	; gera e desenha o asteroide na sua posição inicial
     MOV R1, LINHA_TOPO  ; linha do asteroide
     CALL gera_asteroide ; gera tipo, direção e coluna aleatória
-    MOV R9, LINHA_CIMA_PAINEL -3
 
 ciclo_asteroide:
 	CALL 	colisao_painel
@@ -576,8 +567,6 @@ ciclo_asteroide:
     CALL  apaga_objeto                    ; Apaga o objeto em sua posição atual
     INC   R1    ; Atualiza o posição do asteroide para a próxima linha
     ADD   R2, R5    ; Atualiza o posição do asteroide para a próxima coluna
-    DEC   R9                              ; Incrementa contador
-    JZ asteroide_destruido
 	JMP	ciclo_asteroide		; esta "rotina" nunca retorna porque nunca termina
 						; Se se quisesse terminar o processo, era deixar o processo chegar a um RET
 

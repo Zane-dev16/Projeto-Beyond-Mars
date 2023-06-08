@@ -659,50 +659,56 @@ muda_fundo:
 	
 colisao_asteroide:
 	PUSH R5
-	PUSH R6
 	PUSH R7
 	PUSH R8
-	PUSH R9
-	PUSH R10
-	PUSH R11
-	PUSH R3
 	MOV	R5, R1
 	MOV R7, R2
-	MOV R8, R2
-	MOV R9,R1
-	ADD R9,5
-	ADD R8,5
-	MOV R3, PIXEL_CAST
-
-desce:
-	CMP R5, R9
-	JZ final
-	MOV R7, R2
-	MOV [DEFINE_LINHA], R5
-le_linha:
-	MOV	[DEFINE_COLUNA],R7
-	MOV R10,[ESTADO_PIXEL]
-	JZ loopa
-	MOV R11,[LE_COR_PIXEL]
-	CMP R11,R3
-	JNZ loopa
+	ADD R5,4
+	ADD R7,4
+	MOV R8,[sondas_lancadas]
+verifica_primeira_sonda:
+	CMP R8, R5
+	JGE verifica_segunda_sonda
+	CMP R8, R1
+	JLE verifica_segunda_sonda
+	ADD R8, 2
+	CMP R8, R7
+	JGE verifica_segunda_sonda
+	CMP R8, R2
+	JLE verifica_segunda_sonda
 	CALL muda_fundo
 	JMP final
-loopa:
-	INC R7
-	CMP R7, R8
-	JNZ le_linha
-	INC R5
-	JMP desce
+verifica_segunda_sonda:
+	ADD R8, 2
+	CMP R8, R5
+	JGE verifica_terceira_sonda
+	CMP R8, R1
+	JLE verifica_terceira_sonda
+	ADD R8, 2
+	CMP R8, R7
+	JGE verifica_terceira_sonda
+	CMP R8, R2
+	JLE verifica_terceira_sonda
+	CALL muda_fundo
+	JMP final
+verifica_terceira_sonda:
+	ADD R8, 2
+	CMP R8, R5
+	JGE verifica_terceira_sonda
+	CMP R8, R1
+	JLE verifica_terceira_sonda
+	ADD R8, 2
+	CMP R8, R7
+	JGE verifica_terceira_sonda
+	CMP R8, R2
+	JLE verifica_terceira_sonda
+	CALL muda_fundo
+	JMP final
 
 final:
-	POP R3
-	POP R11
-	POP R10
-	POP R9
+	
 	POP R8
 	POP R7
-	POP R6
 	POP R5
 	RET
 

@@ -23,7 +23,7 @@ TECLA_INICIO_JOGO   EQU 12      ; tecla para iniciar o jogo (tecla C)
 TECLA_PAUSA         EQU 13      ; tecla para pausa e continuar o jogo (tecla D)
 TECLA_TERMINA       EQU 14      ; tecla para pausa e continuar o jogo (tecla E)
 TECLA_REINICIA      EQU 12      ; tecla para reiniciar o jogo (tecla F)
-
+CRIA_ASTEROIDE      EQU 16      ; para criar um asteroide quando um for destruido
 
 INICIO_ENERGIA      EQU 100     ;
 ENERGIA_SONDA       EQU -5      ; corresponde ao gasto da energia pelo disparo de uma sonda
@@ -345,6 +345,10 @@ obtem_tecla:
     CMP R1, R2
     JZ inicio
 
+    MOV R2, CRIA_ASTEROIDE
+    CMP R1, R2
+    JZ  cria_asteroide
+
     JMP obtem_tecla             ; se a tecla premida não foi nenhuma das anteriores ignora a tecla
 
 sonda_esq:
@@ -375,6 +379,10 @@ sonda_dir:
     MOV [sondas_lancadas + 4], R1
     MOV R5, DIRECAO_DIR
     CALL sonda
+    JMP obtem_tecla
+
+cria_asteroide:
+    CALL gera_asteroide
     JMP obtem_tecla
 
 suspende_jogo:
@@ -548,10 +556,9 @@ sai_sonda:
 PROCESS SP_inicial_asteroide	;
 
 asteroide:
-	
-
 	; gera e desenha o asteroide na sua posição inicial
     MOV R1, LINHA_TOPO  ; linha do asteroide
+    CALL gera_tipo_asteroide
 
 ciclo_asteroide:
 	CALL 	colisao_painel
@@ -1054,42 +1061,59 @@ inicia_asteroides:
 
    
 inicia_ast_esq:         ; asteroide a esquerda
-    MOV R5, 1
     CMP R9, 0       ;
-    JZ inicia_ast_cent
-    MOV R2, COLUNA_ESQ
-    CALL asteroide
+    JZ inicia_ast_cent_dir
+    CALL cria_asteroide_esq
 
-inicia_ast_cent:        ; asteroide central
-    MOV R2, COLUNA_CENT
-    SUB R2, 2
 inicia_ast_cent_dir:    ; movimento a direita
     CMP R9, 1
     JZ inicia_ast_cent_cent
-    CALL asteroide
+    CALL cria_asteroide_cent_dir
+
 inicia_ast_cent_cent:   ; movimento no verticalmente
     CMP R9, 2
     JZ inicia_ast_cent_esq
-    MOV R5, 0
-    CALL asteroide
+    CALL cria_asteroide_cent_cent
+
 inicia_ast_cent_esq:    ; movemento a esquerda
-    MOV R5, -1
     CMP R9, 3
     JZ inicia_ast_dir
-    CALL asteroide
+    CALL cria_asteroide_cent_esq
 
 inicia_ast_dir:         ; asteroide a esquerda
     CMP R9, 4
     JZ sai_inicia_asteroides
-    MOV R2, COLUNA_DIR
-    SUB R2, 4
-    CALL asteroide
+    CALL cria_asteroide_dir
 
 sai_inicia_asteroides:
     POP R4
     POP R9
     POP R0
     
+
+; **********************************************************************
+; GERA_TIPO_ASTEROIDE - escolha aleatoriamente a tabela para desenhar o asteroide
+; Retorna:  R4 - tabela de asteroide a desenhar
+; **********************************************************************
+
+gera_tipo_asteroide:
+    PUSH    R0
+    PUSH    R1
+    MOV R0, MASCARA_GERADOR_ALEATORIO
+    MOV R1, [TEC_COL]   ; ler o PIN
+    AND R1, R0  ;   isolar 4 bits aleatórios
+    SHR R1, 6   ;   isolar e colocar 2 bits à direita (numero aleatório 0-3)
+    JZ gera_recursos
+    MOV R4, ASTEROIDE_PERIGO
+    JMP sai_gera_tipo_asteroide
+
+gera_recursos:
+    MOV R4, ASTEROIDE_COM_RECURSOS
+
+sai_gera_tipo_asteroide:
+    POP    R1
+    POP    R0
+    RET
 
 ; **********************************************************************
 ; GERA_ASTEROIDE - gera valores pseudo-aleatórias para o tipo, posição
@@ -1102,20 +1126,11 @@ sai_inicia_asteroides:
 ; **********************************************************************
 
 gera_asteroide:
+    PUSH R2
+    PUSH R5
     PUSH R8
     PUSH R9
-    MOV R5, MASCARA_GERADOR_ALEATORIO
-    MOV R9, [TEC_COL]   ; ler o PIN
-    AND R9, R5  ;   isolar 4 bits aleatórios
-    SHR R9, 6   ;   isolar e colocar 2 bits à direita (numero aleatório 0-3)
-    JZ gera_recursos
-    MOV R4, ASTEROIDE_PERIGO
-    JMP gera_posicao_direcao
 
-gera_recursos:
-    MOV R4, ASTEROIDE_COM_RECURSOS
-
-gera_posicao_direcao:
     CALL rand15
     MOV R8, 9   ;   para comparar o numero
     CMP R9, R8
@@ -1123,15 +1138,12 @@ gera_posicao_direcao:
     MOV R8, 12  ;
     CMP R9, R8
     JLE asteroide_esq
-    MOV R2, COLUNA_DIR
-    SUB R2, 4
-    MOV R5, -1
-    JMP movimento
+    CALL cria_asteroide_dir
+    JMP sai_gera_asteroide
 
 asteroide_esq:
-    MOV R2, COLUNA_ESQ
-    MOV R5, 1
-    JMP movimento
+    CALL cria_asteroide_esq
+    JMP sai_gera_asteroide
 
 asteroide_cent:
     MOV R2, COLUNA_CENT
@@ -1140,10 +1152,13 @@ asteroide_cent:
     MOD R9, R8   ;   obtem numero 0-2
     SUB R9, 1  ;   obtem direcao x da forma -1, 0 ou 1
     MOV R5, R9  ;   retornar valor da direcao x
+    CALL asteroide
 
-movimento:
+sai_gera_asteroide:
     POP R9
     POP R8
+    POP R5
+    POP R2
     RET
 
 ; **********************************************************************
@@ -1165,6 +1180,81 @@ rand15_ciclo:   ;para verificar que o número não seja 0
     MOD R9, R0  ; número aleatória 0-4
 
     POP     R0
+    RET
+
+; **********************************************************************
+; CRIA_ASTEROIDE_ESQ - cria um asteroide a esquerda
+;
+; **********************************************************************
+
+cria_asteroide_esq:
+    PUSH    R2
+    PUSH    R5
+    MOV R2, COLUNA_ESQ
+    MOV R5, 1
+    CALL asteroide
+    POP    R5
+    POP    R2
+    RET
+
+; **********************************************************************
+; CRIA_ASTEROIDE_DIR - cria um asteroide a direita
+;
+; **********************************************************************
+
+cria_asteroide_dir:
+    PUSH    R2
+    PUSH    R5
+    MOV R2, COLUNA_DIR - 4
+    MOV R5, -1
+    CALL asteroide
+    POP    R5
+    POP    R2
+    RET
+
+; **********************************************************************
+; CRIA_ASTEROIDE_CENT_ESQ - cria um asteroide no centro com movimento a esquerda
+;
+; **********************************************************************
+
+cria_asteroide_cent_esq:
+    PUSH    R2
+    PUSH    R5
+    MOV R2, COLUNA_CENT - 2
+    MOV R5, -1
+    CALL asteroide
+    POP    R5
+    POP    R2
+    RET
+
+; **********************************************************************
+; CRIA_ASTEROIDE_CENT_CENT - cria um asteroide no centro com movimento na vertical
+;
+; **********************************************************************
+
+cria_asteroide_cent_cent:
+    PUSH    R2
+    PUSH    R5
+    MOV R2, COLUNA_CENT - 2
+    MOV R5, 0
+    CALL asteroide
+    POP    R5
+    POP    R2
+    RET
+
+; **********************************************************************
+; CRIA_ASTEROIDE_CENT_DIR - cria um asteroide no centro com movimento a direita
+;
+; **********************************************************************
+
+cria_asteroide_cent_dir:
+    PUSH    R2
+    PUSH    R5
+    MOV R2, COLUNA_CENT - 2
+    MOV R5, 1
+    CALL asteroide
+    POP    R5
+    POP    R2
     RET
 
 ; **********************************************************************

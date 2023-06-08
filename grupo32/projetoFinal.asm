@@ -686,6 +686,7 @@ verifica_sonda1:
 	CMP R9, R11
 	JLE final_1
 	CALL muda_fundo
+	MOV R6,1
 	
 final_1:
 	POP R11
@@ -727,7 +728,7 @@ verifica_sonda2:
 	CMP R9, R11
 	JLE final_2
 	CALL muda_fundo
-	
+	MOV R6,1
 final_2:
 	POP R11
 	POP R10
@@ -769,7 +770,7 @@ verifica_sonda3:
 	CMP R9, R11
 	JLE final_3
 	CALL muda_fundo
-	
+	MOV R6,1
 final_3:
 	POP R11
 	POP R10

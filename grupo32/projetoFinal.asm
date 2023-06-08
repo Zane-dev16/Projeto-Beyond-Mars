@@ -22,6 +22,7 @@ TECLA_SONDA_DIR     EQU 2       ; tecla para lancar uma sonda a direita (tecla 2
 TECLA_INICIO_JOGO   EQU 12      ; tecla para iniciar o jogo (tecla C)
 TECLA_PAUSA         EQU 13      ; tecla para pausa e continuar o jogo (tecla D)
 TECLA_TERMINA       EQU 14      ; tecla para pausa e continuar o jogo (tecla E)
+TECLA_REINICIA      EQU 15      ; tecla para reiniciar o jogo (tecla F)
 
 
 INICIO_ENERGIA      EQU 100     ;
@@ -38,28 +39,29 @@ DEFINE_PIXEL    		    EQU COMANDOS + 12H		; endereço do comando para escrever u
 APAGA_AVISO     		    EQU COMANDOS + 40H		; endereço do comando para apagar o aviso de nenhum cenário selecionado
 APAGA_ECRA	 		        EQU COMANDOS + 02H		; endereço do comando para apagar todos os pixels já desenhados
 FUNDO_ECRA                  EQU COMANDOS + 42H		; endereço do comando para selecionar uma imagem de fundo
-TOCA_SOM				    EQU COMANDOS + 5AH		; endereço do comando para tocar um som
 MSG                         EQU COMANDOS + 46H      ; endereço do comando para sobrepor uma imagem (mensagem) à imagem de fundo
+APAGA_MSG                   EQU COMANDOS + 44H      ; endereço do comando para apagar a imagem sobreposta
+REPRODUZ_SOM_VIDEO          EQU COMANDOS + 5AH      ; endereço do comando para reproduzir um som ou video
+PARA_SOM_VIDEO              EQU COMANDOS + 68H      ; endereço do comando para para todos os sons e videos
 
 FUNDO_INICIAL       EQU 0
 FUNDO_JOGO          EQU 1
-FUNDO_EXPLOSAO      EQU 4
-FUNDO_ENERGIA       EQU 8
-FUNDO_CHEGA         EQU 9
+FUNDO_EXPLOSAO      EQU 2
+FUNDO_ENERGIA       EQU 3
 
-MSG_TRANSPARENTE    EQU 3
-MSG_INICIAR         EQU 2
-MSG_PAUSA           EQU 5
-MSG_EXPLOSAO        EQU 6
-MSG_SEM_ENERGIA     EQU 7
-MSG_CHEGA           EQU 10
+MSG_TRANSPARENTE    EQU 4
+MSG_INICIAR         EQU 5
+MSG_PAUSA           EQU 6
+MSG_EXPLOSAO        EQU 7
+MSG_SEM_ENERGIA     EQU 8
 
 SOM_INICIO         EQU 0
 SOM_DISPARO        EQU 1
 SOM_AST_DESTRUIDO  EQU 2
 SOM_AST_MINERADO   EQU 3
 SOM_EXPLOSAO       EQU 4
-SOM_SEM_ENERGIA    EQU 5
+SOM_PAUSA          EQU 5
+SOM_SEM_ENERGIA    EQU 6
 
 LINHA_TOPO        	EQU 0       ; linha do topo do ecrã
 COLUNA_ESQ			EQU 0       ; coluna mais à esquerda
@@ -294,19 +296,28 @@ inicio:
 
     CALL teclado
 
-espera_inicio:
+reinicia:
     MOV R1, [tecla_carregada]   ; bloqueia neste LOCK até uma tecla ser carregada
-    MOV R2, TECLA_INICIO_JOGO   ;
+    MOV R2, TECLA_REINICIA   ;
     CMP R1, R2                  ; verifica se a tecla premida foi o C
-    JNZ espera_inicio             ; se a tecla premida não for C repete ciclo
+    JNZ reinicia             ; se a tecla premida não for C repete ciclo
+    CMP R1, R2
+    JZ prepara_reinicio
+
+prepara_reinicio:
+    MOV [APAGA_ECRA], R1
+    MOV [APAGA_MSG], R1
+    MOV [PARA_SOM_VIDEO], R1
+    JMP inicio
 
 inicia_jogo:
+    MOV R1, SOM_INICIO
+    MOV [REPRODUZ_SOM_VIDEO], R1
     MOV R1, JOGO_INICIADO
     MOV [estado_jogo], R1
     MOV R1, FUNDO_JOGO
     MOV [FUNDO_ECRA], R1        ; coloca imagem de fundo para durante o jogo
-    MOV R1, MSG_TRANSPARENTE
-    MOV [MSG], R1    ; apaga as letras de inicio de jogo
+    MOV [APAGA_MSG], R1    ; apaga as letras de inicio de jogo
     CALL painel
     CALL asteroide
     CALL energia
@@ -335,6 +346,10 @@ obtem_tecla:
     MOV R2, TECLA_TERMINA
     CMP R1, R2                   ; verifica se a tecla premida foi o E
     JZ termina_jogo
+
+    MOV R2, TECLA_REINICIA
+    CMP R1, R2
+    JZ inicio
 
     JMP obtem_tecla             ; se a tecla premida não foi nenhuma das anteriores ignora a tecla
 
@@ -369,19 +384,24 @@ sonda_dir:
     JMP obtem_tecla
 
 suspende_jogo:
+    MOV R1, MSG_PAUSA
+    MOV [MSG], R1
+    MOV R1, SOM_PAUSA
+    MOV [REPRODUZ_SOM_VIDEO], R1
     MOV R1, JOGO_PAUSA
     MOV [estado_jogo], R1       ; bloqueia os processos
+
 pausa_prog_principal:           ; neste ciclo o jogo está em modo pausa
                                 ; e apenas sai quando a tecla D for premida
     MOV R1, [tecla_carregada]   ; bloqueia neste LOCK até uma tecla ser carregada
     MOV R2, TECLA_PAUSA         ; tecla para pausa e continuar o jogo
     CMP R1, R2                  ; verifica se a tecla premida foi o D
     JNZ pausa_prog_principal    ; repete o ciclo
+    MOV [APAGA_MSG], R1
     MOV R1, JOGO_INICIADO
     MOV [estado_jogo], R1       ; volta ao estado jogo iniciado
     MOV [pausa_processos], R1   ; desbloqueia os processos
     JZ obtem_tecla              ; volta ao ciclo de funciomento da prog_principal
-
 
 termina_jogo:
     MOV R1, JOGO_TERMINADO
@@ -390,10 +410,9 @@ termina_jogo:
     MOV [APAGA_AVISO], R1                   ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
     MOV R1, FUNDO_INICIAL
     MOV [FUNDO_ECRA], R1         ; coloca imagem de fundo incial
-    MOV R1, MSG_INICIAR
-    MOV [MSG], R1    ; sobrepõe letras sobre a imagem inicial
+    MOV [APAGA_MSG], R1    ; apaga a mensagem sobreposta, valor de R1 irrelevante
     MOV [APAGA_ECRA], R1                    ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
-    JMP espera_inicio
+    JMP reinicia
 
 ; **********************************************************************
 ; Processo
@@ -417,6 +436,7 @@ painel:
 
 ciclo_anima_painel:
     MOV R4, ANIMACAO_PAINEL_1       ; Primeira forma das luzes do painel
+
 anima_painel:
     MOV R3, JOGO_INICIADO
     MOV R0, [estado_jogo]
@@ -604,7 +624,7 @@ verifica_asteroide_cima:
 	MOV R9,[LE_COR_PIXEL]				;lê a cor do pixel 
 	CMP R9,R10							;verifica se é um pixel vermelho 
 	JNZ  verifica_asteroide_direita		;salta para verificar se o asteroide está no canto superior direito da sonda caso não seja um pixel vermelho
-	CALL muda_fundo						;muda o fundo caso seja um pixel ligado e vermelho
+    CALL muda_fundo						;muda o fundo caso seja um pixel ligado e vermelho
 verifica_asteroide_direita:
 	MOV [DEFINE_COLUNA],R6				;define a coluna do pixel
 	MOV R8, [ESTADO_PIXEL]				;lê o estado do pixel (ligado-1 desligao-0)
@@ -631,7 +651,6 @@ final:
 	POP R0
 	RET
 
-
 colisao_painel:
 	PUSH R5
 	PUSH R6
@@ -646,6 +665,7 @@ colisao_painel:
 	ADD R5, 5							;linha abaixo do asteroide 
 	ADD R6, 5							;linha à direita do asteroide
 	MOV R10, PIXEL_CINZ_CLA
+
 verica_canto_direito:
 	MOV [DEFINE_LINHA],R5				;define a linha do pixel
 	MOV [DEFINE_COLUNA],R6				;define a coluna do pixel
@@ -654,7 +674,8 @@ verica_canto_direito:
 	MOV R8, [LE_COR_PIXEL]				;lê a cor do pixel 
 	CMP R8,R10							;verifica se é um pixel cinzento 
 	JNZ verifica_canto_esquerdo			;verifica se o painel está no canto inferior esquerdo do asteroide caso o pixel não seja cinzento
-	CALL muda_fundo						;muda o fundo
+	JMP explosao						;muda o fundo
+
 verifica_canto_esquerdo:
 	MOV [DEFINE_COLUNA],R9				;define a coluna do pixel
 	MOV R7, [ESTADO_PIXEL]				;lê o estado do pixel (ligado-1 desligao-0)
@@ -662,7 +683,8 @@ verifica_canto_esquerdo:
 	MOV R8, [LE_COR_PIXEL]				;lê a cor do pixel 
 	CMP R8,R10							;verifica se é um pixel cinzento
 	JNZ termina							;termina a rotina caso o pixel não seja cinzento
-	CALL muda_fundo						;muda o fundo
+	JMP explosao						;muda o fundo
+
 termina:
 	POP R10
 	POP R9
@@ -672,7 +694,22 @@ termina:
 	POP R5
 	RET
 
-
+explosao:
+    PUSH R1
+    MOV R1, JOGO_TERMINADO
+        WAIT
+    MOV [estado_jogo], R1
+    MOV [APAGA_ECRA], R1 ; apaga todos os pixeis do ecrã, R1 irrelevante
+    MOV [APAGA_AVISO], R1                   ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
+    MOV R1, FUNDO_EXPLOSAO
+    MOV [FUNDO_ECRA], R1         ; coloca imagem de fundo incial
+    MOV R1, SOM_EXPLOSAO
+    MOV [REPRODUZ_SOM_VIDEO], R1
+    MOV R1, MSG_EXPLOSAO
+    MOV [MSG], R1
+    POP R1
+    JMP obtem_tecla
+    
 
 
 ; **********************************************************************

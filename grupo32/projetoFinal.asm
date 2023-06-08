@@ -522,7 +522,7 @@ ciclo_sonda:
     ; guarda posição na tabela
     MOV [R7], R1
     MOV [R7 + 2], R2
-	CALL colisao_sonda
+	;CALL colisao_sonda
     CALL  desenha_objeto    ; Desenha o objeto novamente na nova posição
 
     MOV R3, JOGO_INICIADO       ; para verificar se o jogo ainda está a continuar

@@ -641,12 +641,12 @@ colisao_asteroide:
 	PUSH R9
 	PUSH R10
 	PUSH R11
-	PUSH R12
+	PUSH R3
 	MOV	R5, R1
 	MOV R6, R2
 	MOV R7, R1
 	MOV R8, R2
-	MOV R12, PIXEL_CAST
+	MOV R3, PIXEL_CAST
 	SUB R6, 1
 	ADD R7, 5
 	ADD R8, 5
@@ -690,13 +690,13 @@ iteracao_3:
 	
 verifica_cor:
 	MOV R11,[LE_COR_PIXEL]
-	CMP R11,R12
+	CMP R11,R3
 	JNZ final
 	CALL  muda_fundo
 
 
 final:
-	POP R12
+	POP R3
 	POP R11
 	POP R10
 	POP R9

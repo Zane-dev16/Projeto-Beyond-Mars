@@ -24,6 +24,7 @@ TECLA_PAUSA         EQU 13      ; tecla para pausa e continuar o jogo (tecla D)
 TECLA_TERMINA       EQU 14      ; tecla para pausa e continuar o jogo (tecla E)
 TECLA_REINICIA      EQU 12      ; tecla para reiniciar o jogo (tecla F)
 CRIA_ASTEROIDE      EQU 16      ; para criar um asteroide quando um for destruido
+MODO_EXPLOSAO       EQU 17      ; para terminar o jogo com explosão
 
 INICIO_ENERGIA      EQU 100     ;
 ENERGIA_SONDA       EQU -5      ; corresponde ao gasto da energia pelo disparo de uma sonda
@@ -350,6 +351,10 @@ obtem_tecla:
     CMP R1, R2
     JZ  cria_asteroide
 
+    MOV R2, MODO_EXPLOSAO
+    CMP R1, R2
+    JZ  termina_jogo_explosão
+
     JMP obtem_tecla             ; se a tecla premida não foi nenhuma das anteriores ignora a tecla
 
 sonda_esq:
@@ -419,6 +424,9 @@ termina_jogo:
     MOV [FUNDO_ECRA], R1         ; coloca imagem de fundo incial
     MOV [APAGA_MSG], R1    ; apaga a mensagem sobreposta, valor de R1 irrelevante
     MOV [APAGA_ECRA], R1                    ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
+    JMP espera_inicio
+
+termina_jogo_explosão:
     JMP espera_inicio
 
 ; **********************************************************************
@@ -688,6 +696,13 @@ final:
 	POP R5
 	RET
 
+; **********************************************************************
+; COLISAO_PAINEL - verifica se o asteroide colide com o painel
+;
+; Retorna: 	
+;
+; **********************************************************************
+
 colisao_painel:
 	PUSH R5
 	PUSH R6
@@ -711,7 +726,8 @@ verica_canto_direito:
 	MOV R8, [LE_COR_PIXEL]				;lê a cor do pixel 
 	CMP R8,R10							;verifica se é um pixel cinzento 
 	JNZ verifica_canto_esquerdo			;verifica se o painel está no canto inferior esquerdo do asteroide caso o pixel não seja cinzento
-	JMP explosao						;muda o fundo
+	CALL explosao						;muda o fundo
+    JMP termina
 
 verifica_canto_esquerdo:
 	MOV [DEFINE_COLUNA],R9				;define a coluna do pixel
@@ -720,7 +736,7 @@ verifica_canto_esquerdo:
 	MOV R8, [LE_COR_PIXEL]				;lê a cor do pixel 
 	CMP R8,R10							;verifica se é um pixel cinzento
 	JNZ termina							;termina a rotina caso o pixel não seja cinzento
-	JMP explosao						;muda o fundo
+	CALL explosao						;muda o fundo
 
 termina:
 	POP R10
@@ -734,7 +750,6 @@ termina:
 explosao:
     PUSH R1
     MOV R1, JOGO_TERMINADO
-        WAIT
     MOV [estado_jogo], R1
     MOV [APAGA_ECRA], R1 ; apaga todos os pixeis do ecrã, R1 irrelevante
     MOV [APAGA_AVISO], R1                   ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
@@ -744,9 +759,10 @@ explosao:
     MOV [REPRODUZ_SOM_VIDEO], R1
     MOV R1, MSG_EXPLOSAO
     MOV [MSG], R1
+    MOV R1, MODO_EXPLOSAO
+    MOV [tecla_carregada], R1
     POP R1
-    JMP obtem_tecla
-    
+    RET
 
 
 ; **********************************************************************

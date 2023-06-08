@@ -604,15 +604,11 @@ ciclo_asteroide:
     CALL  apaga_objeto                    ; Apaga o objeto em sua posição atual
     INC   R1    ; Atualiza o posição do asteroide para a próxima linha
     ADD   R2, R5    ; Atualiza o posição do asteroide para a próxima coluna
-<<<<<<< HEAD
-	
-=======
 
 	CALL	colisao_asteroide
     CMP R6, 1   ; teve colisão?
     JZ  sai_asteroide   ; se tiver sai 
 
->>>>>>> d67ff003df1b2fa9db264a26514b7d81b0a1332d
 	JMP	ciclo_asteroide		; esta "rotina" nunca retorna porque nunca termina
 						; Se se quisesse terminar o processo, era deixar o processo chegar a um RET
 

@@ -316,9 +316,6 @@ inicia_jogo:
     CALL energia
     CALL inicia_asteroides
 
-
-
-
 obtem_tecla:
     MOV R1, [tecla_carregada]   ; bloqueia neste LOCK até uma tecla ser carregada
 
@@ -606,38 +603,47 @@ colisao_sonda:
 	PUSH R8
 	PUSH R9
 	PUSH R10
+    PUSH R11
 	MOV R5, R1
 	MOV R6, R1
 	MOV R7, R2
-	MOV R10,PIXEL_VERM
-	SUB R5, 1							;linha acima da sonda
-	SUB R7, 1							;coluna à esquerda da sonda 
-	ADD R6, 1							;coluna à direita de sonda 
-	MOV [DEFINE_LINHA],R7				;define a linha do pixel
+	MOV R10, PIXEL_VERM
+    MOV R11, PIXEL_VERD
+	SUB R5, 1							; linha acima da sonda
+	SUB R7, 1							; coluna à esquerda da sonda 
+	ADD R6, 1							; coluna à direita de sonda 
+	MOV [DEFINE_LINHA],R7				; define a linha do pixel
+
 verifica_asteroide_cima:
-	MOV [DEFINE_COLUNA],R1				;define a coluna do pixel
-	MOV R8, [ESTADO_PIXEL]				;lê o estado do pixel (ligado-1 desligao-0)
-	JZ  verifica_asteroide_direita		;salta para verificar se o asteroide está no canto superior direito da sonda caso o pixel esteja desligado
-	MOV R9,[LE_COR_PIXEL]				;lê a cor do pixel 
-	CMP R9,R10							;verifica se é um pixel vermelho 
-	JNZ  verifica_asteroide_direita		;salta para verificar se o asteroide está no canto superior direito da sonda caso não seja um pixel vermelho
-    CALL muda_fundo						;muda o fundo caso seja um pixel ligado e vermelho
+	MOV [DEFINE_COLUNA],R1				; define a coluna do pixel
+	MOV R8, [ESTADO_PIXEL]				; lê o estado do pixel (ligado-1 desligao-0)
+	JZ  verifica_asteroide_direita		; salta para verificar se o asteroide está no canto superior direito da sonda caso o pixel esteja desligado
+	MOV R9,[LE_COR_PIXEL]				; lê a cor do pixel 
+	CMP R9,R10							; verifica se é um pixel vermelho 
+	JZ  ast_destruido		            ; salta para verificar se o asteroide está no canto superior direito da sonda caso seja um pixel vermelho
+    CMP R9, R11                         ; verifica se o pixel é verde
+    JZ ast_minerado                     ; salta para verificar se o asteroide está no canto superior direito da sonda caso seja um pixel verde
+
 verifica_asteroide_direita:
 	MOV [DEFINE_COLUNA],R6				;define a coluna do pixel
 	MOV R8, [ESTADO_PIXEL]				;lê o estado do pixel (ligado-1 desligao-0)
 	JZ  verifica_asteroide_esquerda		;salta para verificar se o asteroide está no canto superior esquerdo da sonda caso o pixel esteja desligado
 	MOV R9,[LE_COR_PIXEL]				;lê a cor do pixel 
-	CMP R9,R10							;verifica se é um pixel vermelho 
-	JNZ  verifica_asteroide_esquerda	;salta para verificar se o asteroide está no canto superior esquerdo da sonda caso não seja um pixel vermelho
-	CALL muda_fundo						;muda o fundo caso seja um pixel ligado e vermelho
+	CMP R9,R10							; verifica se é um pixel vermelho 
+	JZ  ast_destruido		            ; salta para verificar se o asteroide está no canto superior direito da sonda caso seja um pixel vermelho
+    CMP R9, R11                         ; verifica se o pixel é verde
+    JZ ast_minerado                     ; salta para verificar se o asteroide está no canto superior direito da sonda caso seja um pixel verde
+
 verifica_asteroide_esquerda:
-	MOV [DEFINE_COLUNA],R5				;define a coluna do pixel
-	MOV R8, [ESTADO_PIXEL]				;lê o estado do pixel (ligado-1 desligao-0)
-	JZ  final							;termina a rotina caso o pixel esteja desligado
-	MOV R9,[LE_COR_PIXEL]				;lê a cor do pixel 
-	CMP R9,R10							;verifica se é um pixel vermelho 
-	JNZ  final							;termina a rotina caso não seja um pixel vermelho
-	CALL muda_fundo						;muda o fundo caso seja um pixel ligado e vermelho
+	MOV [DEFINE_COLUNA],R5				; define a coluna do pixel
+	MOV R8, [ESTADO_PIXEL]				; lê o estado do pixel (ligado-1 desligao-0)
+	JZ  final							; termina a rotina caso o pixel esteja desligado
+	MOV R9,[LE_COR_PIXEL]				; lê a cor do pixel 
+	CMP R9,R10							; verifica se é um pixel vermelho 
+	JZ  ast_destruido		            ; salta para verificar se o asteroide está no canto superior direito da sonda caso seja um pixel vermelho
+    CMP R9, R11                         ; verifica se o pixel é verde
+    JZ ast_minerado                     ; salta para verificar se o asteroide está no canto superior direito da sonda caso seja um pixel verde
+
 final:
 	POP R10
 	POP R9
@@ -648,6 +654,36 @@ final:
 	POP R0
 	RET
 
+ast_destruido:
+    MOV R4, ASTEROIDE_PERIGO
+    MOV R9, [R4]
+    ADD R4, 2
+    MOV R10, [R4]
+    ADD R4, 2
+    MOV R11, [R4]
+    SUB R10, 2
+    SUB R11, 2
+    MOV R1, R10
+    MOV R2, R11
+    MOV R4, ASTEROIDE_PERIGO
+    CALL apaga_pixels
+    JMP obtem_tecla
+
+ast_minerado:
+    MOV R4, RECURSOS
+    MOV R9, [R4]
+    ADD R4, 2
+    MOV R10, [R4]
+    ADD R4, 2
+    MOV R11, [R4]
+    SUB R10, 2
+    SUB R11, 2
+    MOV R1, R10
+    MOV R2, R11
+    MOV R4, RECURSOS
+    CALL ciclo_asteroide
+    JMP obtem_tecla
+
 colisao_painel:
 	PUSH R5
 	PUSH R6
@@ -655,6 +691,7 @@ colisao_painel:
 	PUSH R8
 	PUSH R9
 	PUSH R10
+    PUSH R11
 	MOV R5, R1
 	MOV R6, R2
 	MOV R9, R2
@@ -662,8 +699,9 @@ colisao_painel:
 	ADD R5, 5							;linha abaixo do asteroide 
 	ADD R6, 5							;linha à direita do asteroide
 	MOV R10, PIXEL_CINZ_CLA
+    MOV R11, PIXEL_VERD
 
-verica_canto_direito:
+verifica_canto_direito:
 	MOV [DEFINE_LINHA],R5				;define a linha do pixel
 	MOV [DEFINE_COLUNA],R6				;define a coluna do pixel
 	MOV R7, [ESTADO_PIXEL]				;lê o estado do pixel (ligado-1 desligao-0)
@@ -707,8 +745,6 @@ explosao:
     POP R1
     JMP obtem_tecla
     
-
-
 ; **********************************************************************
 ; Processo
 ;

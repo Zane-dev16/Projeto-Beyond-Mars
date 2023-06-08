@@ -298,6 +298,8 @@ inicio:
 	; cria processos.
     CALL teclado
 
+preparacao_jogo:
+;    CALL prepara_jogo
 espera_inicio:
     MOV R1, [tecla_carregada]   ; bloqueia neste LOCK até uma tecla ser carregada
     MOV R2, TECLA_INICIO_JOGO   ;
@@ -844,7 +846,6 @@ ha_tecla:					; neste ciclo espera-se até NENHUMA tecla estar premida
     CALL espera_libertar_tecla
 
 	JMP	teclado		; esta "rotina" nunca retorna porque nunca termina
-
 
 ; **********************************************************************
 ; ESPERA_TECLA - Espera até uma tecla seja premida e lê a coluna e linha

@@ -694,14 +694,14 @@ verifica_segunda_sonda:
 verifica_terceira_sonda:
 	ADD R8, 2
 	CMP R8, R5
-	JGE verifica_terceira_sonda
+	JGE final
 	CMP R8, R1
-	JLE verifica_terceira_sonda
+	JLE final
 	ADD R8, 2
 	CMP R8, R7
-	JGE verifica_terceira_sonda
+	JGE final
 	CMP R8, R2
-	JLE verifica_terceira_sonda
+	JLE final
 	CALL muda_fundo
 	JMP final
 

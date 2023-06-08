@@ -82,7 +82,6 @@ COLUNA_SONDA_DIR    EQU 38      ; coluna inicial de uma sonda a direita
 
 LARGURA_SONDA       EQU 1        ; largura das sondas
 ALTURA_SONDA        EQU 1        ; altura das sondas
-ALCANCE_SONDA       EQU 12
 
 LARGURA_AST			EQU	5		; largura do asteroide
 ALTURA_AST          EQU 5       ; altura do asteroide 
@@ -236,9 +235,9 @@ posicao_asteroide:       ; posição do asteroide
     WORD    COLUNA_ESQ
 
 sondas_lancadas:
-    WORD    0   ; guarda se a sonda esquerda for em disparo
-    WORD    0   ; guarda se a sonda central for em disparo
-    WORD    0   ; guarda se a sonda direita for em disparo
+    WORD    0, 0   ; coordenadas da primeira sonda
+    WORD    0, 0   ; coordenadas da segunda sonda
+    WORD    0, 0   ; coordenadas da terceir sonda
 
 ; Tabela das rotinas de interrupção
 tab:
@@ -316,6 +315,9 @@ inicia_jogo:
     CALL energia
     CALL inicia_asteroides
 
+
+
+
 obtem_tecla:
     MOV R1, [tecla_carregada]   ; bloqueia neste LOCK até uma tecla ser carregada
 
@@ -351,6 +353,8 @@ obtem_tecla:
 
 sonda_esq:
     MOV R1, [sondas_lancadas]
+    MOV R2, [sondas_lancadas + 2]
+    ADD R1, R2
     CMP R1, 0
     JNZ obtem_tecla
     MOV R1, 1
@@ -360,17 +364,19 @@ sonda_esq:
     JMP obtem_tecla
 
 sonda_cent:
-    MOV R1, [sondas_lancadas + 2]
+    MOV R1, [sondas_lancadas + 4]
+    MOV R2, [sondas_lancadas + 6]
+    ADD R1, R2
     CMP R1, 0
     JNZ obtem_tecla
-    MOV R1, 1
-    MOV [sondas_lancadas + 2], R1
     MOV R5, DIRECAO_CENT
     CALL sonda
     JMP obtem_tecla
 
 sonda_dir:
-    MOV R1, [sondas_lancadas + 4]
+    MOV R1, [sondas_lancadas + 8]
+    MOV R2, [sondas_lancadas + 10]
+    ADD R1, R2
     CMP R1, 0
     JNZ obtem_tecla
     MOV R1, 1
@@ -483,9 +489,7 @@ sonda:
     MOV [R1], R0
 
 	; desenha a sonda na sua posição inicial
-    MOV R1, SOM_DISPARO
-    MOV [REPRODUZ_SOM_VIDEO], R1
-    MOV R0, ALCANCE_SONDA
+    MOV R8, 12
 	MOV R1, LINHA_CIMA_PAINEL   ; linha da sonda
 	MOV R4, SONDA
 
@@ -496,16 +500,28 @@ sonda:
     JZ pos_sonda_dir    ; inicia coluna a esquerda do painel
 
 	MOV R2, COLUNA_CENT	        ; coluna da sonda no centro
-    JMP ciclo_sonda
+    JMP calcula_endereço_sondas_lancadas
 
 pos_sonda_esq:
 	MOV R2, COLUNA_SONDA_ESQ     ; inicia coluna a esquerda do painel
-    JMP ciclo_sonda
+    JMP calcula_endereço_sondas_lancadas
 
 pos_sonda_dir:
 	MOV R2, COLUNA_SONDA_DIR     ; inicia coluna a direita do painel
 
+calcula_endereço_sondas_lancadas:
+    MOV R7, R5  ; cópia do valor da direção
+    INC R7
+    MOV R0, 4   ; cada par de coordenada são WORDs 2 + 2
+    MUL R7, R0  ; calcula posicao na tabela da sondas lançadas
+    MOV R0, sondas_lancadas
+    ADD R7, R0 ; obtém endereço nas sondas lançadas
+
 ciclo_sonda:
+
+    ; guarda posição na tabela
+    MOV [R7], R1
+    MOV [R7 + 2], R2
 	CALL colisao_sonda
     CALL  desenha_objeto    ; Desenha o objeto novamente na nova posição
 
@@ -519,7 +535,7 @@ ciclo_sonda:
     DEC R1      ; a sonda sobe uma linha
     ADD R2, R5  ;  atualiza posição com argumento do direção
 
-    DEC R0      ; decrementa contador
+    DEC R8      ; decrementa contador
     JZ  sai_sonda       ; se o contador for 0 sai
     
 	JMP	ciclo_sonda		;
@@ -536,13 +552,9 @@ pausa_sonda:
    JMP ciclo_sonda              ; volta ao ciclo, a continuar o jogo
 
 sai_sonda:
-    INC R5
-    MOV R0, 2
-    MUL R5, R0  ; calcula posicao na tabela da sondas lançadas
-    MOV R0, sondas_lancadas
-    ADD R5, R0 ; obtém endereço nas sondas lançadas
     MOV R0, 0
-    MOV [R5], R0 ; sonda já não está lançada
+    MOV [R7], R0         ; reinicia valor na tabela
+    MOV [R7 + 2], R0     ; reinicia valor na tabela
     MOV R4, R0                    ; apaga a sonda
     RET
 
@@ -659,7 +671,6 @@ colisao_painel:
 	PUSH R8
 	PUSH R9
 	PUSH R10
-    PUSH R11
 	MOV R5, R1
 	MOV R6, R2
 	MOV R9, R2
@@ -667,9 +678,8 @@ colisao_painel:
 	ADD R5, 5							;linha abaixo do asteroide 
 	ADD R6, 5							;linha à direita do asteroide
 	MOV R10, PIXEL_CINZ_CLA
-    MOV R11, PIXEL_VERD
 
-verifica_canto_direito:
+verica_canto_direito:
 	MOV [DEFINE_LINHA],R5				;define a linha do pixel
 	MOV [DEFINE_COLUNA],R6				;define a coluna do pixel
 	MOV R7, [ESTADO_PIXEL]				;lê o estado do pixel (ligado-1 desligao-0)
@@ -689,7 +699,6 @@ verifica_canto_esquerdo:
 	JMP explosao						;muda o fundo
 
 termina:
-	POP R11
 	POP R10
 	POP R9
 	POP R8
@@ -714,6 +723,8 @@ explosao:
     POP R1
     JMP obtem_tecla
     
+
+
 ; **********************************************************************
 ; Processo
 ;

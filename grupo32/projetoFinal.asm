@@ -324,6 +324,7 @@ inicia_jogo:
 
 
 
+
 obtem_tecla:
     MOV R1, [tecla_carregada]   ; bloqueia neste LOCK até uma tecla ser carregada
 
@@ -555,14 +556,16 @@ PROCESS SP_inicial_asteroide	;
 
 asteroide:
 	
-	; desenha o asteroide na sua posição inicial
-    MOV R1, 0                          ;  linha do asteroide
-    MOV R2, 0                          ; le valor da coluna do asteroide (+2 porque a linha é um WORD)
-    MOV R4, ASTEROIDE_PERIGO           ; endereço da tabela que define o asteroide
+
+	; gera e desenha o asteroide na sua posição inicial
+    MOV R1, LINHA_TOPO  ; linha do asteroide
+    CALL gera_asteroide ; gera tipo, direção e coluna aleatória
+    MOV R9, LINHA_CIMA_PAINEL -3
 
 ciclo_asteroide:
 	CALL 	colisao_painel
 	CALL	desenha_objeto		; desenha o boneco a partir da tabela
+
     MOV R3, JOGO_INICIADO       ; para verificar se o jogo ainda está a continuar
     MOV R0, [estado_jogo]
     CMP R0, R3                  ; O modo do jogo alterou?
@@ -571,8 +574,10 @@ ciclo_asteroide:
 	MOV	R3, [evento_asteroide]  	; lê o LOCK e bloqueia até a interrupção escrever nele
 
     CALL  apaga_objeto                    ; Apaga o objeto em sua posição atual
-    INC   R1                              ; Incrementa a posição do asteroide para a próxima linha
-    INC   R2                              ; Incrementa a posição do asteroide para a próxima coluna
+    INC   R1    ; Atualiza o posição do asteroide para a próxima linha
+    ADD   R2, R5    ; Atualiza o posição do asteroide para a próxima coluna
+    DEC   R9                              ; Incrementa contador
+    JZ asteroide_destruido
 	JMP	ciclo_asteroide		; esta "rotina" nunca retorna porque nunca termina
 						; Se se quisesse terminar o processo, era deixar o processo chegar a um RET
 
@@ -587,6 +592,9 @@ altera_modo_asteroide:
 pausa_asteroide:
    MOV R0, [pausa_processos]    ; bloqueia neste lock até o jogo continuar
    JMP ciclo_asteroide              ; volta ao ciclo, a continuar o jogo
+
+asteroide_destruido:
+    RET
 
 ; **********************************************************************
 ; Processos de colisao
@@ -742,11 +750,12 @@ altera_modo_energia:
     CMP R0, R1                  ; O jogo está em pausa?
     JZ  pausa_energia           ; se for, pausa
     MOV [APAGA_ECRA], R1                    ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
-    RET                         ; se não a tecla premida foi para terminar o jogo
+    RET
 
 pausa_energia:
    MOV R0, [pausa_processos]    ; bloqueia neste lock até o jogo continuar
    JMP atualiza_display              ; volta ao ciclo, a continuar o jogo
+   
 
 
 ; **********************************************************************
@@ -1044,6 +1053,64 @@ apaga_pixels:                 ; Apaga os pixels do objeto a partir da tabela
     POP   R3
     POP   R2
     POP   R1
+    RET
+
+; **********************************************************************
+; GERA_ASTEROIDE - gera valores pseudo-aleatórias para o tipo, posição
+;                  e direção para um asteroide
+; Retorna:  R1 - linha inicial do asteroide
+;           R2 - coluna inicial do asteroide
+;           R4 - tipo do asteroide
+;           R5 - direcao x do asteroide
+;           R6 - direcao y do asteroide
+; **********************************************************************
+
+gera_asteroide:
+    PUSH R8
+    PUSH R9
+    MOV R5, MASCARA_GERADOR_ALEATORIO
+    MOV R9, [TEC_COL]   ; ler o PIN
+    AND R9, R5  ;   isolar 4 bits aleatórios
+    SHR R9, 6   ;   isolar e colocar 2 bits à direita (numero aleatório 0-3)
+    JZ gera_recursos
+    MOV R4, ASTEROIDE_PERIGO
+    JMP gera_posicao_direcao
+
+gera_recursos:
+    MOV R4, ASTEROIDE_COM_RECURSOS
+
+gera_posicao_direcao:
+    MOV R9, [TEC_COL]   ; ler o PIN
+    AND R9, R5  ;   isolar 4 bits aleatórios
+    JZ gera_posicao_direcao ; se o número for 0 repete
+    SHR R9, 4   ;   colocar o 4 bits à direita (numero aleatório 1-15)
+    MOV R8, 9   ;   para comparar o numero
+    CMP R9, R8
+    JLE asteroide_cent
+    MOV R8, 12  ;
+    CMP R9, R8
+    JLE asteroide_esq
+    MOV R2, COLUNA_DIR
+    SUB R2, 4
+    MOV R5, -1
+    JMP movimento
+
+asteroide_esq:
+    MOV R2, COLUNA_ESQ
+    MOV R5, 1
+    JMP movimento
+
+asteroide_cent:
+    MOV R2, COLUNA_CENT
+    SUB R2, 2
+    MOV R8, 3   ;   divisor
+    MOD R9, R8   ;   obtem numero 0-2
+    SUB R9, 1  ;   obtem direcao x da forma -1, 0 ou 1
+    MOV R5, R9  ;   retornar valor da direcao x
+
+movimento:
+    POP R9
+    POP R8
     RET
 
 ; **********************************************************************

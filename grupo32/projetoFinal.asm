@@ -235,20 +235,9 @@ posicao_asteroide:       ; posição do asteroide
     WORD    COLUNA_ESQ
 
 sondas_lancadas:
-
-
-    WORD    0   ; guarda se a sonda esquerda for em disparo
-    WORD    0   ; guarda se a sonda central for em disparo
-    WORD    0   ; guarda se a sonda direita for em disparo
-	
-;sonda_colidida:
-	;WORD	LINHA
-	;WORD	COLUNA
-
     WORD    0, 0   ; coordenadas da primeira sonda
     WORD    0, 0   ; coordenadas da segunda sonda
-    WORD    0, 0   ; coordenadas da terceir sonda
-
+    WORD    0, 0   ; coordenadas da terceira sonda
 
 
 ; Tabela das rotinas de interrupção
@@ -530,22 +519,14 @@ calcula_endereço_sondas_lancadas:
     ADD R7, R0 ; obtém endereço nas sondas lançadas
 
 ciclo_sonda:
-<<<<<<< HEAD
 
 	;CALL colisao_sonda
 
-=======
-	;CALL colisao_sonda
->>>>>>> 8561c74127e3dd875302c9046715cdfc0a1d64bf
 
     ; guarda posição na tabela
     MOV [R7], R1
     MOV [R7 + 2], R2
 
-<<<<<<< HEAD
-	CALL colisao_sonda
-=======
->>>>>>> 8561c74127e3dd875302c9046715cdfc0a1d64bf
     CALL  desenha_objeto    ; Desenha o objeto novamente na nova posição
 
     MOV R3, JOGO_INICIADO       ; para verificar se o jogo ainda está a continuar

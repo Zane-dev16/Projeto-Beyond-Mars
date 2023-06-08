@@ -293,7 +293,6 @@ inicio:
 	EI					; permite interrupções (geral)
 
 	; cria processos.
-
     CALL teclado
 
 espera_inicio:
@@ -310,9 +309,11 @@ inicia_jogo:
     MOV R1, FUNDO_JOGO
     MOV [FUNDO_ECRA], R1        ; coloca imagem de fundo para durante o jogo
     MOV [APAGA_MSG], R1    ; apaga as letras de inicio de jogo
+
+	; cria processos.
     CALL painel
-    CALL asteroide
     CALL energia
+    CALL inicia_asteroides
 
 
 
@@ -551,7 +552,6 @@ asteroide:
 
 	; gera e desenha o asteroide na sua posição inicial
     MOV R1, LINHA_TOPO  ; linha do asteroide
-    CALL gera_asteroide ; gera tipo, direção e coluna aleatória
 
 ciclo_asteroide:
 	CALL 	colisao_painel
@@ -581,9 +581,6 @@ altera_modo_asteroide:
 pausa_asteroide:
    MOV R0, [pausa_processos]    ; bloqueia neste lock até o jogo continuar
    JMP ciclo_asteroide              ; volta ao ciclo, a continuar o jogo
-
-asteroide_destruido:
-    RET
 
 ; **********************************************************************
 ; Processos de colisao
@@ -1045,6 +1042,56 @@ apaga_pixels:                 ; Apaga os pixels do objeto a partir da tabela
     RET
 
 ; **********************************************************************
+; INICIA_ASTEROIDES - inicia 4 asteroides a movimentar
+; **********************************************************************
+
+inicia_asteroides:
+    PUSH R0
+    PUSH R9
+    PUSH R4
+    MOV R4, ASTEROIDE_PERIGO
+    CALL rand15     ; gera numero aleatória 1-15
+
+   
+inicia_ast_esq:         ; asteroide a esquerda
+    MOV R5, 1
+    CMP R9, 0       ;
+    JZ inicia_ast_cent
+    MOV R2, COLUNA_ESQ
+    CALL asteroide
+
+inicia_ast_cent:        ; asteroide central
+    MOV R2, COLUNA_CENT
+    SUB R2, 2
+inicia_ast_cent_dir:    ; movimento a direita
+    CMP R9, 1
+    JZ inicia_ast_cent_cent
+    CALL asteroide
+inicia_ast_cent_cent:   ; movimento no verticalmente
+    CMP R9, 2
+    JZ inicia_ast_cent_esq
+    MOV R5, 0
+    CALL asteroide
+inicia_ast_cent_esq:    ; movemento a esquerda
+    MOV R5, -1
+    CMP R9, 3
+    JZ inicia_ast_dir
+    CALL asteroide
+
+inicia_ast_dir:         ; asteroide a esquerda
+    CMP R9, 4
+    JZ sai_inicia_asteroides
+    MOV R2, COLUNA_DIR
+    SUB R2, 4
+    CALL asteroide
+
+sai_inicia_asteroides:
+    POP R4
+    POP R9
+    POP R0
+    
+
+; **********************************************************************
 ; GERA_ASTEROIDE - gera valores pseudo-aleatórias para o tipo, posição
 ;                  e direção para um asteroide
 ; Retorna:  R1 - linha inicial do asteroide
@@ -1069,10 +1116,7 @@ gera_recursos:
     MOV R4, ASTEROIDE_COM_RECURSOS
 
 gera_posicao_direcao:
-    MOV R9, [TEC_COL]   ; ler o PIN
-    AND R9, R5  ;   isolar 4 bits aleatórios
-    JZ gera_posicao_direcao ; se o número for 0 repete
-    SHR R9, 4   ;   colocar o 4 bits à direita (numero aleatório 1-15)
+    CALL rand15
     MOV R8, 9   ;   para comparar o numero
     CMP R9, R8
     JLE asteroide_cent
@@ -1100,6 +1144,27 @@ asteroide_cent:
 movimento:
     POP R9
     POP R8
+    RET
+
+; **********************************************************************
+; rand15 - gera um número pseudo-aleatória 1-15
+;
+; Retorna:  R9 - número pseudo-aleatória 1-15
+; **********************************************************************
+
+rand15:
+    PUSH    R0
+rand15_ciclo:   ;para verificar que o número não seja 0
+    MOV R0, MASCARA_GERADOR_ALEATORIO
+    MOV R9, [TEC_COL]   ; ler o PIN
+    AND R9, R0  ;   isolar 4 bits aleatórios
+
+    JZ rand15_ciclo ; se o número for 0 repete
+    SHR R9, 4   ;   colocar o 4 bits à direita (numero aleatório 1-15)
+    MOV R0, 5   ; divisor
+    MOD R9, R0  ; número aleatória 0-4
+
+    POP     R0
     RET
 
 ; **********************************************************************

@@ -235,6 +235,7 @@ posicao_asteroide:       ; posição do asteroide
     WORD    COLUNA_ESQ
 
 sondas_lancadas:
+<<<<<<< HEAD
 ;<<<<<<< HEAD
     WORD    0   ; guarda se a sonda esquerda for em disparo
     WORD    0   ; guarda se a sonda central for em disparo
@@ -248,6 +249,11 @@ sondas_lancadas:
     WORD    0, 0   ; coordenadas da segunda sonda
     WORD    0, 0   ; coordenadas da terceir sonda
 ;>>>>>>> 4a37dd907af76c7acd71a78c88a5b7b56e10f9cf
+=======
+    WORD    0, 0   ; coordenadas da primeira sonda
+    WORD    0, 0   ; coordenadas da segunda sonda
+    WORD    0, 0   ; coordenadas da terceir sonda
+>>>>>>> 06519d30a7479b72ee3f1633ddf164e25fb78de1
 
 ; Tabela das rotinas de interrupção
 tab:
@@ -528,15 +534,22 @@ calcula_endereço_sondas_lancadas:
     ADD R7, R0 ; obtém endereço nas sondas lançadas
 
 ciclo_sonda:
+<<<<<<< HEAD
 ;<<<<<<< HEAD
 	;CALL colisao_sonda
 ;=======
+=======
+>>>>>>> 06519d30a7479b72ee3f1633ddf164e25fb78de1
 
     ; guarda posição na tabela
     MOV [R7], R1
     MOV [R7 + 2], R2
+<<<<<<< HEAD
 	;CALL colisao_sonda
 ;>>>>>>> 4a37dd907af76c7acd71a78c88a5b7b56e10f9cf
+=======
+	CALL colisao_sonda
+>>>>>>> 06519d30a7479b72ee3f1633ddf164e25fb78de1
     CALL  desenha_objeto    ; Desenha o objeto novamente na nova posição
 
     MOV R3, JOGO_INICIADO       ; para verificar se o jogo ainda está a continuar

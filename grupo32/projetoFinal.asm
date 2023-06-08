@@ -25,6 +25,7 @@ TECLA_TERMINA       EQU 14      ; tecla para pausa e continuar o jogo (tecla E)
 TECLA_REINICIA      EQU 12      ; tecla para reiniciar o jogo (tecla F)
 CRIA_ASTEROIDE      EQU 16      ; para criar um asteroide quando um for destruido
 MODO_EXPLOSAO       EQU 17      ; para terminar o jogo com explosão
+MODO_SEM_ENERGIA    EQU 18      ; para terminar o jogo quando energia é esgotada
 
 INICIO_ENERGIA      EQU 100     ;
 ENERGIA_SONDA       EQU -5      ; corresponde ao gasto da energia pelo disparo de uma sonda
@@ -236,9 +237,9 @@ posicao_asteroide:       ; posição do asteroide
     WORD    COLUNA_ESQ
 
 sondas_lancadas:
-    WORD    0, 0   ; coordenadas da primeira sonda
-    WORD    0, 0   ; coordenadas da segunda sonda
-    WORD    0, 0   ; coordenadas da terceira sonda
+    WORD    30, 32 ; coordenadas da primeira sonda
+    WORD    30, 32 ; coordenadas da segunda sonda
+    WORD    30, 32 ; coordenadas da terceira sonda
 
 
 ; Tabela das rotinas de interrupção
@@ -343,10 +344,6 @@ obtem_tecla:
     CMP R1, R2                   ; verifica se a tecla premida foi o E
     JZ termina_jogo
 
-    MOV R2, TECLA_REINICIA
-    CMP R1, R2
-    JZ inicio
-
     MOV R2, CRIA_ASTEROIDE
     CMP R1, R2
     JZ  cria_asteroide
@@ -355,13 +352,18 @@ obtem_tecla:
     CMP R1, R2
     JZ  termina_jogo_explosão
 
+    MOV R2, MODO_SEM_ENERGIA
+    CMP R1, R2
+    JZ  sem_energia
+
     JMP obtem_tecla             ; se a tecla premida não foi nenhuma das anteriores ignora a tecla
 
 sonda_esq:
     MOV R1, [sondas_lancadas]
     MOV R2, [sondas_lancadas + 2]
     ADD R1, R2
-    CMP R1, 0
+    MOV R2, 62
+    CMP R1, R2
     JNZ obtem_tecla
     MOV R1, 1
     MOV [sondas_lancadas], R1
@@ -373,7 +375,8 @@ sonda_cent:
     MOV R1, [sondas_lancadas + 4]
     MOV R2, [sondas_lancadas + 6]
     ADD R1, R2
-    CMP R1, 0
+    MOV R2, 62
+    CMP R1, R2
     JNZ obtem_tecla
     MOV R5, DIRECAO_CENT
     CALL sonda
@@ -383,7 +386,8 @@ sonda_dir:
     MOV R1, [sondas_lancadas + 8]
     MOV R2, [sondas_lancadas + 10]
     ADD R1, R2
-    CMP R1, 0
+    MOV R2, 62
+    CMP R1, R2
     JNZ obtem_tecla
     MOV R1, 1
     MOV [sondas_lancadas + 4], R1
@@ -417,7 +421,6 @@ pausa_prog_principal:           ; neste ciclo o jogo está em modo pausa
 
 termina_jogo:
     MOV R1, JOGO_TERMINADO
-    WAIT
     MOV [estado_jogo], R1
     MOV [APAGA_AVISO], R1                   ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
     MOV R1, FUNDO_INICIAL
@@ -427,6 +430,18 @@ termina_jogo:
     JMP espera_inicio
 
 termina_jogo_explosão:
+    MOV R1, JOGO_TERMINADO
+    MOV [estado_jogo], R1
+    JMP espera_inicio
+
+sem_energia:
+    MOV R1, JOGO_TERMINADO
+    MOV [estado_jogo], R1
+    MOV [APAGA_AVISO], R1                   ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
+    MOV R1, FUNDO_INICIAL
+    MOV [FUNDO_ECRA], R1         ; coloca imagem de fundo incial
+    MOV [APAGA_MSG], R1    ; apaga a mensagem sobreposta, valor de R1 irrelevante
+    MOV [APAGA_ECRA], R1                    ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
     JMP espera_inicio
 
 ; **********************************************************************
@@ -568,8 +583,9 @@ pausa_sonda:
    JMP ciclo_sonda              ; volta ao ciclo, a continuar o jogo
 
 sai_sonda:
-    MOV R0, 0
+    MOV R0, 30
     MOV [R7], R0         ; reinicia valor na tabela
+    MOV R0, 32
     MOV [R7 + 2], R0     ; reinicia valor na tabela
     MOV R4, R0                    ; apaga a sonda
     RET
@@ -779,6 +795,9 @@ atualiza_display:
     JNZ altera_modo_energia      ; Se for, salta
 
     CALL escreve_display
+    MOV R9, 94
+    CMP R8, R9
+    JZ  energia_esgotada
     MOV R0, [evento_display]
     ADD R8, R0
     JMP atualiza_display
@@ -794,8 +813,11 @@ altera_modo_energia:
 pausa_energia:
    MOV R0, [pausa_processos]    ; bloqueia neste lock até o jogo continuar
    JMP atualiza_display              ; volta ao ciclo, a continuar o jogo
-   
 
+energia_esgotada:
+    MOV R1, MODO_SEM_ENERGIA
+    MOV [tecla_carregada], R1
+    RET
 
 ; **********************************************************************
 ; Processo

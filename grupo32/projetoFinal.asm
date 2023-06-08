@@ -387,7 +387,7 @@ sonda_dir:
     CMP R1, R2
     JNZ obtem_tecla
     MOV R1, 1
-    MOV [sondas_lancadas + 4], R1
+    MOV [sondas_lancadas + 8], R1
     MOV R5, DIRECAO_DIR
     CALL sonda
     JMP obtem_tecla
@@ -538,9 +538,6 @@ calcula_endereço_sondas_lancadas:
     ADD R7, R0 ; obtém endereço nas sondas lançadas
 
 ciclo_sonda:
-
-	;CALL colisao_sonda
-
 
     ; guarda posição na tabela
     MOV [R7], R1

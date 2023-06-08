@@ -537,7 +537,7 @@ ciclo_sonda:
     MOV R9, R5
     INC R9  ; para comparar com referência de colisão (0-2)
     CMP R3, R9
-    JNZ sai_sonda   ; se tiver colisão sai
+    JZ sai_sonda   ; se tiver colisão sai
 
     CALL  apaga_objeto      ; Apaga o objeto em sua posição atual
     DEC R1      ; a sonda sobe uma linha

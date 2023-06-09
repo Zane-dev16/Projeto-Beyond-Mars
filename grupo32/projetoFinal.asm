@@ -749,8 +749,8 @@ colisao_asteroide_sonda:
 	MOV R11,R2
 	SUB R10,1
 	SUB R11,1
-	ADD R5,5
-	ADD R7,6
+	ADD R5,6
+	ADD R7,5
 	MOV R8,sondas_lancadas
 verifica_sonda:
     MOV R3, R0  ; copia numero da sonda

@@ -320,19 +320,7 @@ espera_inicio:  ; este ciclo espera até a tecla C seja carregada para iniciar o
     JNZ espera_inicio                   ; se a tecla premida não for C repete ciclo
 
 inicia_jogo:
-    MOV R1, SOM_INICIO                  ; som do inicio do jogo
-    MOV [PARA_SOM_VIDEO], R1            ; para som corrente
-    MOV [REPRODUZ_SOM_VIDEO], R1        ; toca som do inicio
-    MOV R1, JOGO_INICIADO               ; estado do jogo inicio
-    MOV [estado_jogo], R1               ; atualiza estado do jogo
-    MOV R1, FUNDO_JOGO                  ; imagem de fundo do jogo
-    MOV [FUNDO_ECRA], R1                ; coloca imagem de fundo para durante o jogo
-    MOV [APAGA_MSG], R1                 ; apaga as letras de inicio de jogo
-
-	; cria processos.
-    CALL painel                 ; cria o processo painel
-    CALL energia                ; cria o processo energia
-    CALL inicia_asteroides      ; rotina que cria os processos para os 4 asteroides
+    CALL configura_inicio_jogo
 
 deteta_eventos:
     MOV R1, [evento_prog_principal]   ; bloqueia neste LOCK até uma tecla ser carregada
@@ -374,43 +362,24 @@ deteta_eventos:
 sonda_esq:
     MOV R5, DIRECAO_ESQ     ; direcao da sonda
     CALL dispara_sonda      ; dispara uma sonda a esquerda
-    JMP deteta_eventos         ; volta a ciclo principal
+    JMP deteta_eventos      ; volta a ciclo principal
 
 sonda_cent:
     MOV R5, DIRECAO_CENT    ; direcao da sonda
     CALL dispara_sonda      ; dispara uma sonda no centro
-    JMP deteta_eventos         ; volta a ciclo principal
+    JMP deteta_eventos      ; volta a ciclo principal
 
 sonda_dir:
-    MOV R1, [sondas_lancadas + 8]
-    MOV R2, [sondas_lancadas + 10]
-    ADD R1, R2
-    MOV R2, SONDA_NAO_LANCADA
-    CMP R1, R2
-    JNZ deteta_eventos
-    MOV R1, 1
-    MOV [sondas_lancadas + 8], R1
-    MOV R5, DIRECAO_DIR
-    CALL sonda
-    JMP deteta_eventos
+    MOV R5, DIRECAO_DIR     ; direcao da sonda
+    CALL dispara_sonda      ; dispara uma sonda a direita
+    JMP deteta_eventos      ; volta a ciclo principal
 
 cria_asteroides:
-    MOV R1, [asteroides_em_falta]   ; obtem numero de asteroides para criar
-cria_asteroide:
-    CALL gera_asteroide
-    DEC R1                          ; diminui numero de asteroides a faltar
-    JNZ cria_asteroide
-    MOV [asteroides_em_falta], R1   ; coloca 0 no endereço dos asteroides a faltar
+    CALL gera_asteroides_em_falta
     JMP deteta_eventos
 
 suspende_jogo:
-    MOV R1, MSG_PAUSA
-    MOV [MSG], R1
-    MOV R1, SOM_PAUSA
-    MOV [PARA_SOM_VIDEO], R1
-    MOV [REPRODUZ_SOM_VIDEO], R1
-    MOV R1, JOGO_PAUSA
-    MOV [estado_jogo], R1       ; bloqueia os processos
+    CALL pausa_jogo
 
 pausa_prog_principal:           ; neste ciclo o jogo está em modo pausa
                                 ; e apenas sai quando a tecla D for premida
@@ -421,57 +390,20 @@ pausa_prog_principal:           ; neste ciclo o jogo está em modo pausa
     JZ termina_jogo
     CMP R1, R2                  ; verifica se a tecla premida foi o D
     JNZ pausa_prog_principal    ; repete o ciclo
-    MOV [PARA_SOM_VIDEO], R1
-    MOV [APAGA_MSG], R1
-    MOV R1, FUNDO_JOGO
-    MOV [FUNDO_ECRA], R1
-    MOV R1, JOGO_INICIADO
-    MOV [estado_jogo], R1       ; volta ao estado jogo iniciado
-    MOV [pausa_processos], R1   ; desbloqueia os processos
+
+    CALL continua_jogo
     JZ deteta_eventos              ; volta ao ciclo de funciomento da prog_principal
 
 termina_jogo:
-    MOV R1, JOGO_TERMINADO
-    MOV [pausa_processos], R1   ; termina os processos se estiverem em pausa
-    MOV [estado_jogo], R1       ; termina os processos se não estiverem em pausa
-    MOV [APAGA_AVISO], R1                   ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
-    MOV R1, FUNDO_TERMINA
-    MOV [FUNDO_ECRA], R1         ; coloca imagem de fundo incial
-    MOV R1, MSG_TERMINA
-    MOV [MSG], R1
-    MOV R1, SOM_TERMINA
-    MOV [PARA_SOM_VIDEO], R1
-    MOV [REPRODUZ_SOM_VIDEO], R1
-    MOV [APAGA_ECRA], R1                    ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
+    CALL game_end
     JMP preparacao_jogo
 
 termina_jogo_explosao:
-    MOV R1, JOGO_TERMINADO
-    MOV [estado_jogo], R1
-    MOV [APAGA_ECRA], R1 ; apaga todos os pixeis do ecrã, R1 irrelevante
-    MOV [APAGA_AVISO], R1                   ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
-    MOV R1, FUNDO_EXPLOSAO
-    MOV [FUNDO_ECRA], R1         ; coloca imagem de fundo incial
-    MOV R1, SOM_EXPLOSAO
-    MOV [PARA_SOM_VIDEO], R1
-    MOV [REPRODUZ_SOM_VIDEO], R1
-    MOV R1, MSG_EXPLOSAO
-    MOV [MSG], R1
+    CALL game_over_explosao
     JMP preparacao_jogo
 
 sem_energia:
-    MOV R1, JOGO_TERMINADO
-    MOV [estado_jogo], R1
-    MOV [APAGA_AVISO], R1                   ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
-    MOV R1, FUNDO_ENERGIA
-    MOV [FUNDO_ECRA], R1         ; coloca imagem de fundo incial
-    MOV [APAGA_MSG], R1    ; apaga a mensagem sobreposta, valor de R1 irrelevante
-    MOV [APAGA_ECRA], R1                    ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
-    MOV R1, SOM_SEM_ENERGIA
-    MOV [PARA_SOM_VIDEO], R1
-    MOV [REPRODUZ_SOM_VIDEO], R1
-    MOV R1, MSG_SEM_ENERGIA
-    MOV [MSG], R1
+    CALL game_over_sem_energia
     JMP preparacao_jogo
 
 ; **********************************************************************
@@ -491,15 +423,15 @@ painel:
     MOV R4, PAINEL_NAVE                ; endereço da tabela que define o painel da nave
     CALL desenha_objeto                ; desenha o objeto a partir da tabela
 
-    MOV R1, LINHA_PAINEL + 2
-    MOV R2, COLUNA_PAINEL + 2
+    MOV R1, LINHA_PAINEL + 2        ; linha das luzes do painel        
+    MOV R2, COLUNA_PAINEL + 2       ; coluna das luzes do painel
 
 ciclo_anima_painel:
     MOV R4, ANIMACAO_PAINEL_1       ; Primeira forma das luzes do painel
 
 anima_painel:
-    MOV R3, JOGO_INICIADO
-    MOV R0, [estado_jogo]
+    MOV R3, JOGO_INICIADO       ; valor do modo do jogo iniciado
+    MOV R0, [estado_jogo]       ; obtem estado do jogo
     CMP R0, R3                  ; O modo do jogo alterou?
     JNZ altera_modo_painel      ; Se for, salta
 
@@ -1347,6 +1279,22 @@ sai_gera_tipo_asteroide:
     RET
 
 ; **********************************************************************
+; GERA_ASTEROIDES_EM_FALTA - cria o numero de asteroides que estão a faltar
+;
+; **********************************************************************
+
+gera_asteroides_em_falta:
+    PUSH    R0
+    MOV R0, [asteroides_em_falta]   ; obtem numero de asteroides para criar
+cria_asteroide:
+    CALL gera_asteroide             ; cria um novo asteroide aleatoriamente
+    DEC R0                          ; diminui numero de asteroides a faltar
+    JNZ cria_asteroide              ; se ainda faltam asteroides a criar repete
+    MOV [asteroides_em_falta], R0   ; coloca 0 no endereço dos asteroides a faltar
+    POP     R0
+    RET
+
+; **********************************************************************
 ; GERA_ASTEROIDE - gera valores pseudo-aleatórias para o tipo, posição
 ;                  e direção para um asteroide
 ; Retorna:  R1 - linha inicial do asteroide
@@ -1423,7 +1371,7 @@ cria_asteroide_esq:
     PUSH    R2
     PUSH    R5
     MOV R2, COLUNA_ESQ
-    MOV R5, DIRECAO_ESQ
+    MOV R5, DIRECAO_DIR
     CALL asteroide
     POP    R5
     POP    R2
@@ -1453,7 +1401,7 @@ cria_asteroide_cent_esq:
     PUSH    R2
     PUSH    R5
     MOV R2, COLUNA_CENT - 2
-    MOV R5, DIRECAO_DIR
+    MOV R5, DIRECAO_ESQ
     CALL asteroide
     POP    R5
     POP    R2
@@ -1487,6 +1435,145 @@ cria_asteroide_cent_dir:
     CALL asteroide
     POP    R5
     POP    R2
+    RET
+
+; **********************************************************************
+; CONFIGURA_INICIO_JOGO - inicia o jogo e inicializa os processos
+;
+; **********************************************************************
+
+configura_inicio_jogo:
+    PUSH    R1
+
+    MOV R1, SOM_INICIO                  ; som do inicio do jogo
+    MOV [PARA_SOM_VIDEO], R1            ; para som corrente
+    MOV [REPRODUZ_SOM_VIDEO], R1        ; toca som do inicio
+    MOV R1, JOGO_INICIADO               ; estado do jogo inicio
+    MOV [estado_jogo], R1               ; atualiza estado do jogo
+    MOV R1, FUNDO_JOGO                  ; imagem de fundo do jogo
+    MOV [FUNDO_ECRA], R1                ; coloca imagem de fundo para durante o jogo
+    MOV [APAGA_MSG], R1                 ; apaga as letras de inicio de jogo
+    
+    ; cria processos.
+    CALL painel                 ; cria o processo painel
+    CALL energia                ; cria o processo energia
+    CALL inicia_asteroides      ; rotina que cria os processos para os 4 asteroides
+
+    POP     R1
+    RET
+
+; **********************************************************************
+; PAUSA_JOGO - Rotina que coloca o jogo em modo pausa
+;
+; **********************************************************************
+
+pausa_jogo:
+    PUSH    R1
+    PUSH    R2
+    PUSH    R3
+
+    MOV R1, MSG_PAUSA
+    MOV [MSG], R1
+    MOV R1, SOM_PAUSA
+    MOV [PARA_SOM_VIDEO], R1
+    MOV [REPRODUZ_SOM_VIDEO], R1
+    MOV R1, JOGO_PAUSA
+    MOV [estado_jogo], R1       ; bloqueia os processos
+
+    POP     R3
+    POP     R2
+    POP     R1
+    RET
+
+; **********************************************************************
+; CONTINUA_JOGO - Rotina que continua o jogo do modo pausa
+;
+; **********************************************************************
+
+continua_jogo:
+    PUSH    R1
+
+    MOV [PARA_SOM_VIDEO], R1
+    MOV [APAGA_MSG], R1
+    MOV R1, FUNDO_JOGO
+    MOV [FUNDO_ECRA], R1
+    MOV R1, JOGO_INICIADO
+    MOV [estado_jogo], R1       ; volta ao estado jogo iniciado
+    MOV [pausa_processos], R1   ; desbloqueia os processos
+
+    POP     R1
+    RET
+
+; **********************************************************************
+; GAME_END - Rotina que coloca o jogo no modo terminado
+;
+; **********************************************************************
+
+game_end:
+    PUSH R0
+
+    MOV R1, JOGO_TERMINADO
+    MOV [pausa_processos], R1   ; termina os processos se estiverem em pausa
+    MOV [estado_jogo], R1       ; termina os processos se não estiverem em pausa
+
+    MOV [APAGA_AVISO], R1                   ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
+    MOV R1, FUNDO_TERMINA
+    MOV [FUNDO_ECRA], R1         ; coloca imagem de fundo incial
+    MOV R1, MSG_TERMINA
+    MOV [MSG], R1
+    MOV R1, SOM_TERMINA
+    MOV [PARA_SOM_VIDEO], R1
+    MOV [REPRODUZ_SOM_VIDEO], R1
+    MOV [APAGA_ECRA], R1                    ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
+
+    POP R1
+    RET
+
+; **********************************************************************
+; GAME_OVER_EXPLOSAO - Rotina que coloca o jogo no modo terminado por explosão
+;
+; **********************************************************************
+
+game_over_explosao:
+    PUSH    R1
+
+    MOV R1, JOGO_TERMINADO
+    MOV [estado_jogo], R1
+    MOV [APAGA_ECRA], R1 ; apaga todos os pixeis do ecrã, R1 irrelevante
+    MOV [APAGA_AVISO], R1                   ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
+    MOV R1, FUNDO_EXPLOSAO
+    MOV [FUNDO_ECRA], R1         ; coloca imagem de fundo incial
+    MOV R1, SOM_EXPLOSAO
+    MOV [PARA_SOM_VIDEO], R1
+    MOV [REPRODUZ_SOM_VIDEO], R1
+    MOV R1, MSG_EXPLOSAO
+    MOV [MSG], R1
+
+    POP     R1
+    RET
+
+; **********************************************************************
+; GAME_OVER_SEM_ENERGIA - Rotina que coloca o jogo no modo terminado por energia esgotada
+;
+; **********************************************************************
+
+game_over_sem_energia:
+    PUSH    R1
+
+    MOV R1, JOGO_TERMINADO
+    MOV [estado_jogo], R1
+    MOV [APAGA_AVISO], R1                   ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
+    MOV R1, FUNDO_ENERGIA
+    MOV [FUNDO_ECRA], R1         ; coloca imagem de fundo incial
+    MOV [APAGA_MSG], R1    ; apaga a mensagem sobreposta, valor de R1 irrelevante
+    MOV [APAGA_ECRA], R1                    ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
+    MOV R1, SOM_SEM_ENERGIA
+    MOV [PARA_SOM_VIDEO], R1
+    MOV [REPRODUZ_SOM_VIDEO], R1
+    MOV R1, MSG_SEM_ENERGIA
+    MOV [MSG], R1
+
+    POP     R1
     RET
 
 ; **********************************************************************

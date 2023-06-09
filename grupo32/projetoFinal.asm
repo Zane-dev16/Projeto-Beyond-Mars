@@ -82,6 +82,7 @@ COLUNA_PAINEL               EQU 25              ; coluna do painel da nave
 COLUNA_SONDA_ESQ            EQU 26              ; coluna inicial de uma sonda a esquerda
 COLUNA_SONDA_DIR            EQU 38              ; coluna inicial de uma sonda a direita
 
+ALCANCE_SONDA               EQU 12              ; alcance da sonda
 SONDA_NAO_LANCADA           EQU 62              ; soma da linha e coluna quando a sonda não é lançada
 
 DIRECAO_ESQ                 EQU -1              ; para mover um objeto a esquerda
@@ -472,33 +473,17 @@ PROCESS SP_inicial_sonda
 
 sonda:
     ; atualiza display de energia
-    MOV R1, SOM_DISPARO
-    MOV [PARA_SOM_VIDEO], R1
-    MOV [REPRODUZ_SOM_VIDEO], R1
-    MOV R0, ENERGIA_SONDA
-    MOV R1, evento_display
-    MOV [R1], R0
+    MOV R1, SOM_DISPARO             ; som do lançamento da sonda
+    MOV [PARA_SOM_VIDEO], R1        ; para qualquer som corrente
+    MOV [REPRODUZ_SOM_VIDEO], R1    ; toca som do lançamento
 
-	; desenha a sonda na sua posição inicial
-    MOV R8, 12
-	MOV R1, LINHA_CIMA_PAINEL   ; linha da sonda
+    MOV R0, ENERGIA_SONDA   ; energia gasto pela sonda
+    MOV R1, evento_display  ; LOCK para alterar valor da energia
+    MOV [R1], R0            ; diminui energia por 5%
+
+    CALL calcula_posicao_sonda
 	MOV R4, SONDA
-
-    CMP R5, DIRECAO_ESQ ; se for lancada uma sonda a esquerda
-    JZ pos_sonda_esq    ; inicia coluna a esquerda do painel
-    
-    CMP R5, DIRECAO_DIR ; se for lancada uma sonda a esquerda
-    JZ pos_sonda_dir    ; inicia coluna a esquerda do painel
-
-	MOV R2, COLUNA_CENT	        ; coluna da sonda no centro
-    JMP calcula_endereco_sondas_lancadas
-
-pos_sonda_esq:
-	MOV R2, COLUNA_SONDA_ESQ     ; inicia coluna a esquerda do painel
-    JMP calcula_endereco_sondas_lancadas
-
-pos_sonda_dir:
-	MOV R2, COLUNA_SONDA_DIR     ; inicia coluna a direita do painel
+    MOV R8, ALCANCE_SONDA  ; alcance da sonda
 
 calcula_endereco_sondas_lancadas:
     MOV R7, R5  ; cópia do valor da direção
@@ -664,6 +649,103 @@ muda_asteroide:
     JMP asteroide_destruido
 
 ; **********************************************************************
+; Processo
+;
+; ENERGIA - Processo que controla o calculo da energia e escrita ns displays
+;
+; **********************************************************************
+
+PROCESS SP_inicial_energia	; Processo com valor para inicializar o SP
+
+energia:
+    MOV R8, INICIO_ENERGIA
+
+atualiza_display:
+
+    MOV R1, JOGO_INICIADO       ; para verificar se o jogo ainda está a continuar
+    MOV R0, [estado_jogo]
+    CMP R0, R1                  ; O modo do jogo alterou?
+    JNZ altera_modo_energia      ; Se for, salta
+
+    CMP R8, 0
+    JLE  energia_esgotada
+    CALL escreve_display
+    MOV R0, [evento_display]
+    ADD R8, R0
+    JMP atualiza_display
+
+altera_modo_energia:
+    MOV R1, JOGO_PAUSA          ; para verificar se o jogo está em pausa
+    MOV R0, [estado_jogo]       ; obtem estado do jogo
+    CMP R0, R1                  ; O jogo está em pausa?
+    JZ  pausa_energia           ; se for, pausa
+    MOV [APAGA_ECRA], R1                    ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
+    RET
+
+pausa_energia:
+   MOV R0, [pausa_processos]    ; bloqueia neste lock até o jogo continuar
+   JMP atualiza_display              ; volta ao ciclo, a continuar o jogo
+
+energia_esgotada:
+    MOV R8, 0   ; valor da energia igual a 0
+    CALL escreve_display
+    MOV R1, MODO_SEM_ENERGIA
+    MOV [evento_prog_principal], R1
+    RET
+
+; **********************************************************************
+; Processo
+;
+; TECLADO - Processo que deteta quando se carrega numa tecla na 4ª linha
+;		  do teclado e escreve o valor da coluna num LOCK.
+;
+; **********************************************************************
+
+PROCESS SP_inicial_teclado	; Processo com valor para inicializar o SP
+
+teclado:					; processo que implementa o comportamento do teclado
+    CALL espera_tecla
+ha_tecla:					; neste ciclo espera-se até NENHUMA tecla estar premida
+
+	YIELD				; este ciclo é potencialmente bloqueante, pelo que tem de
+						; ter um ponto de fuga (aqui pode comutar para outro processo)
+
+    CALL calcula_tecla
+	MOV	[evento_prog_principal], R2	; guarda a coluna carregada
+    CALL espera_libertar_tecla
+
+	JMP	teclado		; esta "rotina" nunca retorna porque nunca termina
+
+; **********************************************************************
+; PREPARA_JOGO - prepara o jogo e os inicializações na memoria
+;
+; **********************************************************************
+
+prepara_jogo:
+    PUSH    R0
+    PUSH    R1
+
+    MOV R0, sondas_lancadas
+set_sondas_lancadas:
+    MOV R1, 30
+    MOV [R0], R1
+    ADD R0, 2
+    MOV R1, 32
+    MOV [R0], R1
+    ADD R0, 2
+    MOV R1, sondas_lancadas + 12
+    CMP R0, R1
+    JNZ set_sondas_lancadas
+
+set_asteroides_em_falta:
+    MOV R0, 0
+    MOV [asteroides_em_falta], R0
+    POP     R1
+    POP     R0
+    RET
+
+
+; **********************************************************************
 ; COLISAO_ASTEROIDE_3_SONDAS - deteta colisões entre um asteroide e as sondas
 ; Argumentos:	R1 - linha do asteroide
 ;               R2 - colunda do asteroide
@@ -804,104 +886,6 @@ explosao:
     MOV [evento_prog_principal], R1
     POP R1
     RET
-
-
-; **********************************************************************
-; Processo
-;
-; ENERGIA - Processo que controla o calculo da energia e escrita ns displays
-;
-; **********************************************************************
-
-PROCESS SP_inicial_energia	; Processo com valor para inicializar o SP
-
-energia:
-    MOV R8, INICIO_ENERGIA
-
-atualiza_display:
-
-    MOV R1, JOGO_INICIADO       ; para verificar se o jogo ainda está a continuar
-    MOV R0, [estado_jogo]
-    CMP R0, R1                  ; O modo do jogo alterou?
-    JNZ altera_modo_energia      ; Se for, salta
-
-    CMP R8, 0
-    JLE  energia_esgotada
-    CALL escreve_display
-    MOV R0, [evento_display]
-    ADD R8, R0
-    JMP atualiza_display
-
-altera_modo_energia:
-    MOV R1, JOGO_PAUSA          ; para verificar se o jogo está em pausa
-    MOV R0, [estado_jogo]       ; obtem estado do jogo
-    CMP R0, R1                  ; O jogo está em pausa?
-    JZ  pausa_energia           ; se for, pausa
-    MOV [APAGA_ECRA], R1                    ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
-    RET
-
-pausa_energia:
-   MOV R0, [pausa_processos]    ; bloqueia neste lock até o jogo continuar
-   JMP atualiza_display              ; volta ao ciclo, a continuar o jogo
-
-energia_esgotada:
-    MOV R8, 0   ; valor da energia igual a 0
-    CALL escreve_display
-    MOV R1, MODO_SEM_ENERGIA
-    MOV [evento_prog_principal], R1
-    RET
-
-; **********************************************************************
-; Processo
-;
-; TECLADO - Processo que deteta quando se carrega numa tecla na 4ª linha
-;		  do teclado e escreve o valor da coluna num LOCK.
-;
-; **********************************************************************
-
-PROCESS SP_inicial_teclado	; Processo com valor para inicializar o SP
-
-teclado:					; processo que implementa o comportamento do teclado
-    CALL espera_tecla
-ha_tecla:					; neste ciclo espera-se até NENHUMA tecla estar premida
-
-	YIELD				; este ciclo é potencialmente bloqueante, pelo que tem de
-						; ter um ponto de fuga (aqui pode comutar para outro processo)
-
-    CALL calcula_tecla
-	MOV	[evento_prog_principal], R2	; guarda a coluna carregada
-    CALL espera_libertar_tecla
-
-	JMP	teclado		; esta "rotina" nunca retorna porque nunca termina
-
-; **********************************************************************
-; PREPARA_JOGO - prepara o jogo e os inicializações na memoria
-;
-; **********************************************************************
-
-prepara_jogo:
-    PUSH    R0
-    PUSH    R1
-
-    MOV R0, sondas_lancadas
-set_sondas_lancadas:
-    MOV R1, 30
-    MOV [R0], R1
-    ADD R0, 2
-    MOV R1, 32
-    MOV [R0], R1
-    ADD R0, 2
-    MOV R1, sondas_lancadas + 12
-    CMP R0, R1
-    JNZ set_sondas_lancadas
-
-set_asteroides_em_falta:
-    MOV R0, 0
-    MOV [asteroides_em_falta], R0
-    POP     R1
-    POP     R0
-    RET
-
 
 ; **********************************************************************
 ; ESPERA_TECLA - Espera até uma tecla seja premida e lê a coluna e linha
@@ -1256,6 +1240,7 @@ sai_inicia_asteroides:
 
 ; **********************************************************************
 ; GERA_TIPO_ASTEROIDE - escolha aleatoriamente a tabela para desenhar o asteroide
+;
 ; Retorna:  R4 - tabela de asteroide a desenhar
 ; **********************************************************************
 
@@ -1435,6 +1420,36 @@ cria_asteroide_cent_dir:
     CALL asteroide
     POP    R5
     POP    R2
+    RET
+
+; **********************************************************************
+; CALCULA_POSICAO_SONDA - calcula os dados para desenhar a sonda
+; Argumentos:	R5 - direção do movimento da sonda
+;
+; Retorna:  R1 - linha inicial da sonda
+;           R2 - coluna inicial da sonda
+; **********************************************************************
+
+calcula_posicao_sonda:
+	MOV R1, LINHA_CIMA_PAINEL   ; linha da sonda
+
+    CMP R5, DIRECAO_ESQ ; se for lancada uma sonda a esquerda
+    JZ pos_sonda_esq    ; inicia coluna a esquerda do painel
+    
+    CMP R5, DIRECAO_DIR ; se for lancada uma sonda a esquerda
+    JZ pos_sonda_dir    ; inicia coluna a esquerda do painel
+
+	MOV R2, COLUNA_CENT	        ; coluna da sonda no centro
+    JMP sai_calcula_posicao_sonda
+
+pos_sonda_esq:                   ; define a sonda a esquerda
+	MOV R2, COLUNA_SONDA_ESQ     ; inicia coluna a esquerda do painel
+    JMP sai_calcula_posicao_sonda
+
+pos_sonda_dir:                   ; define a sonda a direita
+	MOV R2, COLUNA_SONDA_DIR     ; inicia coluna a direita do painel
+
+sai_calcula_posicao_sonda:
     RET
 
 ; **********************************************************************

@@ -389,7 +389,7 @@ sonda_dir:
     CMP R1, R2
     JNZ obtem_tecla
     MOV R1, 1
-    MOV [sondas_lancadas + 4], R1
+    MOV [sondas_lancadas + 8], R1
     MOV R5, DIRECAO_DIR
     CALL sonda
     JMP obtem_tecla
@@ -541,9 +541,6 @@ calcula_endereço_sondas_lancadas:
 
 ciclo_sonda:
 
-	;CALL colisao_sonda
-
-
     ; guarda posição na tabela
     MOV [R7], R1
     MOV [R7 + 2], R2
@@ -620,7 +617,9 @@ ciclo_asteroide:
     INC   R1    ; Atualiza o posição do asteroide para a próxima linha
     ADD   R2, R5    ; Atualiza o posição do asteroide para a próxima coluna
 
-	CALL	colisao_asteroide
+	CALL	colisao_asteroide_sonda1
+	CALL	colisao_asteroide_sonda2
+	CALL	colisao_asteroide_sonda3
     CMP R6, 1   ; teve colisão?
     JZ  sai_asteroide   ; se tiver sai 
 
@@ -656,72 +655,131 @@ muda_fundo:
 	POP R0
 	RET
 	
-colisao_asteroide:
+	
+colisao_asteroide_sonda1:
 	PUSH R5
 	PUSH R7
 	PUSH R8
 	PUSH R9
+	PUSH R10
+	PUSH R11
+	MOV R3,8
 	MOV	R5, R1
 	MOV R7, R2
 	MOV R10,R1
 	MOV R11,R2
 	SUB R10,1
 	SUB R11,1
-	ADD R5,6
-	ADD R7,6
+	ADD R5,5
+	ADD R7,5
 	MOV R8,sondas_lancadas
-verifica_primeira_sonda:
+verifica_sonda1:
 	MOV R9, [R8]
 	CMP R9, R5
-	JGE verifica_segunda_sonda
+	JGE final_1
 	CMP R9, R10
-	JLE verifica_segunda_sonda
+	JLE final_1
 	ADD R8, 2
 	MOV R9, [R8]
 	CMP R9, R7
-	JGE verifica_segunda_sonda
+	JGE final_1
 	CMP R9, R11
-	JLE verifica_segunda_sonda
+	JLE final_1
 	CALL muda_fundo
-	JMP final
-verifica_segunda_sonda:
-	ADD R8, 2
-	MOV R9, [R8]
-	CMP R9, R5
-	JGE verifica_terceira_sonda
-	CMP R9, R10
-	JLE verifica_terceira_sonda
-	ADD R8, 2
-	MOV R9, [R8]
-	CMP R9, R7
-	JGE verifica_terceira_sonda
-	CMP R9, R11
-	JLE verifica_terceira_sonda
-	CALL muda_fundo
-	JMP final
-verifica_terceira_sonda:
-	ADD R8, 2
-	MOV R9, [R8]
-	CMP R9, R5
-	JGE final
-	CMP R9, R10
-	JLE final
-	ADD R8, 2
-	MOV R9, [R8]
-	CMP R9, R7
-	JGE final
-	CMP R9, R11
-	JLE final
-	CALL muda_fundo
-	JMP final
-
-final:
+	MOV R6,1
+	
+final_1:
+	POP R11
+	POP R10
 	POP R9
 	POP R8
 	POP R7
 	POP R5
 	RET
-
+	
+colisao_asteroide_sonda2:
+	PUSH R5
+	PUSH R7
+	PUSH R8
+	PUSH R9
+	PUSH R10
+	PUSH R11
+	MOV R3,8
+	MOV	R5, R1
+	MOV R7, R2
+	MOV R10,R1
+	MOV R11,R2
+	SUB R10,1
+	SUB R11,1
+	ADD R5,5
+	ADD R7,5
+	MOV R8,sondas_lancadas
+verifica_sonda2:
+	ADD R8, 4
+	MOV R9, [R8]
+	CMP R9, R5
+	JGE final_2
+	CMP R9, R10
+	JLE final_2
+	ADD R8, 2
+	MOV R9, [R8]
+	CMP R9, R7
+	JGE final_2
+	CMP R9, R11
+	JLE final_2
+	CALL muda_fundo
+	MOV R6,1
+final_2:
+	POP R11
+	POP R10
+	POP R9
+	POP R8
+	POP R7
+	POP R5
+	RET
+	
+colisao_asteroide_sonda3:
+	PUSH R3
+	PUSH R5
+	PUSH R7
+	PUSH R8
+	PUSH R9
+	PUSH R10
+	PUSH R11
+	MOV R3,8
+	MOV	R5, R1
+	MOV R7, R2
+	MOV R10,R1
+	MOV R11,R2
+	SUB R10,1
+	SUB R11,1
+	ADD R5,5
+	ADD R7,5
+	MOV R8,sondas_lancadas
+verifica_sonda3:
+	ADD R8,R3
+	MOV R9, [R8]
+	CMP R9, R5
+	JGE final_3
+	CMP R9, R10
+	JLE final_3
+	ADD R8, 2
+	MOV R9, [R8]
+	CMP R9, R7
+	JGE final_3
+	CMP R9, R11
+	JLE final_3
+	CALL muda_fundo
+	MOV R6,1
+final_3:
+	POP R11
+	POP R10
+	POP R9
+	POP R8
+	POP R7
+	POP R5
+	POP R3
+	RET
 ; **********************************************************************
 ; COLISAO_PAINEL - verifica se o asteroide colide com o painel
 ;

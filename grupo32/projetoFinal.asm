@@ -456,7 +456,8 @@ pausa_prog_principal:           ; neste ciclo o jogo está em modo pausa
 
 termina_jogo:
     MOV R1, JOGO_TERMINADO
-    MOV [estado_jogo], R1
+    MOV [pausa_processos], R1   ; termina os processos se estiverem em pausa
+    MOV [estado_jogo], R1       ; termina os processos se não estiverem em pausa
     MOV [APAGA_AVISO], R1                   ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
     MOV R1, FUNDO_CHEGA
     MOV [FUNDO_ECRA], R1         ; coloca imagem de fundo incial
@@ -544,8 +545,11 @@ altera_modo_painel:
     RET                         ; se não a tecla premida foi para terminar o jogo
 
 pausa_painel:
-   MOV R0, [pausa_processos]    ; bloqueia neste lock até o jogo continuar
-   JMP anima_painel
+    MOV R0, [pausa_processos]    ; bloqueia neste lock até o jogo continuar
+    JMP anima_painel
+
+sai_painel:
+    RET
 
 ; **********************************************************************
 ; Processo
@@ -814,6 +818,16 @@ verifica_sonda:
 	JLE final
 	MOV R6,1
     MOV [evento_sonda], R0
+    MOV R7, R5  ; cópia do valor da direção
+    INC R7
+    MOV R4, 4   ; cada par de coordenada são WORDs 2 + 2
+    MUL R7, R4  ; calcula posicao na tabela da sondas lançadas
+    MOV R4, sondas_lancadas
+    ADD R7, R4 ; obtém endereço nas sondas lançadas
+    MOV R4, 30
+    MOV [R7], R4         ; reinicia valor na tabela
+    MOV R4, 32
+    MOV [R7 + 2], R4     ; reinicia valor na tabela
 final:
 	POP R11
 	POP R10

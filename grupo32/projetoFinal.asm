@@ -774,39 +774,39 @@ colisao_asteroide_sonda:
 	PUSH R9
 	PUSH R10
 	PUSH R11
-	MOV	R5, R1
-	MOV R7, R2
-	MOV R10,R1
-	MOV R11,R2
-	SUB R10,1
-	SUB R11,1
-	ADD R5,6
-	ADD R7,5
-	MOV R8,sondas_lancadas
+	MOV	R5, R1				;copia para R5 a primeira linha do asteroide 
+	MOV R7, R2				;copia para R7 a primeira coluna do asteroide
+	MOV R10,R1				;copia para R10 a primeira linha do asteroide
+	MOV R11,R2				;copia para R11 a primeira coluna do asteroide
+	SUB R10,1				;obtem a linha acima do asteroide
+	SUB R11,1				;obtem a coluna à esquerda do asteroide
+	ADD R5,6				;obtem a segunda linha abaixo do asteroide (para melhor deteção de colisões)
+	ADD R7,6				;obtem a segunda coluna abaixo do asteroide (para melhor deteção de colisões)
+	MOV R8,sondas_lancadas	;obtem a tabela de posições das sondas lançadas
 verifica_sonda:
-    MOV R3, R0  ; copia numero da sonda
-    MOV R4, 4
-    MUL R3, R4
-	ADD R8, R3
-	MOV R9, [R8]
-	CMP R9, R5
-	JGE final
-	CMP R9, R10
-	JLE final
-	ADD R8, 2
-	MOV R9, [R8]
-	CMP R9, R7
-	JGE final
-	CMP R9, R11
-	JLE final
-	MOV R6,1
+    MOV R3, R0  			;copia numero da sonda (0-sonda da esquerda, 1-sonda central, 2-sonda da direita)
+    MOV R4, 4				;multiplicador de endereços na tabela (4 porque cada coordenada de sonda tem 2 valores e cada WORD ocupa 2 endereços) 
+    MUL R3, R4				;determina o endereço da sonda
+	ADD R8, R3				;determina o endereço da sonda
+	MOV R9, [R8]			;obtem a linha da sonda
+	CMP R9, R5				;verifica se a sonha está abaixo do asteroide
+	JGE final				;se sim termina
+	CMP R9, R10				;verifica se a sonda está acima do asteroide
+	JLE final				;se sim termina
+	ADD R8, 2				;endereço da coluna da sonda
+	MOV R9, [R8]			;obtem a coluna da sonda
+	CMP R9, R7				;verifica se a sonda está à direita do asteroide
+	JGE final				;se sim termina
+	CMP R9, R11				;verifica se a sonda está acima do asteroide
+	JLE final				;se sim termina
+	MOV R6,1				;se a sonda não estiver nem acima nem abaixo nem à esquerda nem à direita então está dentro do asteroide, retorna em R6 colisão detetada
     MOV [evento_sonda], R0
 
     CALL calcula_endereco_sondas_lancadas
-    MOV R4, 30          ; linha default da sonda
-    MOV [R7], R4        ; reinicia valor da linha da sonda
-    MOV R4, 32          ; coluna default da sonda
-    MOV [R7 + 2], R4    ; reinicia valor da linha da sonda
+    MOV R4, 30          	; linha default da sonda
+    MOV [R7], R4        	; reinicia valor da linha da sonda
+    MOV R4, 32          	; coluna default da sonda
+    MOV [R7 + 2], R4    	; reinicia valor da linha da sonda
 final:
 	POP R11
 	POP R10
@@ -820,7 +820,8 @@ final:
 
 ; **********************************************************************
 ; COLISAO_PAINEL - verifica se o asteroide colide com o painel
-;
+; Argumentos:	R1 - linha do asteroide
+;               R2 - colunda do asteroide
 ; Retorna: 	
 ;
 ; **********************************************************************

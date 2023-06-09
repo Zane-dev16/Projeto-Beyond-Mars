@@ -1191,9 +1191,9 @@ inicia_asteroides:
     PUSH R0
     PUSH R9
     PUSH R4
-    MOV R4, ASTEROIDE_PERIGO
     CALL rand15     ; gera numero aleatória 1-15
-
+    MOV R0, 5   ; divisor
+    MOD R9, R0  ; número aleatória 0-4
    
 inicia_ast_esq:         ; asteroide a esquerda
     CMP R9, 0       ;
@@ -1304,15 +1304,16 @@ sai_gera_asteroide:
 
 rand15:
     PUSH    R0
-rand15_ciclo:   ;para verificar que o número não seja 0
     MOV R0, MASCARA_GERADOR_ALEATORIO
+rand15_ciclo:   ;para verificar que o número não seja 0
+
+    YIELD               ; este ciclo é potencialmente bloqueante (ponto de fuga)
+
     MOV R9, [TEC_COL]   ; ler o PIN
-    AND R9, R0  ;   isolar 4 bits aleatórios
+    AND R9, R0          ; isolar 4 bits do maior peso (aleatórios)
 
     JZ rand15_ciclo ; se o número for 0 repete
     SHR R9, 4   ;   colocar o 4 bits à direita (numero aleatório 1-15)
-    MOV R0, 5   ; divisor
-    MOD R9, R0  ; número aleatória 0-4
 
     POP     R0
     RET

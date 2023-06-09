@@ -484,14 +484,7 @@ sonda:
     CALL calcula_posicao_sonda
 	MOV R4, SONDA
     MOV R8, ALCANCE_SONDA  ; alcance da sonda
-
-calcula_endereco_sondas_lancadas:
-    MOV R7, R5  ; cópia do valor da direção
-    INC R7
-    MOV R0, 4   ; cada par de coordenada são WORDs 2 + 2
-    MUL R7, R0  ; calcula posicao na tabela da sondas lançadas
-    MOV R0, sondas_lancadas
-    ADD R7, R0 ; obtém endereço nas sondas lançadas
+    CALL calcula_endereco_sondas_lancadas
 
 ciclo_sonda:
 
@@ -808,16 +801,12 @@ verifica_sonda:
 	JLE final
 	MOV R6,1
     MOV [evento_sonda], R0
-    MOV R7, R5  ; cópia do valor da direção
-    INC R7
-    MOV R4, 4   ; cada par de coordenada são WORDs 2 + 2
-    MUL R7, R4  ; calcula posicao na tabela da sondas lançadas
-    MOV R4, sondas_lancadas
-    ADD R7, R4 ; obtém endereço nas sondas lançadas
-    MOV R4, 30
-    MOV [R7], R4         ; reinicia valor na tabela
-    MOV R4, 32
-    MOV [R7 + 2], R4     ; reinicia valor na tabela
+
+    CALL calcula_endereco_sondas_lancadas
+    MOV R4, 30          ; linha default da sonda
+    MOV [R7], R4        ; reinicia valor da linha da sonda
+    MOV R4, 32          ; coluna default da sonda
+    MOV [R7 + 2], R4    ; reinicia valor da linha da sonda
 final:
 	POP R11
 	POP R10
@@ -1420,6 +1409,25 @@ cria_asteroide_cent_dir:
     CALL asteroide
     POP    R5
     POP    R2
+    RET
+
+; **********************************************************************
+; CALCULA_ENDERECO_SONDAS_LANCADAS - calcula o endereço das coordenadas sonda
+;                                    correspondente a direção
+; Argumentos:	R5 - direção do movimento da sonda
+;
+; Retorna:  R7 - endereço das coordenadas da sonda
+; **********************************************************************
+
+calcula_endereco_sondas_lancadas:
+    PUSH    R0
+    MOV R7, R5  ; cópia do valor da direção
+    INC R7
+    MOV R0, 4   ; cada par de coordenada são WORDs 2 + 2
+    MUL R7, R0  ; calcula posicao na tabela da sondas lançadas
+    MOV R0, sondas_lancadas
+    ADD R7, R0 ; obtém endereço nas sondas lançadas
+    POP     R0
     RET
 
 ; **********************************************************************

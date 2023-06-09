@@ -21,9 +21,9 @@ TECLA_SONDA_DIR             EQU 2               ; tecla para lancar uma sonda a 
 TECLA_INICIO_JOGO           EQU 12              ; tecla para iniciar o jogo (tecla C)
 TECLA_PAUSA                 EQU 13              ; tecla para pausa e continuar o jogo (tecla D)
 TECLA_TERMINA               EQU 14              ; tecla para pausa e continuar o jogo (tecla E)
-CRIA_ASTEROIDE              EQU 16              ; para criar um asteroide quando um for destruido
+MODO_SEM_ENERGIA            EQU 16              ; para terminar o jogo quando energia é esgotada
 MODO_EXPLOSAO               EQU 17              ; para terminar o jogo com explosão
-MODO_SEM_ENERGIA            EQU 18              ; para terminar o jogo quando energia é esgotada
+CRIA_ASTEROIDE              EQU 18              ; para criar um asteroide quando um for destruido
 
 INICIO_ENERGIA              EQU 100             ; valor inicial da energia
 ENERGIA_SONDA               EQU -5              ; gasto da energia pelo disparo de uma sonda
@@ -233,14 +233,17 @@ SONDA:                   ; tabela que define a sonda (cor, pixels)
     WORD    ALTURA_SONDA
     WORD    PIXEL_CAST
 
-posicao_asteroide:       ; posição do asteroide
-    WORD    LINHA_TOPO
-    WORD    COLUNA_ESQ
-
 sondas_lancadas:
     WORD    30, 32   ; coordenadas da primeira sonda
     WORD    30, 32   ; coordenadas da segunda sonda
     WORD    30, 32   ; coordenadas da terceira sonda
+
+asteroides_em_falta:    ; número de asteroides em falta
+    WORD    0
+
+posicao_asteroide:       ; posição do asteroide
+    WORD    LINHA_TOPO
+    WORD    COLUNA_ESQ
 
 
 ; Tabela das rotinas de interrupção
@@ -346,7 +349,7 @@ obtem_tecla:
 
     MOV R2, CRIA_ASTEROIDE
     CMP R1, R2
-    JZ  cria_asteroide
+    JZ  cria_asteroides
 
     MOV R2, MODO_EXPLOSAO
     CMP R1, R2
@@ -395,8 +398,13 @@ sonda_dir:
     CALL sonda
     JMP obtem_tecla
 
+cria_asteroides:
+    MOV R1, [asteroides_em_falta]   ; obtem numero de asteroides para criar
 cria_asteroide:
     CALL gera_asteroide
+    DEC R1                          ; diminui numero de asteroides a faltar
+    JNZ cria_asteroide
+    MOV [asteroides_em_falta], R1   ; coloca 0 no endereço dos asteroides a faltar
     JMP obtem_tecla
 
 suspende_jogo:
@@ -587,6 +595,7 @@ ciclo_sonda:
 	JMP	ciclo_sonda		;
 
 altera_modo_sonda:
+    YIELD                       ; ponto de fuga para outros processos
     MOV R3, JOGO_PAUSA          ; para verificar se o jogo está em pausa
     MOV R6, [estado_jogo]       ; obtem estado do jogo
     CMP R6, R3                  ; O jogo está em pausa?
@@ -622,7 +631,8 @@ asteroide:
     CALL gera_tipo_asteroide
 
 ciclo_asteroide:
-	
+
+
 	CALL 	colisao_painel
 	CALL	desenha_objeto		; desenha o boneco a partir da tabela
 
@@ -668,9 +678,15 @@ asteroide_destruido:
     MOV R0, 25                  ; valor da energia do recurso
     MOV [evento_display], R0    ; recursos obtidos, adicione 25 a energia
     MOV R4, RECURSOS
+    DEC R1                  ; para desenhar na mesma linha    
+    SUB R2, R5              ; para desenhar na mesma coluna
     JMP muda_asteroide
 
 sai_asteroide:
+    MOV R0, [asteroides_em_falta]   ; obtem número de asteroides em falta
+    INC R0                          ; incrementa número de asteroides em falta
+    MOV [asteroides_em_falta], R0   ; colocar de novo no endereço
+	MOV	R0, [evento_asteroide]  	; lê o LOCK e bloqueia até a interrupção escrever nele
     MOV R0, CRIA_ASTEROIDE
     MOV [tecla_carregada], R0
     RET
@@ -726,7 +742,7 @@ colisao_asteroide_sonda:
 	SUB R10,1
 	SUB R11,1
 	ADD R5,5
-	ADD R7,5
+	ADD R7,6
 	MOV R8,sondas_lancadas
 verifica_sonda:
     MOV R3, R0  ; copia numero da sonda
@@ -746,7 +762,6 @@ verifica_sonda:
 	JLE final
 	MOV R6,1
     MOV [evento_sonda], R0
-    MOV R0, CRIA_ASTEROIDE
 final:
 	POP R11
 	POP R10
@@ -905,6 +920,10 @@ set_sondas_lancadas:
     MOV R1, sondas_lancadas + 12
     CMP R0, R1
     JNZ set_sondas_lancadas
+
+set_asteroides_em_falta:
+    MOV R0, 0
+    MOV [asteroides_em_falta], R0
     POP     R1
     POP     R0
     RET
@@ -1162,6 +1181,7 @@ apaga_objeto:
     ADD   R4, 2               ; Endereço da cor do 1º pixel
 
 apaga_pixels:                 ; Apaga os pixels do objeto a partir da tabela
+    
     MOV   R3, 0               ; Cor para apagar o próximo pixel do objeto
     CALL  escreve_pixel       ; Escreve cada pixel do objeto
     ADD   R4, 2               ; Endereço da cor do próximo pixel

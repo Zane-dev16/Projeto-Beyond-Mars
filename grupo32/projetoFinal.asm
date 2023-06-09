@@ -160,7 +160,7 @@ ASTEROIDE_COM_RECURSOS:	; tabela que define o asteroide com recursos (cor, largu
     WORD		0, PIXEL_VERD, PIXEL_VERD, PIXEL_VERD, 0
     WORD		0, 0, PIXEL_VERD, 0, 0 
 
-RECURSOS:				; tabela que define os recursos (cor, largura, pixels, altura)
+EXPLOSAO_ASTEROIDE:				; tabela que define os recursos (cor, largura, pixels, altura)
 	WORD		LARGURA_AST
     WORD        ALTURA_AST
 	WORD		PIXEL_AZUL, 0, PIXEL_AZUL, 0, PIXEL_AZUL		
@@ -312,6 +312,7 @@ espera_inicio:
     
 inicia_jogo:
     MOV R1, SOM_INICIO
+    MOV [PARA_SOM_VIDEO], R1
     MOV [REPRODUZ_SOM_VIDEO], R1
     MOV R1, JOGO_INICIADO
     MOV [estado_jogo], R1
@@ -411,6 +412,7 @@ suspende_jogo:
     MOV R1, MSG_PAUSA
     MOV [MSG], R1
     MOV R1, SOM_PAUSA
+    MOV [PARA_SOM_VIDEO], R1
     MOV [REPRODUZ_SOM_VIDEO], R1
     MOV R1, JOGO_PAUSA
     MOV [estado_jogo], R1       ; bloqueia os processos
@@ -419,6 +421,9 @@ pausa_prog_principal:           ; neste ciclo o jogo está em modo pausa
                                 ; e apenas sai quando a tecla D for premida
     MOV R1, [tecla_carregada]   ; bloqueia neste LOCK até uma tecla ser carregada
     MOV R2, TECLA_PAUSA         ; tecla para pausa e continuar o jogo
+    MOV R3, TECLA_TERMINA
+    CMP R1, R3
+    JZ termina_jogo
     CMP R1, R2                  ; verifica se a tecla premida foi o D
     JNZ pausa_prog_principal    ; repete o ciclo
     MOV [APAGA_MSG], R1
@@ -438,8 +443,8 @@ termina_jogo:
     MOV R1, MSG_CHEGA
     MOV [MSG], R1
     MOV R1, SOM_CHEGA
+    MOV [PARA_SOM_VIDEO], R1
     MOV [REPRODUZ_SOM_VIDEO], R1
-    MOV [APAGA_MSG], R1    ; apaga a mensagem sobreposta, valor de R1 irrelevante
     MOV [APAGA_ECRA], R1                    ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
     JMP preparacao_jogo
 
@@ -451,6 +456,7 @@ termina_jogo_explosao:
     MOV R1, FUNDO_EXPLOSAO
     MOV [FUNDO_ECRA], R1         ; coloca imagem de fundo incial
     MOV R1, SOM_EXPLOSAO
+    MOV [PARA_SOM_VIDEO], R1
     MOV [REPRODUZ_SOM_VIDEO], R1
     MOV R1, MSG_EXPLOSAO
     MOV [MSG], R1
@@ -465,6 +471,7 @@ sem_energia:
     MOV [APAGA_MSG], R1    ; apaga a mensagem sobreposta, valor de R1 irrelevante
     MOV [APAGA_ECRA], R1                    ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
     MOV R1, SOM_SEM_ENERGIA
+    MOV [PARA_SOM_VIDEO], R1
     MOV [REPRODUZ_SOM_VIDEO], R1
     MOV R1, MSG_SEM_ENERGIA
     MOV [MSG], R1
@@ -533,6 +540,9 @@ PROCESS SP_inicial_sonda
 
 sonda:
     ; atualiza display de energia
+    MOV R1, SOM_DISPARO
+    MOV [PARA_SOM_VIDEO], R1
+    MOV [REPRODUZ_SOM_VIDEO], R1
     MOV R0, ENERGIA_SONDA
     MOV R1, evento_display
     MOV [R1], R0
@@ -672,12 +682,13 @@ pausa_asteroide:
    JMP ciclo_asteroide              ; volta ao ciclo, a continuar o jogo
 
 asteroide_destruido:
-    MOV R0, ASTEROIDE_COM_RECURSOS
+    MOV R0, ASTEROIDE_PERIGO
     CMP R4, R0
     JNZ  destroi_asteroide          ; se for um asteroide de perigo salta
-    MOV R0, 25                  ; valor da energia do recurso
-    MOV [evento_display], R0    ; recursos obtidos, adicione 25 a energia
-    MOV R4, RECURSOS
+    MOV R4, SOM_AST_DESTRUIDO
+    MOV [PARA_SOM_VIDEO], R4
+    MOV [REPRODUZ_SOM_VIDEO], R4
+    MOV R4, EXPLOSAO_ASTEROIDE
     DEC R1                  ; para desenhar na mesma linha    
     SUB R2, R5              ; para desenhar na mesma coluna
     JMP muda_asteroide
@@ -691,10 +702,8 @@ sai_asteroide:
     RET
 
 destroi_asteroide:
-    PUSH R1
-    MOV R1, SOM_AST_DESTRUIDO
-    MOV [REPRODUZ_SOM_VIDEO], R1
-    POP R1
+    MOV R0, 25                  ; valor da energia do recurso
+    MOV [evento_display], R0    ; recursos obtidos, adicione 25 a energia
     JMP sai_asteroide
 
 

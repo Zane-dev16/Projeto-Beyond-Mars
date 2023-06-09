@@ -54,7 +54,7 @@ MSG_INICIAR                 EQU 5               ; mensagem a apresentar antes de
 MSG_PAUSA                   EQU 6               ; mensagem a apresentar com o jogo em pausa
 MSG_EXPLOSAO                EQU 7               ; mensagem a apresentar quando um asteroide colide com a nave
 MSG_SEM_ENERGIA             EQU 8               ; mensagem a apresentar quando a nave fica sem energia
-MSG_CHEGA                  EQU 9               ; mensagem a apresentar quando o utilizador decide terminar o jogo
+MSG_CHEGA                   EQU 9               ; mensagem a apresentar quando o utilizador decide terminar o jogo
 
 SOM_INICIO                  EQU 0               ; som quando o jogo é iniciado
 SOM_DISPARO                 EQU 1               ; som quando uma sonda é disparada
@@ -541,16 +541,16 @@ sonda:
     JZ pos_sonda_dir    ; inicia coluna a esquerda do painel
 
 	MOV R2, COLUNA_CENT	        ; coluna da sonda no centro
-    JMP calcula_endereço_sondas_lancadas
+    JMP calcula_endereco_sondas_lancadas
 
 pos_sonda_esq:
 	MOV R2, COLUNA_SONDA_ESQ     ; inicia coluna a esquerda do painel
-    JMP calcula_endereço_sondas_lancadas
+    JMP calcula_endereco_sondas_lancadas
 
 pos_sonda_dir:
 	MOV R2, COLUNA_SONDA_DIR     ; inicia coluna a direita do painel
 
-calcula_endereço_sondas_lancadas:
+calcula_endereco_sondas_lancadas:
     MOV R7, R5  ; cópia do valor da direção
     INC R7
     MOV R0, 4   ; cada par de coordenada são WORDs 2 + 2
@@ -641,6 +641,7 @@ ciclo_asteroide:
     CMP R6, 1   ; teve colisão?
     JZ  asteroide_destruido   ; se tiver sai 
 
+muda_asteroide:
     MOV R7, LINHA_BASE          ; linha base do ecrã
     CMP R7, R1
     JZ  sai_asteroide           ; se chegar a ultima linha sai
@@ -663,14 +664,25 @@ pausa_asteroide:
 asteroide_destruido:
     MOV R0, ASTEROIDE_COM_RECURSOS
     CMP R4, R0
-    JNZ  sai_asteroide          ; se for um asteroide de perigo salta
+    JNZ  destroi_asteroide          ; se for um asteroide de perigo salta
     MOV R0, 25                  ; valor da energia do recurso
     MOV [evento_display], R0    ; recursos obtidos, adicione 25 a energia
+    MOV R4, RECURSOS
+    JMP muda_asteroide
+
 sai_asteroide:
     MOV R0, CRIA_ASTEROIDE
     MOV [tecla_carregada], R0
     RET
-	
+
+destroi_asteroide:
+    PUSH R1
+    MOV R1, SOM_AST_DESTRUIDO
+    MOV [REPRODUZ_SOM_VIDEO], R1
+    POP R1
+    JMP sai_asteroide
+
+
 ; **********************************************************************
 ; COLISAO_ASTEROIDE_3_SONDAS - deteta colisões entre um asteroide e as sondas
 ; Argumentos:	R1 - linha do asteroide

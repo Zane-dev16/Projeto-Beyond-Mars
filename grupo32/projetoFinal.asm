@@ -82,6 +82,8 @@ COLUNA_PAINEL               EQU 25              ; coluna do painel da nave
 COLUNA_SONDA_ESQ            EQU 26              ; coluna inicial de uma sonda a esquerda
 COLUNA_SONDA_DIR            EQU 38              ; coluna inicial de uma sonda a direita
 
+SONDA_NAO_LANCADA           EQU 62              ; soma da linha e coluna quando a sonda não é lançada
+
 DIRECAO_ESQ                 EQU -1              ; para mover um objeto a esquerda
 DIRECAO_CENT                EQU 0               ; para mover um objeto verticalmente
 DIRECAO_DIR                 EQU 1               ; para mover um objeto a direita
@@ -332,7 +334,7 @@ inicia_jogo:
     CALL energia                ; cria o processo energia
     CALL inicia_asteroides      ; rotina que cria os processos para os 4 asteroides
 
-obtem_tecla:
+deteta_eventos:
     MOV R1, [evento_prog_principal]   ; bloqueia neste LOCK até uma tecla ser carregada
 
     MOV R2, TECLA_SONDA_ESQ     ; tecla para lancar uma sonda a esquerda (tecla 0)
@@ -367,44 +369,30 @@ obtem_tecla:
     CMP R1, R2                  ; a nave está sem energia?
     JZ  sem_energia             ; se estiver, salta
 
-    JMP obtem_tecla             ; se a tecla premida não foi nenhuma das anteriores repete o ciclo
+    JMP deteta_eventos             ; se a tecla premida não foi nenhuma das anteriores repete o ciclo
 
 sonda_esq:
-    MOV R1, [sondas_lancadas]
-    MOV R2, [sondas_lancadas + 2]
-    ADD R1, R2
-    MOV R2, 62
-    CMP R1, R2
-    JNZ obtem_tecla
-    MOV R1, 1
-    MOV [sondas_lancadas], R1
-    MOV R5, DIRECAO_ESQ
-    CALL sonda
-    JMP obtem_tecla
+    MOV R5, DIRECAO_ESQ     ; direcao da sonda
+    CALL dispara_sonda      ; dispara uma sonda a esquerda
+    JMP deteta_eventos         ; volta a ciclo principal
 
 sonda_cent:
-    MOV R1, [sondas_lancadas + 4]
-    MOV R2, [sondas_lancadas + 6]
-    ADD R1, R2
-    MOV R2, 62
-    CMP R1, R2
-    JNZ obtem_tecla
-    MOV R5, DIRECAO_CENT
-    CALL sonda
-    JMP obtem_tecla
+    MOV R5, DIRECAO_CENT    ; direcao da sonda
+    CALL dispara_sonda      ; dispara uma sonda no centro
+    JMP deteta_eventos         ; volta a ciclo principal
 
 sonda_dir:
     MOV R1, [sondas_lancadas + 8]
     MOV R2, [sondas_lancadas + 10]
     ADD R1, R2
-    MOV R2, 62
+    MOV R2, SONDA_NAO_LANCADA
     CMP R1, R2
-    JNZ obtem_tecla
+    JNZ deteta_eventos
     MOV R1, 1
     MOV [sondas_lancadas + 8], R1
     MOV R5, DIRECAO_DIR
     CALL sonda
-    JMP obtem_tecla
+    JMP deteta_eventos
 
 cria_asteroides:
     MOV R1, [asteroides_em_falta]   ; obtem numero de asteroides para criar
@@ -413,7 +401,7 @@ cria_asteroide:
     DEC R1                          ; diminui numero de asteroides a faltar
     JNZ cria_asteroide
     MOV [asteroides_em_falta], R1   ; coloca 0 no endereço dos asteroides a faltar
-    JMP obtem_tecla
+    JMP deteta_eventos
 
 suspende_jogo:
     MOV R1, MSG_PAUSA
@@ -440,7 +428,7 @@ pausa_prog_principal:           ; neste ciclo o jogo está em modo pausa
     MOV R1, JOGO_INICIADO
     MOV [estado_jogo], R1       ; volta ao estado jogo iniciado
     MOV [pausa_processos], R1   ; desbloqueia os processos
-    JZ obtem_tecla              ; volta ao ciclo de funciomento da prog_principal
+    JZ deteta_eventos              ; volta ao ciclo de funciomento da prog_principal
 
 termina_jogo:
     MOV R1, JOGO_TERMINADO
@@ -1258,6 +1246,40 @@ apaga_pixels:                 ; Apaga os pixels do objeto a partir da tabela
     RET
 
 ; **********************************************************************
+; DISPARA_SONDA - dispara a sonda correspondente a direção da sonda
+; Argumentos:	R5 - direção do movimento da sonda
+;
+; **********************************************************************
+
+dispara_sonda:
+    PUSH    R0
+    PUSH    R1
+    PUSH    R2
+    MOV R0, R5  ; cópia da direção
+    INC R0      ; para calcular endereço na tabela (0, 1, 2)
+    MOV R1, 4   ; para calcular endereço na tabela
+    MUL R0, R1  ; posicao da sonda relativa a tabela sondas lancadas
+    MOV R1, sondas_lancadas         ; endereço da tabela sondas lancadas
+    ADD R0, R1         ; endereço das coordenadas da sonda
+
+    MOV R1, [R0]       ; obtem linha da sonda esquerda
+    ADD R0, 2          ; endereço da coluna
+    MOV R2, [R0]       ; obtem coluna da sonda esquerda
+    ADD R1, R2         ; soma linha e coluna
+
+    MOV R2, SONDA_NAO_LANCADA       ; soma que corresponde a uma sonda não lancada
+    CMP R1, R2                      ; a sonda ja está em lançamento
+    JNZ sai_dispara_sonda           ; se estiver sai
+
+    CALL sonda
+
+sai_dispara_sonda:
+    POP     R2
+    POP     R1
+    POP     R0
+    RET
+
+; **********************************************************************
 ; INICIA_ASTEROIDES - inicia 4 asteroides a movimentar
 ; **********************************************************************
 
@@ -1416,7 +1438,7 @@ cria_asteroide_dir:
     PUSH    R2
     PUSH    R5
     MOV R2, COLUNA_DIR - 4
-    MOV R5, DIRECAO_DIR
+    MOV R5, DIRECAO_ESQ
     CALL asteroide
     POP    R5
     POP    R2
@@ -1431,7 +1453,7 @@ cria_asteroide_cent_esq:
     PUSH    R2
     PUSH    R5
     MOV R2, COLUNA_CENT - 2
-    MOV R5, DIRECAO_ESQ
+    MOV R5, DIRECAO_DIR
     CALL asteroide
     POP    R5
     POP    R2

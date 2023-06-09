@@ -859,6 +859,28 @@ ha_tecla:					; neste ciclo espera-se até NENHUMA tecla estar premida
 	JMP	teclado		; esta "rotina" nunca retorna porque nunca termina
 
 ; **********************************************************************
+; PREPARA_JOGO - prepara o jogo e os inicializações na memoria
+;
+; **********************************************************************
+
+prepara_jogo:
+    PUSH    R0
+    PUSH    R1
+
+    MOV R0, [sondas_lancadas]
+set_sondas_lancadas:
+    MOV R1, 30
+    MOV [R0], R1
+    ADD R0, 2
+    MOV R1, 32
+    MOV [R0], R1
+    ADD R0, 2
+    MOV R1, sondas_lancadas + 12
+    CMP R0, R1
+    JZ set_sondas_lancadas
+
+
+; **********************************************************************
 ; ESPERA_TECLA - Espera até uma tecla seja premida e lê a coluna e linha
 ;
 ; Retorna: 	R1 - linha da tecla premida

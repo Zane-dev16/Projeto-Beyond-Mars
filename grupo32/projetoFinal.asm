@@ -66,6 +66,7 @@ SOM_PAUSA          EQU 5
 SOM_SEM_ENERGIA    EQU 6
 
 LINHA_TOPO        	EQU 0       ; linha do topo do ecrã
+LINHA_BASE          EQU 32      ; linha da base do ecrã
 COLUNA_ESQ			EQU 0       ; coluna mais à esquerda
 COLUNA_CENT         EQU 32      ; coluna central
 COLUNA_DIR          EQU 63      ; coluna mais à direita
@@ -299,7 +300,7 @@ inicio:
     CALL teclado
 
 preparacao_jogo:
-;    CALL prepara_jogo
+    CALL prepara_jogo
 espera_inicio:
     MOV R1, [tecla_carregada]   ; bloqueia neste LOCK até uma tecla ser carregada
     MOV R2, TECLA_INICIO_JOGO   ;
@@ -419,6 +420,8 @@ pausa_prog_principal:           ; neste ciclo o jogo está em modo pausa
     JZ obtem_tecla              ; volta ao ciclo de funciomento da prog_principal
 
 termina_jogo:
+    ; @Carlos
+
     MOV R1, JOGO_TERMINADO
     MOV [estado_jogo], R1
     MOV [APAGA_AVISO], R1                   ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
@@ -426,14 +429,24 @@ termina_jogo:
     MOV [FUNDO_ECRA], R1         ; coloca imagem de fundo incial
     MOV [APAGA_MSG], R1    ; apaga a mensagem sobreposta, valor de R1 irrelevante
     MOV [APAGA_ECRA], R1                    ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
-    JMP espera_inicio
+    JMP preparacao_jogo
 
 termina_jogo_explosão:
     MOV R1, JOGO_TERMINADO
     MOV [estado_jogo], R1
-    JMP espera_inicio
+    MOV [APAGA_ECRA], R1 ; apaga todos os pixeis do ecrã, R1 irrelevante
+    MOV [APAGA_AVISO], R1                   ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
+    MOV R1, FUNDO_EXPLOSAO
+    MOV [FUNDO_ECRA], R1         ; coloca imagem de fundo incial
+    MOV R1, SOM_EXPLOSAO
+    MOV [REPRODUZ_SOM_VIDEO], R1
+    MOV R1, MSG_EXPLOSAO
+    MOV [MSG], R1
+    JMP preparacao_jogo
 
 sem_energia:
+    ; @Carlos
+
     MOV R1, JOGO_TERMINADO
     MOV [estado_jogo], R1
     MOV [APAGA_AVISO], R1                   ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
@@ -441,7 +454,7 @@ sem_energia:
     MOV [FUNDO_ECRA], R1         ; coloca imagem de fundo incial
     MOV [APAGA_MSG], R1    ; apaga a mensagem sobreposta, valor de R1 irrelevante
     MOV [APAGA_ECRA], R1                    ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
-    JMP espera_inicio
+    JMP preparacao_jogo
 
 ; **********************************************************************
 ; Processo
@@ -572,13 +585,14 @@ altera_modo_sonda:
     MOV R6, [estado_jogo]       ; obtem estado do jogo
     CMP R6, R3                  ; O jogo está em pausa?
     JZ  pausa_sonda             ; se for, pausa
-    RET                         ; se não a tecla premida foi para terminar o jogo
+    JMP sai_sonda               ; se não a tecla premida foi para terminar o jogo
 
 pausa_sonda:
    MOV R6, [pausa_processos]    ; bloqueia neste lock até o jogo continuar
    JMP ciclo_sonda              ; volta ao ciclo, a continuar o jogo
 
 sai_sonda:
+    CALL  apaga_objeto      ; Apaga o objeto em sua posição atual
     MOV R0, 30
     MOV [R7], R0         ; reinicia valor na tabela
     MOV R0, 32
@@ -589,7 +603,7 @@ sai_sonda:
 ; **********************************************************************
 ; Processo
 ;
-; ASTEROIDE - Processo que desenha um asteroide implementa o seu comportamento
+; ASTEROIDE - Processo que desenha um asteroide e implementa o seu comportamento
 ;
 ; **********************************************************************
 
@@ -617,11 +631,13 @@ ciclo_asteroide:
     INC   R1    ; Atualiza o posição do asteroide para a próxima linha
     ADD   R2, R5    ; Atualiza o posição do asteroide para a próxima coluna
 
-	CALL	colisao_asteroide_sonda1
-	CALL	colisao_asteroide_sonda2
-	CALL	colisao_asteroide_sonda3
+	CALL	colisao_asteroide_3_sondas
     CMP R6, 1   ; teve colisão?
-    JZ  sai_asteroide   ; se tiver sai 
+    JZ  asteroide_destruido   ; se tiver sai 
+
+    MOV R7, LINHA_BASE          ; linha base do ecrã
+    CMP R7, R1
+    JZ  sai_asteroide           ; se chegar a ultima linha sai
 
 	JMP	ciclo_asteroide		; esta "rotina" nunca retorna porque nunca termina
 						; Se se quisesse terminar o processo, era deixar o processo chegar a um RET
@@ -638,32 +654,53 @@ pausa_asteroide:
    MOV R0, [pausa_processos]    ; bloqueia neste lock até o jogo continuar
    JMP ciclo_asteroide              ; volta ao ciclo, a continuar o jogo
 
+asteroide_destruido:
+    MOV R0, ASTEROIDE_COM_RECURSOS
+    CMP R4, R0
+    JNZ  sai_asteroide          ; se for um asteroide de perigo salta
+    MOV R0, 25                  ; valor da energia do recurso
+    MOV [evento_display], R0    ; recursos obtidos, adicione 25 a energia
 sai_asteroide:
+    MOV R0, CRIA_ASTEROIDE
+    MOV [tecla_carregada], R0
+    RET
+	
+; **********************************************************************
+; COLISAO_ASTEROIDE_3_SONDAS - deteta colisões entre um asteroide e as sondas
+; Argumentos:	R1 - linha do asteroide
+;               R2 - colunda do asteroide
+;
+; Retorna: 	R6 - igual a 1 se uma colisão for detetada
+; **********************************************************************
+
+colisao_asteroide_3_sondas:
+    PUSH    R0
+    MOV R0, 0
+    CALL colisao_asteroide_sonda
+    MOV R0, 1
+    CALL colisao_asteroide_sonda
+    MOV R0, 2
+    CALL colisao_asteroide_sonda
+    POP R0
     RET
 
 ; **********************************************************************
-; Processos de colisao
+; COLISAO_ASTEROIDE_SONDA - deteta colisão entre um asteroide e uma sonda
+; Argumentos:	R1 - linha do asteroide
+;               R2 - colunda do asteroide
 ;
-; Sonda - Processo que determina a colisao de uma sonda com um asteroide
-;		  Argumentos: R1-linha da Sonda	R2-coluna da sonda
-;
+; Retorna: 	R6 - igual a 1 se uma colisão for detetada
 ; **********************************************************************
-muda_fundo:
-	PUSH R0
-	MOV R0,FUNDO_INICIAL		
-	MOV [FUNDO_ECRA], R0         ; coloca imagem de fundo incial
-	POP R0
-	RET
-	
-	
-colisao_asteroide_sonda1:
+
+colisao_asteroide_sonda:
+    PUSH R3
+    PUSH R4
 	PUSH R5
 	PUSH R7
 	PUSH R8
 	PUSH R9
 	PUSH R10
 	PUSH R11
-	MOV R3,8
 	MOV	R5, R1
 	MOV R7, R2
 	MOV R10,R1
@@ -673,113 +710,36 @@ colisao_asteroide_sonda1:
 	ADD R5,5
 	ADD R7,5
 	MOV R8,sondas_lancadas
-verifica_sonda1:
+verifica_sonda:
+    MOV R3, R0  ; copia numero da sonda
+    MOV R4, 4
+    MUL R3, R4
+	ADD R8, R3
 	MOV R9, [R8]
 	CMP R9, R5
-	JGE final_1
+	JGE final
 	CMP R9, R10
-	JLE final_1
+	JLE final
 	ADD R8, 2
 	MOV R9, [R8]
 	CMP R9, R7
-	JGE final_1
+	JGE final
 	CMP R9, R11
-	JLE final_1
-	CALL muda_fundo
+	JLE final
 	MOV R6,1
-	
-final_1:
+    MOV [evento_sonda], R0
+    MOV R0, CRIA_ASTEROIDE
+final:
 	POP R11
 	POP R10
 	POP R9
 	POP R8
 	POP R7
 	POP R5
+    POP R4
+    POP R3
 	RET
-	
-colisao_asteroide_sonda2:
-	PUSH R5
-	PUSH R7
-	PUSH R8
-	PUSH R9
-	PUSH R10
-	PUSH R11
-	MOV R3,8
-	MOV	R5, R1
-	MOV R7, R2
-	MOV R10,R1
-	MOV R11,R2
-	SUB R10,1
-	SUB R11,1
-	ADD R5,5
-	ADD R7,5
-	MOV R8,sondas_lancadas
-verifica_sonda2:
-	ADD R8, 4
-	MOV R9, [R8]
-	CMP R9, R5
-	JGE final_2
-	CMP R9, R10
-	JLE final_2
-	ADD R8, 2
-	MOV R9, [R8]
-	CMP R9, R7
-	JGE final_2
-	CMP R9, R11
-	JLE final_2
-	CALL muda_fundo
-	MOV R6,1
-final_2:
-	POP R11
-	POP R10
-	POP R9
-	POP R8
-	POP R7
-	POP R5
-	RET
-	
-colisao_asteroide_sonda3:
-	PUSH R3
-	PUSH R5
-	PUSH R7
-	PUSH R8
-	PUSH R9
-	PUSH R10
-	PUSH R11
-	MOV R3,8
-	MOV	R5, R1
-	MOV R7, R2
-	MOV R10,R1
-	MOV R11,R2
-	SUB R10,1
-	SUB R11,1
-	ADD R5,5
-	ADD R7,5
-	MOV R8,sondas_lancadas
-verifica_sonda3:
-	ADD R8,R3
-	MOV R9, [R8]
-	CMP R9, R5
-	JGE final_3
-	CMP R9, R10
-	JLE final_3
-	ADD R8, 2
-	MOV R9, [R8]
-	CMP R9, R7
-	JGE final_3
-	CMP R9, R11
-	JLE final_3
-	CALL muda_fundo
-	MOV R6,1
-final_3:
-	POP R11
-	POP R10
-	POP R9
-	POP R8
-	POP R7
-	POP R5
-	POP R3
-	RET
+
 ; **********************************************************************
 ; COLISAO_PAINEL - verifica se o asteroide colide com o painel
 ;
@@ -833,16 +793,6 @@ termina:
 
 explosao:
     PUSH R1
-    MOV R1, JOGO_TERMINADO
-    MOV [estado_jogo], R1
-    MOV [APAGA_ECRA], R1 ; apaga todos os pixeis do ecrã, R1 irrelevante
-    MOV [APAGA_AVISO], R1                   ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
-    MOV R1, FUNDO_EXPLOSAO
-    MOV [FUNDO_ECRA], R1         ; coloca imagem de fundo incial
-    MOV R1, SOM_EXPLOSAO
-    MOV [REPRODUZ_SOM_VIDEO], R1
-    MOV R1, MSG_EXPLOSAO
-    MOV [MSG], R1
     MOV R1, MODO_EXPLOSAO
     MOV [tecla_carregada], R1
     POP R1
@@ -868,9 +818,9 @@ atualiza_display:
     CMP R0, R1                  ; O modo do jogo alterou?
     JNZ altera_modo_energia      ; Se for, salta
 
-    CALL escreve_display
     CMP R8, 0
-    JZ  energia_esgotada
+    JLE  energia_esgotada
+    CALL escreve_display
     MOV R0, [evento_display]
     ADD R8, R0
     JMP atualiza_display
@@ -888,6 +838,8 @@ pausa_energia:
    JMP atualiza_display              ; volta ao ciclo, a continuar o jogo
 
 energia_esgotada:
+    MOV R8, 0   ; valor da energia igual a 0
+    CALL escreve_display
     MOV R1, MODO_SEM_ENERGIA
     MOV [tecla_carregada], R1
     RET
@@ -924,7 +876,7 @@ prepara_jogo:
     PUSH    R0
     PUSH    R1
 
-    MOV R0, [sondas_lancadas]
+    MOV R0, sondas_lancadas
 set_sondas_lancadas:
     MOV R1, 30
     MOV [R0], R1
@@ -934,7 +886,10 @@ set_sondas_lancadas:
     ADD R0, 2
     MOV R1, sondas_lancadas + 12
     CMP R0, R1
-    JZ set_sondas_lancadas
+    JNZ set_sondas_lancadas
+    POP     R1
+    POP     R0
+    RET
 
 
 ; **********************************************************************

@@ -1,121 +1,121 @@
 ; *********************************************************************
 ; * IST-UL
 ; * Modulo:    grupo32.asm
-; * Descrição: Projeto Intermédia do grupo 32
+; * Descrição: Projeto do grupo 32
 ; *
 ; *********************************************************************
 
 ; **********************************************************************
 ; * Constantes
 ; **********************************************************************
-DISPLAYS            EQU 0A000H  ; endereço dos displays de 7 segmentos (periférico POUT-1)
-TEC_LIN             EQU 0C000H  ; endereço das linhas do teclado (periférico POUT-2)
-TEC_COL             EQU 0E000H  ; endereço das colunas do teclado (periférico PIN)
-LINHA1              EQU 1       ; 1ª linha
-LINHA4              EQU 8       ; 4ª linha
-MASCARA_TECLA       EQU 0FH     ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
-MASCARA_GERADOR_ALEATORIO   EQU 0F0H    ; para isolar os 4 bits do maior peso (pseudo-aleatórias)
+DISPLAYS                    EQU 0A000H          ; endereço dos displays de 7 segmentos (periférico POUT-1)
+TEC_LIN                     EQU 0C000H          ; endereço das linhas do teclado (periférico POUT-2)
+TEC_COL                     EQU 0E000H          ; endereço das colunas do teclado (periférico PIN)
+LINHA1                      EQU 1               ; 1ª linha
+MASCARA_TECLA               EQU 0FH             ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
+MASCARA_GERADOR_ALEATORIO   EQU 0F0H            ; para isolar os 4 bits do maior peso (pseudo-aleatórias)
 
-TECLA_SONDA_ESQ     EQU 0       ; tecla para lancar uma sonda a esquerda (tecla 0)
-TECLA_SONDA_CENT    EQU 1       ; tecla para lancar uma sonda no centro (tecla 1)
-TECLA_SONDA_DIR     EQU 2       ; tecla para lancar uma sonda a direita (tecla 2)
-TECLA_INICIO_JOGO   EQU 12      ; tecla para iniciar o jogo (tecla C)
-TECLA_PAUSA         EQU 13      ; tecla para pausa e continuar o jogo (tecla D)
-TECLA_TERMINA       EQU 14      ; tecla para pausa e continuar o jogo (tecla E)
-TECLA_REINICIA      EQU 12      ; tecla para reiniciar o jogo (tecla F)
-CRIA_ASTEROIDE      EQU 16      ; para criar um asteroide quando um for destruido
-MODO_EXPLOSAO       EQU 17      ; para terminar o jogo com explosão
-MODO_SEM_ENERGIA    EQU 18      ; para terminar o jogo quando energia é esgotada
+TECLA_SONDA_ESQ             EQU 0               ; tecla para lancar uma sonda a esquerda (tecla 0)
+TECLA_SONDA_CENT            EQU 1               ; tecla para lancar uma sonda no centro (tecla 1)
+TECLA_SONDA_DIR             EQU 2               ; tecla para lancar uma sonda a direita (tecla 2)
+TECLA_INICIO_JOGO           EQU 12              ; tecla para iniciar o jogo (tecla C)
+TECLA_PAUSA                 EQU 13              ; tecla para pausa e continuar o jogo (tecla D)
+TECLA_TERMINA               EQU 14              ; tecla para pausa e continuar o jogo (tecla E)
+CRIA_ASTEROIDE              EQU 16              ; para criar um asteroide quando um for destruido
+MODO_EXPLOSAO               EQU 17              ; para terminar o jogo com explosão
+MODO_SEM_ENERGIA            EQU 18              ; para terminar o jogo quando energia é esgotada
 
-INICIO_ENERGIA      EQU 100     ;
-ENERGIA_SONDA       EQU -5      ; corresponde ao gasto da energia pelo disparo de uma sonda
-FATOR_INICIAL       EQU 1000    ;
+INICIO_ENERGIA              EQU 100             ; valor inicial da energia
+ENERGIA_SONDA               EQU -5              ; gasto da energia pelo disparo de uma sonda
+FATOR_INICIAL               EQU 1000            ; fator para obter digitos
 
-COMANDOS				EQU	6000H			; endereço de base dos comandos do MediaCenter
+COMANDOS			        EQU	6000H			; endereço de base dos comandos do MediaCenter
 
-LE_COR_PIXEL				EQU	COMANDOS + 10H		; endereço do comando para ler a cor de um pixel
-ESTADO_PIXEL				EQU	COMANDOS + 14H		; endereço do comando para ler o estado de um pixel (ligado-1, desligado-0)
-DEFINE_LINHA    		    EQU COMANDOS + 0AH		; endereço do comando para definir a linha
-DEFINE_COLUNA   		    EQU COMANDOS + 0CH		; endereço do comando para definir a coluna
-DEFINE_PIXEL    		    EQU COMANDOS + 12H		; endereço do comando para escrever um pixel
-APAGA_AVISO     		    EQU COMANDOS + 40H		; endereço do comando para apagar o aviso de nenhum cenário selecionado
-APAGA_ECRA	 		        EQU COMANDOS + 02H		; endereço do comando para apagar todos os pixels já desenhados
-FUNDO_ECRA                  EQU COMANDOS + 42H		; endereço do comando para selecionar uma imagem de fundo
-MSG                         EQU COMANDOS + 46H      ; endereço do comando para sobrepor uma imagem (mensagem) à imagem de fundo
-APAGA_MSG                   EQU COMANDOS + 44H      ; endereço do comando para apagar a imagem sobreposta
-REPRODUZ_SOM_VIDEO          EQU COMANDOS + 5AH      ; endereço do comando para reproduzir um som ou video
-PARA_SOM_VIDEO              EQU COMANDOS + 68H      ; endereço do comando para para todos os sons e videos
+LE_COR_PIXEL		        EQU	COMANDOS + 10H	; endereço do comando para ler a cor de um pixel
+ESTADO_PIXEL		        EQU	COMANDOS + 14H	; endereço do comando para ler o estado de um pixel (ligado-1, desligado-0)
+DEFINE_LINHA    	        EQU COMANDOS + 0AH	; endereço do comando para definir a linha
+DEFINE_COLUNA   	        EQU COMANDOS + 0CH	; endereço do comando para definir a coluna
+DEFINE_PIXEL    	        EQU COMANDOS + 12H	; endereço do comando para escrever um pixel
+APAGA_AVISO     	        EQU COMANDOS + 40H	; endereço do comando para apagar o aviso de nenhum cenário selecionado
+APAGA_ECRA	 		        EQU COMANDOS + 02H	; endereço do comando para apagar todos os pixels já desenhados
+FUNDO_ECRA                  EQU COMANDOS + 42H	; endereço do comando para selecionar uma imagem de fundo
+MSG                         EQU COMANDOS + 46H  ; endereço do comando para sobrepor uma imagem (mensagem) à imagem de fundo
+APAGA_MSG                   EQU COMANDOS + 44H  ; endereço do comando para apagar a imagem sobreposta
+REPRODUZ_SOM_VIDEO          EQU COMANDOS + 5AH  ; endereço do comando para reproduzir um som ou video
+PARA_SOM_VIDEO              EQU COMANDOS + 68H  ; endereço do comando para para todos os sons e videos
 
-FUNDO_INICIAL       EQU 0
-FUNDO_JOGO          EQU 1
-FUNDO_EXPLOSAO      EQU 2
-FUNDO_ENERGIA       EQU 3
+FUNDO_INICIAL               EQU 0               ; ordem da imagem para o fundo inicial
+FUNDO_JOGO                  EQU 1               ; ordem da imagem para o fundo durante o jogo
+FUNDO_EXPLOSAO              EQU 2               ; ordem da imagem para o fundo quando um asteroide colide com a nave
+FUNDO_ENERGIA               EQU 3               ; ordem da imagem para o fundo quando a nave fica sem energia
+FUNDO_CHEGA                 EQU 4               ; ordem da imagem para o fundo quando o utilizador decide terminar o jogo
 
-MSG_TRANSPARENTE    EQU 4
-MSG_INICIAR         EQU 5
-MSG_PAUSA           EQU 6
-MSG_EXPLOSAO        EQU 7
-MSG_SEM_ENERGIA     EQU 8
+MSG_INICIAR                 EQU 5               ; mensagem a apresentar antes de iniciar o jogo
+MSG_PAUSA                   EQU 6               ; mensagem a apresentar com o jogo em pausa
+MSG_EXPLOSAO                EQU 7               ; mensagem a apresentar quando um asteroide colide com a nave
+MSG_SEM_ENERGIA             EQU 8               ; mensagem a apresentar quando a nave fica sem energia
+MSG_CHEGA                  EQU 9               ; mensagem a apresentar quando o utilizador decide terminar o jogo
 
-SOM_INICIO         EQU 0
-SOM_DISPARO        EQU 1
-SOM_AST_DESTRUIDO  EQU 2
-SOM_AST_MINERADO   EQU 3
-SOM_EXPLOSAO       EQU 4
-SOM_PAUSA          EQU 5
-SOM_SEM_ENERGIA    EQU 6
+SOM_INICIO                  EQU 0               ; som quando o jogo é iniciado
+SOM_DISPARO                 EQU 1               ; som quando uma sonda é disparada
+SOM_AST_DESTRUIDO           EQU 2               ; som quando um asteroide é destruido
+SOM_AST_MINERADO            EQU 3               ; som quando um asteroide é minerado
+SOM_EXPLOSAO                EQU 4               ; som quando um asteroide colide com a nave
+SOM_PAUSA                   EQU 5               ; som duranto a pausa do jogo
+SOM_SEM_ENERGIA             EQU 6               ; som quando a nave fica sem energia
+SOM_CHEGA                   EQU 7               ; som quando o utilizador decide terminar o jogo
 
-LINHA_TOPO        	EQU 0       ; linha do topo do ecrã
-LINHA_BASE          EQU 32      ; linha da base do ecrã
-COLUNA_ESQ			EQU 0       ; coluna mais à esquerda
-COLUNA_CENT         EQU 32      ; coluna central
-COLUNA_DIR          EQU 63      ; coluna mais à direita
+LINHA_TOPO        	        EQU 0               ; linha do topo do ecrã
+LINHA_BASE                  EQU 32              ; linha da base do ecrã
+COLUNA_ESQ			        EQU 0               ; coluna mais à esquerda
+COLUNA_CENT                 EQU 32              ; coluna central
+COLUNA_DIR                  EQU 63              ; coluna mais à direita
 
-LINHA_PAINEL        EQU 27      ; linha do painel da nave
-COLUNA_PAINEL       EQU 25      ; coluna do painel da nave
+LINHA_PAINEL                EQU 27              ; linha do painel da nave
+COLUNA_PAINEL               EQU 25              ; coluna do painel da nave
 
-LINHA_CIMA_PAINEL	EQU 26		 ; linha acima do painel
+LINHA_CIMA_PAINEL	        EQU 26		        ; linha acima do painel
 
-DIRECAO_ESQ         EQU -1      ; para mover um objeto a esquerda
-DIRECAO_CENT        EQU 0       ; para mover um objeto verticalmente
-DIRECAO_DIR         EQU 1       ; para mover um objeto a direita
+DIRECAO_ESQ                 EQU -1              ; para mover um objeto a esquerda
+DIRECAO_CENT                EQU 0               ; para mover um objeto verticalmente
+DIRECAO_DIR                 EQU 1               ; para mover um objeto a direita
 
-COLUNA_SONDA_ESQ    EQU 26      ; coluna inicial de uma sonda a esquerda
-COLUNA_SONDA_DIR    EQU 38      ; coluna inicial de uma sonda a direita
+COLUNA_SONDA_ESQ            EQU 26              ; coluna inicial de uma sonda a esquerda
+COLUNA_SONDA_DIR            EQU 38              ; coluna inicial de uma sonda a direita
 
-LARGURA_SONDA       EQU 1        ; largura das sondas
-ALTURA_SONDA        EQU 1        ; altura das sondas
+LARGURA_SONDA               EQU 1               ; largura das sondas
+ALTURA_SONDA                EQU 1               ; altura das sondas
 
-LARGURA_AST			EQU	5		; largura do asteroide
-ALTURA_AST          EQU 5       ; altura do asteroide 
+LARGURA_AST			        EQU	5		        ; largura do asteroide
+ALTURA_AST                  EQU 5               ; altura do asteroide 
 
-LARGURA_PAINEL      EQU 15      ; largura do painel da nave
-ALTURA_PAINEL       EQU 5       ; altura do painel da nave
+LARGURA_PAINEL              EQU 15              ; largura do painel da nave
+ALTURA_PAINEL               EQU 5               ; altura do painel da nave
 
-LARGURA_LUZES       EQU 11      ; largura dos luzes do painel
-ALTURA_LUZES        EQU 2       ; altura dos luzes do painel
+LARGURA_LUZES               EQU 11              ; largura dos luzes do painel
+ALTURA_LUZES                EQU 2               ; altura dos luzes do painel
 
-PROX_ANIM_PAINEL    EQU 48      ; para obter os pixels do proximo animação do painel      
+PROX_ANIM_PAINEL            EQU 48              ; para obter os pixels do proximo animação do painel      
 
-PIXEL_VERM		    EQU	0FF00H	; pixel vermelho opaco
-PIXEL_VERM_TRANS    EQU	0FF00H	; pixel vermelho translucido
-PIXEL_VERD          EQU 0F0F0H  ; pixel verde opaco 
-PIXEL_VERD_TRANS    EQU 0F0F0H  ; pixel verde translucido 
-PIXEL_AZUL          EQU 0F0BFH  ; pixel azul opaco 
-PIXEL_VIOLETA       EQU 0FA3CH  ; pixel violeta opaco 
-PIXEL_AMAR          EQU 0FFF0H  ; pixel opaco amarelo
-PIXEL_CAST          EQU 0F850H  ; pixel opaco castanho
-PIXEL_AMAR_TRANS    EQU 05FF0H  ; pixel amarelo translucido 
-PIXEL_CINZ_ESC      EQU 0F777H  ; pixel cinzento escuro opaco 
-PIXEL_CINZ_CLA      EQU 0FFFFH  ; pixel cinzento claro opaco 
+PIXEL_VERM		            EQU	0FF00H	        ; pixel vermelho opaco
+PIXEL_VERM_TRANS            EQU	0FF00H	        ; pixel vermelho translucido
+PIXEL_VERD                  EQU 0F0F0H          ; pixel verde opaco 
+PIXEL_VERD_TRANS            EQU 0F0F0H          ; pixel verde translucido 
+PIXEL_AZUL                  EQU 0F0BFH          ; pixel azul opaco 
+PIXEL_VIOLETA               EQU 0FA3CH          ; pixel violeta opaco 
+PIXEL_AMAR                  EQU 0FFF0H          ; pixel opaco amarelo
+PIXEL_CAST                  EQU 0F850H          ; pixel opaco castanho
+PIXEL_AMAR_TRANS            EQU 05FF0H          ; pixel amarelo translucido 
+PIXEL_CINZ_ESC              EQU 0F777H          ; pixel cinzento escuro opaco 
+PIXEL_CINZ_CLA              EQU 0FFFFH          ; pixel cinzento claro opaco 
 
-TAMANHO_PILHA		EQU 100H    ; tamanho de cada pilha, em words
-N_ASTEROIDES        EQU 4       ; nº de asteroides em simultaneo
-N_SONDA             EQU 3       ; nº de sondas em simultaneo
+TAMANHO_PILHA		        EQU 100H            ; tamanho de cada pilha, em words
+N_ASTEROIDES                EQU 4               ; nº de asteroides em simultaneo
+N_SONDA                     EQU 3               ; nº de sondas em simultaneo
 
-JOGO_INICIADO       EQU 1       ; jogo iniciado
-JOGO_PAUSA          EQU 0       ; jogo em pausa
-JOGO_TERMINADO      EQU 2      ; jogo terminado
+JOGO_INICIADO               EQU 1               ; jogo iniciado
+JOGO_PAUSA                  EQU 0               ; jogo em pausa
+JOGO_TERMINADO              EQU 2               ; jogo terminado
 
 ; *********************************************************************************
 ; * Dados 
@@ -350,7 +350,7 @@ obtem_tecla:
 
     MOV R2, MODO_EXPLOSAO
     CMP R1, R2
-    JZ  termina_jogo_explosão
+    JZ  termina_jogo_explosao
 
     MOV R2, MODO_SEM_ENERGIA
     CMP R1, R2
@@ -414,24 +414,28 @@ pausa_prog_principal:           ; neste ciclo o jogo está em modo pausa
     CMP R1, R2                  ; verifica se a tecla premida foi o D
     JNZ pausa_prog_principal    ; repete o ciclo
     MOV [APAGA_MSG], R1
+    MOV R1, FUNDO_JOGO
+    MOV [FUNDO_ECRA], R1
     MOV R1, JOGO_INICIADO
     MOV [estado_jogo], R1       ; volta ao estado jogo iniciado
     MOV [pausa_processos], R1   ; desbloqueia os processos
     JZ obtem_tecla              ; volta ao ciclo de funciomento da prog_principal
 
 termina_jogo:
-    ; @Carlos
-
     MOV R1, JOGO_TERMINADO
     MOV [estado_jogo], R1
     MOV [APAGA_AVISO], R1                   ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
-    MOV R1, FUNDO_INICIAL
+    MOV R1, FUNDO_CHEGA
     MOV [FUNDO_ECRA], R1         ; coloca imagem de fundo incial
+    MOV R1, MSG_CHEGA
+    MOV [MSG], R1
+    MOV R1, SOM_CHEGA
+    MOV [REPRODUZ_SOM_VIDEO], R1
     MOV [APAGA_MSG], R1    ; apaga a mensagem sobreposta, valor de R1 irrelevante
     MOV [APAGA_ECRA], R1                    ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
     JMP preparacao_jogo
 
-termina_jogo_explosão:
+termina_jogo_explosao:
     MOV R1, JOGO_TERMINADO
     MOV [estado_jogo], R1
     MOV [APAGA_ECRA], R1 ; apaga todos os pixeis do ecrã, R1 irrelevante
@@ -445,15 +449,17 @@ termina_jogo_explosão:
     JMP preparacao_jogo
 
 sem_energia:
-    ; @Carlos
-
     MOV R1, JOGO_TERMINADO
     MOV [estado_jogo], R1
     MOV [APAGA_AVISO], R1                   ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
-    MOV R1, FUNDO_INICIAL
+    MOV R1, FUNDO_ENERGIA
     MOV [FUNDO_ECRA], R1         ; coloca imagem de fundo incial
     MOV [APAGA_MSG], R1    ; apaga a mensagem sobreposta, valor de R1 irrelevante
     MOV [APAGA_ECRA], R1                    ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
+    MOV R1, SOM_SEM_ENERGIA
+    MOV [REPRODUZ_SOM_VIDEO], R1
+    MOV R1, MSG_SEM_ENERGIA
+    MOV [MSG], R1
     JMP preparacao_jogo
 
 ; **********************************************************************

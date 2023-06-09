@@ -684,7 +684,7 @@ pausa_asteroide:
 asteroide_destruido:
     MOV R0, ASTEROIDE_PERIGO
     CMP R4, R0
-    JNZ  destroi_asteroide          ; se for um asteroide de perigo salta
+    JNZ  destroi_asteroide          ; se for um asteroide de recursos salta
     MOV R4, SOM_AST_DESTRUIDO
     MOV [PARA_SOM_VIDEO], R4
     MOV [REPRODUZ_SOM_VIDEO], R4

@@ -21,13 +21,17 @@ TECLA_SONDA_DIR             EQU 2               ; tecla para lancar uma sonda a 
 TECLA_INICIO_JOGO           EQU 12              ; tecla para iniciar o jogo (tecla C)
 TECLA_PAUSA                 EQU 13              ; tecla para pausa e continuar o jogo (tecla D)
 TECLA_TERMINA               EQU 14              ; tecla para pausa e continuar o jogo (tecla E)
-MODO_SEM_ENERGIA            EQU 16              ; para terminar o jogo quando energia é esgotada
-MODO_EXPLOSAO               EQU 17              ; para terminar o jogo com explosão
-CRIA_ASTEROIDE              EQU 18              ; para criar um asteroide quando um for destruido
+MODO_SEM_ENERGIA            EQU 15              ; para terminar o jogo quando energia é esgotada
+MODO_EXPLOSAO               EQU 16              ; para terminar o jogo com explosão
+CRIA_ASTEROIDE              EQU 17              ; para criar um asteroide quando um for destruido
+
+JOGO_INICIADO               EQU 1               ; jogo iniciado
+JOGO_PAUSA                  EQU 0               ; jogo em pausa
+JOGO_TERMINADO              EQU 2               ; jogo terminado
 
 INICIO_ENERGIA              EQU 100             ; valor inicial da energia
 ENERGIA_SONDA               EQU -5              ; gasto da energia pelo disparo de uma sonda
-FATOR_INICIAL               EQU 1000            ; fator para obter digitos
+FATOR_INICIAL               EQU 1000            ; fator para obter digitos para colocar no display
 
 COMANDOS			        EQU	6000H			; endereço de base dos comandos do MediaCenter
 
@@ -48,13 +52,13 @@ FUNDO_INICIAL               EQU 0               ; ordem da imagem para o fundo i
 FUNDO_JOGO                  EQU 1               ; ordem da imagem para o fundo durante o jogo
 FUNDO_EXPLOSAO              EQU 2               ; ordem da imagem para o fundo quando um asteroide colide com a nave
 FUNDO_ENERGIA               EQU 3               ; ordem da imagem para o fundo quando a nave fica sem energia
-FUNDO_CHEGA                 EQU 4               ; ordem da imagem para o fundo quando o utilizador decide terminar o jogo
+FUNDO_TERMINA                 EQU 4               ; ordem da imagem para o fundo quando o utilizador decide terminar o jogo
 
 MSG_INICIAR                 EQU 5               ; mensagem a apresentar antes de iniciar o jogo
 MSG_PAUSA                   EQU 6               ; mensagem a apresentar com o jogo em pausa
 MSG_EXPLOSAO                EQU 7               ; mensagem a apresentar quando um asteroide colide com a nave
 MSG_SEM_ENERGIA             EQU 8               ; mensagem a apresentar quando a nave fica sem energia
-MSG_CHEGA                   EQU 9               ; mensagem a apresentar quando o utilizador decide terminar o jogo
+MSG_TERMINA                   EQU 9               ; mensagem a apresentar quando o utilizador decide terminar o jogo
 
 SOM_INICIO                  EQU 0               ; som quando o jogo é iniciado
 SOM_DISPARO                 EQU 1               ; som quando uma sonda é disparada
@@ -63,7 +67,7 @@ SOM_AST_MINERADO            EQU 3               ; som quando um asteroide é min
 SOM_EXPLOSAO                EQU 4               ; som quando um asteroide colide com a nave
 SOM_PAUSA                   EQU 5               ; som duranto a pausa do jogo
 SOM_SEM_ENERGIA             EQU 6               ; som quando a nave fica sem energia
-SOM_CHEGA                   EQU 7               ; som quando o utilizador decide terminar o jogo
+SOM_TERMINA                 EQU 7               ; som quando o utilizador decide terminar o jogo
 
 LINHA_TOPO        	        EQU 0               ; linha do topo do ecrã
 LINHA_BASE                  EQU 32              ; linha da base do ecrã
@@ -72,16 +76,15 @@ COLUNA_CENT                 EQU 32              ; coluna central
 COLUNA_DIR                  EQU 63              ; coluna mais à direita
 
 LINHA_PAINEL                EQU 27              ; linha do painel da nave
+LINHA_CIMA_PAINEL	        EQU 26		        ; linha acima do painel
 COLUNA_PAINEL               EQU 25              ; coluna do painel da nave
 
-LINHA_CIMA_PAINEL	        EQU 26		        ; linha acima do painel
+COLUNA_SONDA_ESQ            EQU 26              ; coluna inicial de uma sonda a esquerda
+COLUNA_SONDA_DIR            EQU 38              ; coluna inicial de uma sonda a direita
 
 DIRECAO_ESQ                 EQU -1              ; para mover um objeto a esquerda
 DIRECAO_CENT                EQU 0               ; para mover um objeto verticalmente
 DIRECAO_DIR                 EQU 1               ; para mover um objeto a direita
-
-COLUNA_SONDA_ESQ            EQU 26              ; coluna inicial de uma sonda a esquerda
-COLUNA_SONDA_DIR            EQU 38              ; coluna inicial de uma sonda a direita
 
 LARGURA_SONDA               EQU 1               ; largura das sondas
 ALTURA_SONDA                EQU 1               ; altura das sondas
@@ -109,13 +112,9 @@ PIXEL_AMAR_TRANS            EQU 05FF0H          ; pixel amarelo translucido
 PIXEL_CINZ_ESC              EQU 0F777H          ; pixel cinzento escuro opaco 
 PIXEL_CINZ_CLA              EQU 0FFFFH          ; pixel cinzento claro opaco 
 
-TAMANHO_PILHA		        EQU 100H            ; tamanho de cada pilha, em words
 N_ASTEROIDES                EQU 4               ; nº de asteroides em simultaneo
 N_SONDA                     EQU 3               ; nº de sondas em simultaneo
-
-JOGO_INICIADO               EQU 1               ; jogo iniciado
-JOGO_PAUSA                  EQU 0               ; jogo em pausa
-JOGO_TERMINADO              EQU 2               ; jogo terminado
+TAMANHO_PILHA		        EQU 100H            ; tamanho de cada pilha, em words
 
 ; *********************************************************************************
 ; * Dados 
@@ -178,7 +177,6 @@ ASTEROIDE_MINADO_2:	; tabela que define o asteroide com recursos (cor, largura, 
     WORD		0, 0, 0, 0, 0
     WORD		0, 0, 0, 0, 0 
 
-
 EXPLOSAO_ASTEROIDE:				; tabela que define os recursos (cor, largura, pixels, altura)
 	WORD		LARGURA_AST
     WORD        ALTURA_AST
@@ -202,99 +200,89 @@ ANIMACAO_PAINEL_1:
     WORD        ALTURA_LUZES
     WORD		PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_VERD, PIXEL_CINZ_CLA, PIXEL_CAST, PIXEL_CINZ_CLA, PIXEL_VERM
     WORD		PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_CAST, PIXEL_CINZ_CLA, PIXEL_VERD, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_VERM
-
 ANIMACAO_PAINEL_2:
 	WORD		LARGURA_LUZES
     WORD        ALTURA_LUZES
     WORD		PIXEL_VERD_TRANS, PIXEL_CINZ_CLA, PIXEL_AMAR_TRANS, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_AMAR_TRANS, PIXEL_CINZ_CLA, PIXEL_VERM_TRANS
     WORD		PIXEL_VERD, PIXEL_CINZ_CLA, PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_VERM
-
 ANIMACAO_PAINEL_3:
 	WORD		LARGURA_LUZES
     WORD        ALTURA_LUZES
     WORD		PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_VERD, PIXEL_CINZ_CLA, PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_CAST, PIXEL_CINZ_CLA, PIXEL_VERM, PIXEL_CINZ_CLA, PIXEL_AMAR
     WORD		PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_VERD_TRANS, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_AMAR_TRANS, PIXEL_CINZ_CLA, PIXEL_CAST, PIXEL_CINZ_CLA, PIXEL_AMAR_TRANS
-
 ANIMACAO_PAINEL_4:
 	WORD		LARGURA_LUZES
     WORD        ALTURA_LUZES
     WORD		PIXEL_CAST, PIXEL_CINZ_CLA, PIXEL_VERM, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_VERM_TRANS, PIXEL_CINZ_CLA, PIXEL_VERM, PIXEL_CINZ_CLA, PIXEL_AZUL
     WORD		PIXEL_VERD, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_AMAR_TRANS, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_CAST, PIXEL_CINZ_CLA, PIXEL_VIOLETA
-
 ANIMACAO_PAINEL_5:
 	WORD		LARGURA_LUZES
     WORD        ALTURA_LUZES
     WORD		PIXEL_VERD, PIXEL_CINZ_CLA, PIXEL_VERD_TRANS, PIXEL_CINZ_CLA, PIXEL_CAST, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_VERM, PIXEL_CINZ_CLA, PIXEL_CAST
     WORD		PIXEL_VERM, PIXEL_CINZ_CLA, PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_AMAR_TRANS, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_VERD, PIXEL_CINZ_CLA, PIXEL_AZUL
-
 ANIMACAO_PAINEL_6:
 	WORD		LARGURA_LUZES
     WORD        ALTURA_LUZES
     WORD		PIXEL_VERM, PIXEL_CINZ_CLA, PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_VERD
     WORD		PIXEL_VERM_TRANS, PIXEL_CINZ_CLA, PIXEL_AMAR_TRANS, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_AMAR_TRANS, PIXEL_CINZ_CLA, PIXEL_VERD_TRANS
-
 ANIMACAO_PAINEL_7:
 	WORD		LARGURA_LUZES
     WORD        ALTURA_LUZES
     WORD		PIXEL_VERD, PIXEL_CINZ_CLA, PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_VERM
     WORD		PIXEL_VERD_TRANS, PIXEL_CINZ_CLA, PIXEL_AMAR_TRANS, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_AMAR_TRANS, PIXEL_CINZ_CLA, PIXEL_VERM_TRANS
-
 ANIMACAO_PAINEL_8:
 	WORD		LARGURA_LUZES
     WORD        ALTURA_LUZES
     WORD		PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_CAST, PIXEL_CINZ_CLA, PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_VIOLETA, PIXEL_CINZ_CLA, PIXEL_VERD, PIXEL_CINZ_CLA, PIXEL_VERM
     WORD		PIXEL_AZUL, PIXEL_CINZ_CLA, PIXEL_AMAR_TRANS, PIXEL_CINZ_CLA, PIXEL_AMAR, PIXEL_CINZ_CLA, PIXEL_CAST, PIXEL_CINZ_CLA, PIXEL_VERM_TRANS, PIXEL_CINZ_CLA, PIXEL_VERD_TRANS
 
-
-
 SONDA:                   ; tabela que define a sonda (cor, pixels)
     WORD    LARGURA_SONDA
     WORD    ALTURA_SONDA
     WORD    PIXEL_CAST
 
-sondas_lancadas:
+sondas_lancadas:     ; guarda as coordenadas das três sondas
     WORD    30, 32   ; coordenadas da primeira sonda
     WORD    30, 32   ; coordenadas da segunda sonda
     WORD    30, 32   ; coordenadas da terceira sonda
 
-asteroides_em_falta:    ; número de asteroides em falta
+asteroides_em_falta:    ; número de asteroides em falta (4 - número de asteroides no ecrã)
     WORD    0
 
-posicao_asteroide:       ; posição do asteroide
-    WORD    LINHA_TOPO
-    WORD    COLUNA_ESQ
-
+estado_jogo:          ; guarda o estado do jogo (inicia, pausa, termina)
+    WORD 0
 
 ; Tabela das rotinas de interrupção
 tab:
 	WORD rot_int_0			; rotina de atendimento da interrupção 0
+                            ; controla temporização dos asteroides
+
 	WORD rot_int_1			; rotina de atendimento da interrupção 1
+                            ; controla temporização das sondas
+
 	WORD rot_int_2			; rotina de atendimento da interrupção 2
+                            ; controla temporização dos energia
+
 	WORD rot_int_3			; rotina de atendimento da interrupção 3
+                            ; controla temporização do painel
 
 evento_asteroide:		; LOCKs que controla a temporização do movimento do asteroide
-	LOCK 0				; LOCK para a rotina de interrupção 0
+	LOCK 0				; LOCK corresponde a rotina de interrupção 0
 
 evento_sonda:			; LOCK que controla a temporização do movimento da sonda
-	LOCK 0				; LOCK para a rotina de interrupção 1
+	LOCK 0				; LOCK corresponde a rotina de interrupção 1
 
 evento_display:			; LOCK que controla a temporização do display
-	LOCK 0				; LOCK para a rotina de interrupção 2
+	LOCK 0				; LOCK corresponde a rotina de interrupção 2
 
 evento_painel:			; LOCK que controla a temporização do animação do painel
-	LOCK 0				; LOCK para a rotina de interrupção 3
+	LOCK 0				; LOCK corresponde a rotina de interrupção 3
 
-tecla_carregada:
-    LOCK 0              ; LOCK para o teclado comunicar aos restantes processos que coluna detetou
+evento_prog_principal:
+    LOCK 0              ; LOCK para comunicar a programa principal teclas carregadas e colisões
 
-pausa_processos:        ; LOCK para pausar os processos quando o jogo está em pausa
+pausa_processos:        ; LOCK para bloquear os processos quando o jogo está em pausa
 	LOCK 0
-
-momento_jogo:            ; controlar se o jogo já foi iniciado
-    WORD 0
-
-estado_jogo:          ; LOCK para o teclado comunicar aos restantes processos o estado do jogo
-    WORD 0
 
 
 ; *********************************************************************************
@@ -303,14 +291,14 @@ estado_jogo:          ; LOCK para o teclado comunicar aos restantes processos o 
 PLACE      0
 inicio:
 	MOV  SP, SP_inicial_prog_princ		; inicializa SP do programa principal
-
 	MOV  BTE, tab			; inicializa BTE (registo de Base da Tabela de Exceções)
-    MOV [APAGA_AVISO], R1                   ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
-    MOV [APAGA_ECRA], R1                    ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
+
+    MOV [APAGA_AVISO], R1       ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
+    MOV [APAGA_ECRA], R1        ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
     MOV R1, FUNDO_INICIAL
-    MOV [FUNDO_ECRA], R1         ; coloca imagem de fundo incial
+    MOV [FUNDO_ECRA], R1        ; coloca imagem de fundo incial
     MOV R1, MSG_INICIAR
-    MOV [MSG], R1    ; sobrepõe letras sobre a imagem inicial
+    MOV [MSG], R1               ; sobrepõe texto inicial sobre a imagem inicial
 
     EI0                 ; permite interrupções 0
     EI1                 ; permite interrupções 1
@@ -318,68 +306,68 @@ inicio:
     EI3                 ; permite interrupções 3
 	EI					; permite interrupções (geral)
 
-	; cria processos.
-    CALL teclado
+    CALL teclado        ; cria processo teclado para detetar teclas carregadas
 
 preparacao_jogo:
-    CALL prepara_jogo
-espera_inicio:
-    MOV R1, [tecla_carregada]   ; bloqueia neste LOCK até uma tecla ser carregada
-    MOV R2, TECLA_INICIO_JOGO   ;
-    CMP R1, R2                  ; verifica se a tecla premida foi o C
-    JNZ espera_inicio       ; se a tecla premida não for C repete ciclo
-    
+    CALL prepara_jogo   ; reinicia valores da memoria (serve para quando o jogo é reiniciado)
+
+espera_inicio:  ; este ciclo espera até a tecla C seja carregada para iniciar o jogo
+    MOV R1, [evento_prog_principal]     ; bloqueia neste LOCK até uma tecla ser carregada
+    MOV R2, TECLA_INICIO_JOGO           ; tecla para iniciar o jogo (tecla C)
+    CMP R1, R2                          ; verifica se a tecla premida foi o C
+    JNZ espera_inicio                   ; se a tecla premida não for C repete ciclo
+
 inicia_jogo:
-    MOV R1, SOM_INICIO
-    MOV [PARA_SOM_VIDEO], R1
-    MOV [REPRODUZ_SOM_VIDEO], R1
-    MOV R1, JOGO_INICIADO
-    MOV [estado_jogo], R1
-    MOV R1, FUNDO_JOGO
-    MOV [FUNDO_ECRA], R1        ; coloca imagem de fundo para durante o jogo
-    MOV [APAGA_MSG], R1    ; apaga as letras de inicio de jogo
+    MOV R1, SOM_INICIO                  ; som do inicio do jogo
+    MOV [PARA_SOM_VIDEO], R1            ; para som corrente
+    MOV [REPRODUZ_SOM_VIDEO], R1        ; toca som do inicio
+    MOV R1, JOGO_INICIADO               ; estado do jogo inicio
+    MOV [estado_jogo], R1               ; atualiza estado do jogo
+    MOV R1, FUNDO_JOGO                  ; imagem de fundo do jogo
+    MOV [FUNDO_ECRA], R1                ; coloca imagem de fundo para durante o jogo
+    MOV [APAGA_MSG], R1                 ; apaga as letras de inicio de jogo
 
 	; cria processos.
-    CALL painel
-    CALL energia
-    CALL inicia_asteroides
+    CALL painel                 ; cria o processo painel
+    CALL energia                ; cria o processo energia
+    CALL inicia_asteroides      ; rotina que cria os processos para os 4 asteroides
 
 obtem_tecla:
-    MOV R1, [tecla_carregada]   ; bloqueia neste LOCK até uma tecla ser carregada
+    MOV R1, [evento_prog_principal]   ; bloqueia neste LOCK até uma tecla ser carregada
 
-    MOV R2, TECLA_SONDA_ESQ    ; tecla para lancar uma sonda no centro (tecla 0)
-    CMP R1, R2                  ; tecla para lancar uma sonda a esquerda (tecla 0)
-    JZ sonda_esq               ; verifica se a tecla premida foi o 0
+    MOV R2, TECLA_SONDA_ESQ     ; tecla para lancar uma sonda a esquerda (tecla 0)
+    CMP R1, R2                  ; a tecla carregada foi para lancar uma sonda a esquerda?
+    JZ sonda_esq                ; se a tecla for, salta
 
     MOV R2, TECLA_SONDA_CENT    ; tecla para lancar uma sonda no centro (tecla 1)
-    CMP R1, R2                  ; verifica se a tecla premida foi o 1
-    JZ sonda_cent
+    CMP R1, R2                  ; a tecla carregada foi para lancar uma sonda no centro?
+    JZ sonda_cent               ; se a tecla for, salta
 
     MOV R2, TECLA_SONDA_DIR     ; tecla para lancar uma sonda a direita (tecla 2)
-    CMP R1, R2                  ; verifica se a tecla premida foi o 2
-    JZ sonda_dir
+    CMP R1, R2                  ; a tecla carregada foi para lancar uma sonda a direita"
+    JZ sonda_dir                ; se a tecla for, salta
 
-    MOV R2, TECLA_PAUSA        ; tecla para pausa e continuar o jogo
-    CMP R1, R2                 ; verifica se a tecla premida foi o D
-    JZ suspende_jogo
+    MOV R2, TECLA_PAUSA         ; tecla para pausa e continuar o jogo (tecla D)
+    CMP R1, R2                  ; a tecla carregada foi para pausar/continuar o jogo?
+    JZ suspende_jogo            ; se a tecla for, salta
 
-    MOV R2, TECLA_TERMINA
-    CMP R1, R2                   ; verifica se a tecla premida foi o E
+    MOV R2, TECLA_TERMINA       ; tecla para terminar o jogo (tecla E)
+    CMP R1, R2                  ; a tecla carregada foi para terminar o jogo?
     JZ termina_jogo
 
-    MOV R2, CRIA_ASTEROIDE
-    CMP R1, R2
-    JZ  cria_asteroides
+    MOV R2, CRIA_ASTEROIDE      ; modo para criar uma nova asteroide
+    CMP R1, R2                  ; falta asteroides no ecrã?
+    JZ  cria_asteroides         ; se faltar, salta
 
-    MOV R2, MODO_EXPLOSAO
-    CMP R1, R2
-    JZ  termina_jogo_explosao
+    MOV R2, MODO_EXPLOSAO       ; modo quando um asteroide colidir com a nave
+    CMP R1, R2                  ; um asteroide colidiu com a nave
+    JZ  termina_jogo_explosao   ; se colidir, salta
 
-    MOV R2, MODO_SEM_ENERGIA
-    CMP R1, R2
-    JZ  sem_energia
+    MOV R2, MODO_SEM_ENERGIA    ; modo quando a nave fica sem energia
+    CMP R1, R2                  ; a nave está sem energia?
+    JZ  sem_energia             ; se estiver, salta
 
-    JMP obtem_tecla             ; se a tecla premida não foi nenhuma das anteriores ignora a tecla
+    JMP obtem_tecla             ; se a tecla premida não foi nenhuma das anteriores repete o ciclo
 
 sonda_esq:
     MOV R1, [sondas_lancadas]
@@ -438,7 +426,7 @@ suspende_jogo:
 
 pausa_prog_principal:           ; neste ciclo o jogo está em modo pausa
                                 ; e apenas sai quando a tecla D for premida
-    MOV R1, [tecla_carregada]   ; bloqueia neste LOCK até uma tecla ser carregada
+    MOV R1, [evento_prog_principal]   ; bloqueia neste LOCK até uma tecla ser carregada
     MOV R2, TECLA_PAUSA         ; tecla para pausa e continuar o jogo
     MOV R3, TECLA_TERMINA
     CMP R1, R3
@@ -459,11 +447,11 @@ termina_jogo:
     MOV [pausa_processos], R1   ; termina os processos se estiverem em pausa
     MOV [estado_jogo], R1       ; termina os processos se não estiverem em pausa
     MOV [APAGA_AVISO], R1                   ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
-    MOV R1, FUNDO_CHEGA
+    MOV R1, FUNDO_TERMINA
     MOV [FUNDO_ECRA], R1         ; coloca imagem de fundo incial
-    MOV R1, MSG_CHEGA
+    MOV R1, MSG_TERMINA
     MOV [MSG], R1
-    MOV R1, SOM_CHEGA
+    MOV R1, SOM_TERMINA
     MOV [PARA_SOM_VIDEO], R1
     MOV [REPRODUZ_SOM_VIDEO], R1
     MOV [APAGA_ECRA], R1                    ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
@@ -732,7 +720,7 @@ sai_asteroide:
     INC R0                          ; incrementa número de asteroides em falta
     MOV [asteroides_em_falta], R0   ; colocar de novo no endereço
     MOV R0, CRIA_ASTEROIDE
-    MOV [tecla_carregada], R0
+    MOV [evento_prog_principal], R0
     RET
 
 mina_asteroide_1:
@@ -893,7 +881,7 @@ termina:
 explosao:
     PUSH R1
     MOV R1, MODO_EXPLOSAO
-    MOV [tecla_carregada], R1
+    MOV [evento_prog_principal], R1
     POP R1
     RET
 
@@ -940,7 +928,7 @@ energia_esgotada:
     MOV R8, 0   ; valor da energia igual a 0
     CALL escreve_display
     MOV R1, MODO_SEM_ENERGIA
-    MOV [tecla_carregada], R1
+    MOV [evento_prog_principal], R1
     RET
 
 ; **********************************************************************
@@ -961,7 +949,7 @@ ha_tecla:					; neste ciclo espera-se até NENHUMA tecla estar premida
 						; ter um ponto de fuga (aqui pode comutar para outro processo)
 
     CALL calcula_tecla
-	MOV	[tecla_carregada], R2	; guarda a coluna carregada
+	MOV	[evento_prog_principal], R2	; guarda a coluna carregada
     CALL espera_libertar_tecla
 
 	JMP	teclado		; esta "rotina" nunca retorna porque nunca termina
@@ -1413,7 +1401,7 @@ cria_asteroide_esq:
     PUSH    R2
     PUSH    R5
     MOV R2, COLUNA_ESQ
-    MOV R5, 1
+    MOV R5, DIRECAO_ESQ
     CALL asteroide
     POP    R5
     POP    R2
@@ -1428,7 +1416,7 @@ cria_asteroide_dir:
     PUSH    R2
     PUSH    R5
     MOV R2, COLUNA_DIR - 4
-    MOV R5, -1
+    MOV R5, DIRECAO_DIR
     CALL asteroide
     POP    R5
     POP    R2
@@ -1443,7 +1431,7 @@ cria_asteroide_cent_esq:
     PUSH    R2
     PUSH    R5
     MOV R2, COLUNA_CENT - 2
-    MOV R5, -1
+    MOV R5, DIRECAO_ESQ
     CALL asteroide
     POP    R5
     POP    R2
@@ -1458,7 +1446,7 @@ cria_asteroide_cent_cent:
     PUSH    R2
     PUSH    R5
     MOV R2, COLUNA_CENT - 2
-    MOV R5, 0
+    MOV R5, DIRECAO_CENT
     CALL asteroide
     POP    R5
     POP    R2
@@ -1473,7 +1461,7 @@ cria_asteroide_cent_dir:
     PUSH    R2
     PUSH    R5
     MOV R2, COLUNA_CENT - 2
-    MOV R5, 1
+    MOV R5, DIRECAO_DIR
     CALL asteroide
     POP    R5
     POP    R2

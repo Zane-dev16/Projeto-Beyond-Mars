@@ -238,6 +238,17 @@ sondas_lancadas:
     WORD    30, 32   ; coordenadas da segunda sonda
     WORD    30, 32   ; coordenadas da terceira sonda
 
+cores:
+    WORD 0
+    WORD 0
+    WORD 0
+
+analise_linha:
+    WORD 0
+
+analise_coluna:
+    WORD 0
+
 asteroides_em_falta:    ; número de asteroides em falta
     WORD    0
 
@@ -426,6 +437,7 @@ pausa_prog_principal:           ; neste ciclo o jogo está em modo pausa
     JZ termina_jogo
     CMP R1, R2                  ; verifica se a tecla premida foi o D
     JNZ pausa_prog_principal    ; repete o ciclo
+    MOV [PARA_SOM_VIDEO], R1
     MOV [APAGA_MSG], R1
     MOV R1, FUNDO_JOGO
     MOV [FUNDO_ECRA], R1
@@ -656,7 +668,8 @@ ciclo_asteroide:
     CALL  apaga_objeto                    ; Apaga o objeto em sua posição atual
     INC   R1    ; Atualiza o posição do asteroide para a próxima linha
     ADD   R2, R5    ; Atualiza o posição do asteroide para a próxima coluna
-
+    MOV [analise_linha], R1
+    MOV [analise_coluna], R2
 	CALL	colisao_asteroide_3_sondas
     CMP R6, 1   ; teve colisão?
     JZ  asteroide_destruido   ; se tiver sai 
@@ -682,7 +695,12 @@ pausa_asteroide:
    JMP ciclo_asteroide              ; volta ao ciclo, a continuar o jogo
 
 asteroide_destruido:
-    MOV R0, ASTEROIDE_PERIGO
+    MOV R10, [analise_linha]
+    MOV R11, [analise_coluna]
+    MOV [DEFINE_LINHA], R10
+    MOV [DEFINE_COLUNA], R11
+    MOV R4, [LE_COR_PIXEL]
+    MOV R0, PIXEL_VERM
     CMP R4, R0
     JNZ  destroi_asteroide          ; se for um asteroide de perigo salta
     MOV R4, SOM_AST_DESTRUIDO
@@ -735,6 +753,7 @@ colisao_asteroide_3_sondas:
 ; **********************************************************************
 
 colisao_asteroide_sonda:
+    PUSH R0
     PUSH R3
     PUSH R4
 	PUSH R5
@@ -763,11 +782,13 @@ verifica_sonda:
 	CMP R9, R10
 	JLE final
 	ADD R8, 2
-	MOV R9, [R8]
-	CMP R9, R7
+	MOV R0, [R8]
+	CMP R0, R7
 	JGE final
-	CMP R9, R11
+	CMP R0, R11
 	JLE final
+    MOV [analise_linha], R9
+    MOV [analise_coluna], R0
 	MOV R6,1
     MOV [evento_sonda], R0
 final:
@@ -779,6 +800,7 @@ final:
 	POP R5
     POP R4
     POP R3
+    POP R0
 	RET
 
 ; **********************************************************************

@@ -869,8 +869,7 @@ atualiza_display:
     JNZ altera_modo_energia      ; Se for, salta
 
     CALL escreve_display
-    MOV R9, 94
-    CMP R8, R9
+    CMP R8, 0
     JZ  energia_esgotada
     MOV R0, [evento_display]
     ADD R8, R0

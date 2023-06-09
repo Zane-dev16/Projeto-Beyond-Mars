@@ -160,6 +160,25 @@ ASTEROIDE_COM_RECURSOS:	; tabela que define o asteroide com recursos (cor, largu
     WORD		0, PIXEL_VERD, PIXEL_VERD, PIXEL_VERD, 0
     WORD		0, 0, PIXEL_VERD, 0, 0 
 
+ASTEROIDE_MINADO_1:	; tabela que define o asteroide com recursos (cor, largura, pixels, altura)
+	WORD		LARGURA_AST
+    WORD        ALTURA_AST
+	WORD		0, 0, 0, 0, 0		
+    WORD		0, 0, PIXEL_VERD, 0, 0
+    WORD		0, PIXEL_VERD, PIXEL_VERD, PIXEL_VERD, 0
+    WORD		0, 0, PIXEL_VERD, 0, 0
+    WORD		0, 0, 0, 0, 0 
+
+ASTEROIDE_MINADO_2:	; tabela que define o asteroide com recursos (cor, largura, pixels, altura)
+	WORD		LARGURA_AST
+    WORD        ALTURA_AST
+	WORD		0, 0, 0, 0, 0		
+    WORD		0, 0, 0, 0, 0
+    WORD		0, 0, PIXEL_VERD, 0, 0
+    WORD		0, 0, 0, 0, 0
+    WORD		0, 0, 0, 0, 0 
+
+
 EXPLOSAO_ASTEROIDE:				; tabela que define os recursos (cor, largura, pixels, altura)
 	WORD		LARGURA_AST
     WORD        ALTURA_AST
@@ -661,7 +680,6 @@ ciclo_asteroide:
     CMP R6, 1   ; teve colisão?
     JZ  asteroide_destruido   ; se tiver sai 
 
-muda_asteroide:
     MOV R7, LINHA_BASE          ; linha base do ecrã
     CMP R7, R1
     JZ  sai_asteroide           ; se chegar a ultima linha sai
@@ -682,9 +700,21 @@ pausa_asteroide:
    JMP ciclo_asteroide              ; volta ao ciclo, a continuar o jogo
 
 asteroide_destruido:
-    MOV R0, ASTEROIDE_PERIGO
+    MOV R0, ASTEROIDE_COM_RECURSOS
     CMP R4, R0
-    JNZ  destroi_asteroide          ; se for um asteroide de perigo salta
+    JZ  mina_asteroide_1          ; se for um asteroide com recursos
+    MOV R0, EXPLOSAO_ASTEROIDE
+    CMP R4, R0
+    JZ  sai_asteroide
+    MOV R0, ASTEROIDE_MINADO_1
+    CMP R4, R0
+    JZ  mina_asteroide_2
+    MOV R0, ASTEROIDE_MINADO_2
+    CMP R4, R0
+    JZ  sai_asteroide
+
+
+asteroide_perigo_destruido:
     MOV R4, SOM_AST_DESTRUIDO
     MOV [PARA_SOM_VIDEO], R4
     MOV [REPRODUZ_SOM_VIDEO], R4
@@ -701,11 +731,25 @@ sai_asteroide:
     MOV [tecla_carregada], R0
     RET
 
-destroi_asteroide:
+mina_asteroide_1:
     MOV R0, 25                  ; valor da energia do recurso
     MOV [evento_display], R0    ; recursos obtidos, adicione 25 a energia
-    JMP sai_asteroide
+    MOV R4, ASTEROIDE_MINADO_1
+    DEC R1                  ; para desenhar na mesma linha    
+    SUB R2, R5              ; para desenhar na mesma coluna
+    JMP muda_asteroide
 
+mina_asteroide_2:
+    MOV R4, ASTEROIDE_MINADO_2
+    DEC R1                  ; para desenhar na mesma linha    
+    SUB R2, R5              ; para desenhar na mesma coluna
+    JMP muda_asteroide
+
+muda_asteroide:
+    CALL	desenha_objeto		; desenha o boneco a partir da tabela
+	MOV	R3, [evento_asteroide]  	; lê o LOCK e bloqueia até a interrupção escrever nele
+    CALL  apaga_objeto                    ; Apaga o objeto em sua posição atual
+    JMP asteroide_destruido
 
 ; **********************************************************************
 ; COLISAO_ASTEROIDE_3_SONDAS - deteta colisões entre um asteroide e as sondas

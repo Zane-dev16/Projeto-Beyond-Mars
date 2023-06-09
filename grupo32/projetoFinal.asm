@@ -686,7 +686,6 @@ sai_asteroide:
     MOV R0, [asteroides_em_falta]   ; obtem número de asteroides em falta
     INC R0                          ; incrementa número de asteroides em falta
     MOV [asteroides_em_falta], R0   ; colocar de novo no endereço
-	MOV	R0, [evento_asteroide]  	; lê o LOCK e bloqueia até a interrupção escrever nele
     MOV R0, CRIA_ASTEROIDE
     MOV [tecla_carregada], R0
     RET

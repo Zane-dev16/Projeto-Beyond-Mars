@@ -611,8 +611,6 @@ asteroide_perigo_destruido:
     MOV  [PARA_SOM_VIDEO], R4               ; para todos os sons
     MOV  [REPRODUZ_SOM_VIDEO], R4           ; toca o som da colisão da sonda com um asteroide sem recursos
     MOV  R4, EXPLOSAO_ASTEROIDE             ; tabela com o efeito da exposão do asteroide sem recursos
-    DEC  R1                                 ; para desenhar na mesma linha    
-    SUB  R2, R5                             ; para desenhar na mesma coluna
     JMP  muda_asteroide                     ; volta a desenhar o asteroide com o efeito da destruição
 
 sai_asteroide:
@@ -630,18 +628,15 @@ mina_asteroide_1:
     MOV  R0, VALOR_RECURSOS                 ; valor da energia do recurso
     MOV  [evento_display], R0               ; recursos obtidos, adicione 25 a energia
     MOV  R4, ASTEROIDE_MINADO_1             ; 1º estado da mineração de um asteroide com recursos
-    DEC  R1                                 ; decrementa o valor da linha para desenhar na mesma linha    
-    SUB  R2, R5                             ; para desenhar na mesma coluna
     JMP  muda_asteroide                     ; desenha asteroide com nova imagem
 
 mina_asteroide_2:
     MOV  R4, ASTEROIDE_MINADO_2             ; 1º estado da mineração de um asteroide com recursos
-    DEC  R1                                 ; decrementa o valor da linha para desenhar na mesma linha 
-    SUB  R2, R5                             ; para desenhar na mesma coluna
     JMP  muda_asteroide                     ; desenha asteroide com nova imagem
 
 muda_asteroide:
-    CALL desenha_objeto		                ; desenha o objeto a partir da tabela
+    DEC  R1                                 ; para desenhar na mesma linha    
+    SUB  R2, R5                             ; para desenhar na mesma coluna
 	MOV	 R3, [evento_asteroide]  	        ; lê o LOCK e bloqueia até a interrupção escrever nele
     CALL apaga_objeto                       ; apaga o objeto em sua posição atual
     JMP  asteroide_destruido                ; destroi o asteroide

@@ -2,7 +2,7 @@
   "comment" : "This is a JSON file describing a digital circuit, which can be loaded into the SEPE (Simulador Especial Para Ensino), a computer architecture simulator.",
   "savedWithSimulatorVersion" : "2.2.3",
   "savedWithSimulatorBuildOn" : "2023-06-07  at  20:03:56",
-  "editorLocked" : false,
+  "editorLocked" : true,
   "startAutomatically" : true,
   "showConnectionColors" : false,
   "zoomScale" : 90,
